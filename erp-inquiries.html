@@ -1,0 +1,95 @@
+<!-- [AI 생성 초안 - 검토 전] 농부마을 고객 문의 관리 -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>고객 문의 관리</title>
+<style>
+  :root{ --navy:#2B3A4E; --copper:#C67B3C; --cream:#F7F3EE; --teal:#3A8FB7; --ink:#243140; --muted:#6b7785; --line:#e3dccf; --green:#3f7a52; }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{ font-family:"맑은 고딕","Malgun Gothic",sans-serif; background:var(--cream); color:var(--ink); padding:24px; }
+  header{ background:linear-gradient(135deg,#2B3A4E,#1a2636 58%,#C67B3C 210%); color:#fff; border-radius:14px; padding:22px 26px; margin-bottom:20px; }
+  header h1{ font-size:20px; margin-bottom:6px; }
+  header p{ font-size:13.5px; color:#d7dee6; }
+  .sync-note{ background:#fff7ec; border:1px solid #f0d9b8; border-radius:10px; padding:14px 18px; margin-bottom:20px; font-size:13px; color:#7a5a30; }
+  .sync-note b{ color:var(--copper); }
+  .card{ background:#fff; border:1px solid var(--line); border-radius:12px; overflow:hidden; margin-bottom:16px; }
+  .table-wrap{ overflow-x:auto; }
+  table{ width:100%; min-width:640px; border-collapse:collapse; font-size:13.5px; }
+  th,td{ padding:12px 14px; text-align:left; border-bottom:1px solid #eee; vertical-align:top; }
+  th{ background:#fafafa; color:var(--muted); font-weight:normal; font-size:12px; }
+  tr:last-child td{ border-bottom:none; }
+  .status-pill{ font-size:11px; font-weight:800; padding:3px 10px; border-radius:10px; white-space:nowrap; }
+  .status-pill.new{ background:#fde2e2; color:#c0392b; }
+  .status-pill.done{ background:#e3f2e6; color:var(--green); }
+  .empty{ padding:50px 20px; text-align:center; color:var(--muted); }
+  .empty .big{ font-size:34px; margin-bottom:10px; }
+  footer{ text-align:center; color:var(--muted); font-size:12px; margin-top:20px; }
+  a.back{ color:var(--copper); font-weight:700; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>✉️ 고객 문의 관리</h1>
+  <p>홈페이지 문의 폼(mailto) → 대표 메일로 접수된 내용을 옮겨온 표입니다.</p>
+</header>
+
+<div class="sync-note">
+  📬 이 표는 자동으로 갱신되지 않습니다 — 새 문의가 왔는지 확인하려면 클로드에게 <b>"문의 확인해줘"</b>라고 말씀해주세요. Gmail을 확인해서 이 표에 새 줄로 추가해드립니다.
+  (Gmail 연결이 끊어져 있으면 먼저 다시 연결해달라고 안내해드립니다.)
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:14%">날짜</th>
+          <th style="width:16%">성함</th>
+          <th style="width:18%">연락처</th>
+          <th style="width:38%">문의 내용</th>
+          <th style="width:14%">상태</th>
+        </tr>
+      </thead>
+      <tbody id="inqBody">
+        <!-- 클로드가 Gmail에서 확인한 문의를 여기에 행으로 추가합니다 -->
+      </tbody>
+    </table>
+  </div>
+  <div class="empty" id="emptyState">
+    <div class="big">📭</div>
+    <div><strong>아직 동기화된 문의가 없습니다.</strong></div>
+    <div style="margin-top:6px;font-size:13px;">홈페이지에서 문의가 들어오면, 클로드에게 "문의 확인해줘"라고 말씀해주세요.</div>
+  </div>
+</div>
+
+<footer>
+  erp-inquiries.html · 최근 갱신 2026-09-17 · <a class="back" href="erp-map.html">← 지도로 돌아가기</a>
+</footer>
+
+<script>
+// 클로드가 Gmail에서 확인한 문의를 이 배열에 채워 넣습니다. 비어 있으면 빈 상태 유지.
+const inquiries = [];
+
+function render(){
+  const body = document.getElementById("inqBody");
+  const empty = document.getElementById("emptyState");
+  if (inquiries.length === 0){ empty.style.display = "block"; return; }
+  empty.style.display = "none";
+  body.innerHTML = inquiries.map(q => `
+    <tr>
+      <td>${q.date}</td>
+      <td>${q.name}</td>
+      <td>${q.contact}</td>
+      <td>${q.message}</td>
+      <td><span class="status-pill ${q.status === '완료' ? 'done' : 'new'}">${q.status || '신규'}</span></td>
+    </tr>
+  `).join("");
+}
+render();
+</script>
+
+</body>
+</html>
