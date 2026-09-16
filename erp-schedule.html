@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>회사 일정판</title>
+<style>
+  :root {
+    --navy: #1e2a4a;
+    --orange: #f5820d;
+    --gray-bg: #f4f4f2;
+    --gray-border: #ddd;
+    --text: #222;
+    --muted: #888;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+    background: var(--gray-bg);
+    color: var(--text);
+    padding: 24px;
+  }
+  header {
+    background: var(--navy);
+    color: white;
+    border-radius: 12px;
+    padding: 20px 28px;
+    margin-bottom: 20px;
+  }
+  header h1 { margin: 0 0 6px; font-size: 20px; }
+  header p { margin: 0; color: #cbd3e6; font-size: 13px; }
+  .card {
+    background: white;
+    border-radius: 10px;
+    border: 1px solid var(--gray-border);
+    overflow: hidden;
+  }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; min-width: 560px; border-collapse: collapse; font-size: 14px; }
+  th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid #eee; }
+  th { background: #fafafa; color: var(--muted); font-weight: normal; font-size: 12px; }
+  tr:last-child td { border-bottom: none; }
+  .cal-tag {
+    display: inline-block;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: #e8eaf6;
+    color: #3949ab;
+  }
+  .empty {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--muted);
+  }
+  .empty .big { font-size: 32px; margin-bottom: 8px; }
+  footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 16px; }
+  a.back { color: var(--orange); text-decoration: none; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📅 회사 일정판</h1>
+  <p>구글 캘린더(a7leehs@gmail.com)를 읽어옵니다 · 오늘 이후 일정만, 날짜순</p>
+</header>
+
+<div class="card">
+  <div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th style="width:15%">날짜</th>
+        <th style="width:12%">시간</th>
+        <th style="width:38%">일정 이름</th>
+        <th style="width:20%">어느 캘린더</th>
+        <th style="width:15%">장소</th>
+      </tr>
+    </thead>
+    <tbody id="scheduleBody">
+      <!-- 클로드에게 "다시 채워줘"라고 하면 이 표가 갱신됩니다 -->
+    </tbody>
+  </table>
+  </div>
+  <div class="empty" id="emptyState">
+    <div class="big">🗓️</div>
+    <div><strong>2026-09-12 ~ 2026-09-26 기간에 등록된 일정이 없습니다.</strong></div>
+    <div style="margin-top:6px;font-size:13px;">구글 캘린더에 일정을 넣으신 뒤 클로드에게 "회사 일정판 다시 채워줘"라고 하시면 여기에 표시됩니다.</div>
+  </div>
+</div>
+
+<footer>
+  erp-schedule.html · 조회 범위 2026-09-12 ~ 2026-09-26 · 최근 갱신 2026-09-12<br>
+  <a class="back" href="erp-map.html">← 지도로 돌아가기</a>
+</footer>
+
+<script>
+// 클로드가 구글 캘린더 커넥터로 읽어온 일정. 비어 있으면 그대로 유지.
+const events = [
+  { date: "2026-09-16", time: "14:00", title: "철원 협신농장 미팅", calendar: "a7leehs@gmail.com", location: "철원 협신농장" }
+];
+
+function render() {
+  const body = document.getElementById("scheduleBody");
+  const empty = document.getElementById("emptyState");
+  if (events.length === 0) {
+    empty.style.display = "block";
+    return;
+  }
+  empty.style.display = "none";
+  body.innerHTML = events.map(e => `
+    <tr>
+      <td>${e.date}</td>
+      <td>${e.time}</td>
+      <td>${e.title}</td>
+      <td><span class="cal-tag">${e.calendar}</span></td>
+      <td>${e.location || "-"}</td>
+    </tr>
+  `).join("");
+}
+render();
+</script>
+
+</body>
+</html>

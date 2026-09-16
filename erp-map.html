@@ -1,0 +1,395 @@
+<!-- [AI 생성 초안 - 검토 전] 농부마을 ERP 지도 -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>농부마을 ERP 지도</title>
+<style>
+  :root{
+    --navy:#2B3A4E; --copper:#C67B3C; --cream:#F7F3EE; --teal:#3A8FB7;
+    --ink:#243140; --line:#e3dccf; --muted:#6b7785; --red:#b3503a; --green:#3f7a52;
+    --sidebar-w: 260px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    background:var(--cream); color:var(--ink);
+    font-family:"맑은 고딕","Malgun Gothic",sans-serif;
+    line-height:1.6; font-size:15px;
+  }
+  a{color:inherit;text-decoration:none;}
+
+  .app{ display:flex; min-height:100vh; }
+
+  /* ---------- 사이드바 ---------- */
+  aside.sidebar{
+    width:var(--sidebar-w); flex:0 0 var(--sidebar-w);
+    background:#fff; border-right:1px solid var(--line);
+    padding:20px 16px; position:sticky; top:0; height:100vh; overflow-y:auto;
+  }
+  .brand{ font-size:17px; font-weight:800; color:var(--navy); margin-bottom:16px; padding:0 4px; }
+  .brand small{ display:block; font-weight:normal; color:var(--muted); font-size:12px; margin-top:2px; }
+
+  .overview-card{
+    background:linear-gradient(135deg,#2B3A4E,#1a2636 70%,#C67B3C 230%);
+    color:#fff; border-radius:14px; padding:16px; margin-bottom:18px;
+  }
+  .overview-card .ttl{ font-size:14px; font-weight:800; display:flex; align-items:center; gap:6px; }
+  .overview-card .counts{ display:flex; gap:10px; font-size:12px; margin-top:10px; color:#d7dee6; }
+  .overview-card .counts b{ display:block; font-size:16px; color:#fff; }
+  .overview-card .bar-wrap{ background:rgba(255,255,255,.18); border-radius:6px; height:8px; margin-top:12px; overflow:hidden; }
+  .overview-card .bar{ background:var(--copper); height:100%; }
+
+  .side-section{ margin-bottom:18px; }
+  .side-h{ font-size:11.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; padding:0 4px; margin-bottom:8px; }
+  .fav-item, .cat-item{
+    display:flex; align-items:center; gap:8px; padding:8px 8px; border-radius:8px; font-size:13.5px; color:var(--ink);
+  }
+  .fav-item:hover, .cat-item:hover{ background:var(--cream); }
+  .fav-item .dot, .cat-item .dot{ width:7px; height:7px; border-radius:50%; flex:0 0 auto; }
+  .dot.done{ background:var(--green); }
+  .dot.todo{ background:#c9c2b4; }
+  .fav-item .star{ color:var(--copper); font-size:12px; }
+  .fav-item .name{ flex:1; }
+  .fav-item .order-tag{ font-size:11px; color:var(--copper); font-weight:800; }
+  .cat-item .name{ flex:1; }
+  .cat-item .frac{ font-size:12px; color:var(--muted); font-weight:700; }
+
+  /* ---------- 메인 ---------- */
+  main{ flex:1; min-width:0; padding:28px 32px 80px; }
+  .page-ttl{ font-size:22px; font-weight:800; color:var(--navy); margin-bottom:18px; }
+
+  .hero{
+    background:linear-gradient(135deg,#2B3A4E,#1a2636 58%,#C67B3C 210%);
+    color:#fff; border-radius:16px; padding:22px 24px; margin-bottom:26px;
+  }
+  .hero .k{ display:inline-block; background:rgba(198,123,60,.28); border:1px solid rgba(198,123,60,.5); color:#f0c89a; font-size:12.5px; font-weight:700; border-radius:20px; padding:5px 13px; margin-bottom:10px; }
+  .hero h2{ font-size:19px; margin-bottom:6px; }
+  .hero .sub{ color:#d7dee6; font-size:14px; max-width:640px; }
+  .hero .stats{ display:flex; gap:22px; margin-top:16px; flex-wrap:wrap; }
+  .hero .stats div b{ display:block; font-size:22px; }
+  .hero .stats div span{ font-size:12px; color:#cbd3e6; }
+  .hero .bar-wrap{ background:rgba(255,255,255,.18); border-radius:8px; height:12px; margin-top:16px; overflow:hidden; }
+  .hero .bar{ background:var(--copper); height:100%; }
+  .hero .next-box{ background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.2); border-radius:10px; padding:12px 16px; margin-top:18px; font-size:13px; }
+  .hero .next-box .lbl{ color:#f0c89a; font-weight:800; margin-bottom:8px; font-size:12px; }
+  .hero .next-box div.row{ display:flex; gap:8px; padding:3px 0; }
+  .hero .next-box .n{ color:var(--copper); font-weight:800; min-width:34px; }
+
+  .cat-section{ margin-bottom:30px; scroll-margin-top:20px; }
+  .cat-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px; }
+  .cat-head h3{ font-size:16.5px; color:var(--navy); }
+  .cat-head .frac{ font-size:13px; color:var(--muted); font-weight:700; }
+  .cat-sub{ font-size:12.5px; color:var(--muted); margin-bottom:12px; }
+
+  .card-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .item-card{
+    background:#fff; border:1px solid var(--line); border-radius:12px;
+    padding:13px 14px; display:flex; align-items:center; gap:11px;
+    box-shadow:0 2px 8px rgba(0,0,0,.03);
+  }
+  .item-card.done{ background:#f4faf5; }
+  .item-icon{ width:34px; height:34px; border-radius:9px; background:var(--cream); display:flex; align-items:center; justify-content:center; font-size:16px; flex:0 0 auto; }
+  .item-card.done .item-icon{ background:#e3f2e6; }
+  .item-body{ flex:1; min-width:0; }
+  .item-name{ font-size:13.8px; font-weight:700; color:var(--ink); display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .item-meta{ font-size:11.8px; color:var(--muted); margin-top:2px; }
+  .item-right{ display:flex; flex-direction:column; align-items:flex-end; gap:5px; }
+  .status-pill{ font-size:10.5px; font-weight:800; padding:2px 8px; border-radius:10px; white-space:nowrap; }
+  .status-pill.done{ background:#e3f2e6; color:var(--green); }
+  .status-pill.todo{ background:#f1ece2; color:var(--muted); }
+  .status-pill.inprogress{ background:#fff2d6; color:#b7791f; }
+  .order-badge{ font-size:10.5px; font-weight:800; background:var(--copper); color:#fff; border-radius:10px; padding:2px 8px; }
+  .tag-proposed{ font-size:10px; padding:1px 6px; border-radius:8px; background:#f0f0f0; color:#999; border:1px dashed #ccc; font-weight:normal; }
+  .tag-urgency{ font-size:10px; padding:1px 6px; border-radius:8px; font-weight:800; }
+  .tag-urgency.상{ background:#fde2e2; color:#c0392b; }
+  .tag-urgency.중{ background:#fff2d6; color:#b7791f; }
+  .tag-urgency.하{ background:#e6f0e6; color:#4b7a4b; }
+
+  .foot{ text-align:center; color:var(--muted); font-size:12px; margin-top:40px; line-height:1.7; }
+
+  /* ---------- 상단 바 ---------- */
+  .topbar{
+    display:flex; justify-content:flex-end; align-items:center; gap:14px;
+    padding:9px 24px; background:#fff; border-bottom:1px solid var(--line);
+    font-size:12.5px; color:var(--muted);
+  }
+  .topbar .badge-ok{ background:#e3f2e6; color:var(--green); font-weight:700; padding:3px 10px; border-radius:20px; }
+
+  /* ---------- 피드백 배너 ---------- */
+  .feedback-banner{
+    background:#fff7ec; border:1px solid #f0d9b8; border-radius:12px;
+    padding:12px 16px; margin-bottom:20px; font-size:13px; color:#7a5a30;
+    display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+  }
+  .feedback-banner button{
+    background:var(--copper); color:#fff; border:none; border-radius:8px;
+    padding:7px 14px; font-size:12.5px; font-weight:700; cursor:pointer; font-family:inherit; white-space:nowrap;
+  }
+  .fb-list{ margin-bottom:20px; }
+  .fb-item{ background:#fff; border:1px solid var(--line); border-left:4px solid var(--copper); border-radius:8px; padding:9px 13px; font-size:12.8px; margin-bottom:6px; color:var(--ink); }
+  .fb-item span.t{ color:var(--muted); font-size:11px; margin-right:6px; }
+
+  /* 사이드바는 화면 크기와 상관없이 항상 펼쳐진 채로 보인다(접히지 않음) */
+  .sidebar-inner{ display:block; }
+
+  /* ---------- 모바일 ---------- */
+  @media (max-width: 760px){
+    .app{ flex-direction:column; }
+    aside.sidebar{ position:static; width:100%; height:auto; border-right:none; border-bottom:1px solid var(--line); padding:16px; }
+    .brand{ padding:0 4px 12px; }
+    .sidebar-inner{ padding:0; }
+    main{ padding:20px 16px 60px; }
+    .card-grid{ grid-template-columns:1fr; }
+    .hero .stats{ gap:16px; }
+    .topbar{ padding:8px 16px; font-size:11.5px; }
+    .feedback-banner{ font-size:12px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="badge-ok">🖥️ 바탕화면 아이콘 완료</span>
+  <span id="todayLabel"></span>
+</div>
+
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="brand">🐣 농부마을 작업대<small>양계업 · 산란계 사육 · 계란 생산판매</small></div>
+    <div class="sidebar-inner" id="sidebarInner"></div>
+  </aside>
+
+  <main>
+    <div class="feedback-banner">
+      <span>안 되는 것·불편한 것이 있으면 바로 적어두세요 — 다음 수업 때 고칩니다.</span>
+      <button id="fbBtn">이 화면 불편해요</button>
+    </div>
+    <div class="fb-list" id="fbList"></div>
+
+    <div id="overview" class="hero">
+      <div class="k">ERP 지도</div>
+      <h2>🌾 농부마을 ERP 지도</h2>
+      <div class="sub">완성된 ERP의 설계도가 아니다. 지금 있는 것과 앞으로 붙일 것을 한 장에 놓고, 일주일에 한 칸씩 채워가기 위한 지도다. 칸이 비어 있는 것은 실패가 아니라 순서.</div>
+      <div class="stats">
+        <div><b id="statDone">0</b><span>완성</span></div>
+        <div><b id="statProgress">0</b><span>진행중</span></div>
+        <div><b id="statTodo">0</b><span>미완성</span></div>
+      </div>
+      <div class="bar-wrap"><div class="bar" id="heroBar" style="width:0%"></div></div>
+      <div class="next-box">
+        <div class="lbl">🡒 다음에 붙일 칸</div>
+        <div id="nextList"></div>
+      </div>
+    </div>
+
+    <div id="catRoot"></div>
+
+    <div class="foot">
+      erp-map.html · 정본 1장 · 매주 목요일 수업 후 갱신 · 최근 갱신 2026-09-10<br>
+      <a href="erp-schedule.html">📅 회사 일정판 열기</a> &nbsp;·&nbsp; <a href="index.html">🌐 홈페이지 열기</a> &nbsp;·&nbsp; [AI 생성 초안 - 검토 전]
+    </div>
+  </main>
+
+</div>
+
+<script>
+// ---- 데이터 ----
+const categories = [
+  {
+    code: "전사", anchor: "cat-all", name: "⭐ 전사 공통",
+    sub: "대표·직원 전원이 매일 보는 항목.",
+    items: [
+      { icon:"📅", name: "회사 일정판 (첫 칸)", where: "구글 캘린더", often: "상시", urgency: "상",
+        order: "2회차", status: "done", file: "erp-schedule.html" }
+    ]
+  },
+  {
+    code: "돈", anchor: "cat-money", name: "① 돈",
+    sub: "돈이 새는 지점을 보는 묶음. 7·8회차(회계·재무)에서 채운다.",
+    items: [
+      { icon:"🥚", name: "계란 출하량/매출 집계", where: "엑셀 일부 + 정리 안 함", often: "정산 때마다", urgency: "상", order: 1, status: "todo" },
+      { icon:"💰", name: "거래처별 판매 단가", where: "엑셀/기억", often: "수시", urgency: "중", order: null, status: "todo" },
+      { icon:"🧾", name: "거래처 정산서 작성", where: "수기/엑셀, 매번 번거로움", often: "월 1회", urgency: "중", order: null, status: "todo" },
+      { icon:"💳", name: "미수금 현황", where: "해당 없음 (즉시결제)", often: "-", urgency: "하", order: null, status: "todo" },
+      { icon:"🌾", name: "사료 등 매입 대금", where: "즉시 현금/이체, 별도 기록 없음", often: "발주 때마다", urgency: "하", order: null, status: "todo" },
+      { icon:"💵", name: "급여 지급 내역", where: "전원 월급 고정", often: "월 1회", urgency: "하", order: null, status: "todo" },
+      { icon:"📄", name: "세금계산서 발행", where: "대표/직원 직접 처리", often: "월/분기", urgency: "중", order: null, status: "todo", proposed:true },
+      { icon:"📊", name: "자금(현금흐름) 현황", where: "미논의", often: "수시", urgency: "중", order: null, status: "todo", proposed:true }
+    ]
+  },
+  {
+    code: "일", anchor: "cat-work", name: "② 일",
+    sub: "매일 반복되는 현장 업무 기록. 수업에서 다루지 않아 혼자 붙이는 칸 — 오늘 순서를 전부 정했다.",
+    items: [
+      { icon:"🐔", name: "산란율/폐사율 기록", where: "직원 수기 → 대표 취합", often: "매일", urgency: "상", order: 3, status: "todo" },
+      { icon:"📇", name: "거래처 목록/연락처", where: "기억/개별 확인 추정", often: "수시", urgency: "중", order: 6, status: "todo" },
+      { icon:"🧴", name: "방역 소독 스케줄 체크", where: "수기/기억, 매번 번거로움", often: "정기", urgency: "중", order: 7, status: "todo" },
+      { icon:"🔍", name: "폐사 원인 기록", where: "숫자만 기록, 원인 분석 없음", often: "발생 시", urgency: "중", order: 8, status: "todo", proposed:true },
+      { icon:"🚚", name: "판매처별 배송/납품 일정", where: "미논의", often: "수시", urgency: "중", order: 9, status: "todo", proposed:true }
+    ]
+  },
+  {
+    code: "물건", anchor: "cat-goods", name: "③ 물건",
+    sub: "사료·계란·시설의 흐름. 이것도 혼자 붙이는 칸 — 오늘 순서를 전부 정했다.",
+    items: [
+      { icon:"🌽", name: "사료 재고량", where: "담당 직원 눈대중 확인 → 구두 보고", often: "발주 필요시 수시", urgency: "상", order: 4, status: "todo" },
+      { icon:"📦", name: "사료 발주", where: "대표 보고받고 결정", often: "정기", urgency: "상", order: 5, status: "todo" },
+      { icon:"🥚", name: "계란 등급별(왕란/특란/대란) 재고", where: "세분화는 하나 방식 불명", often: "매일", urgency: "중", order: 10, status: "todo" },
+      { icon:"🔧", name: "장비/설비 점검·수리 이력", where: "미논의", often: "수시", urgency: "중", order: 11, status: "todo", proposed:true },
+      { icon:"🏚️", name: "계사(농장) 시설 현황", where: "미논의 (2~3동)", often: "수시", urgency: "하", order: 12, status: "todo" }
+    ]
+  },
+  {
+    code: "사람", anchor: "cat-people", name: "④ 사람",
+    sub: "근태·급여·채용. 6회차(채용·노무)에서 채운다.",
+    items: [
+      { icon:"⏰", name: "직원 근태(출퇴근/휴가)", where: "구두로 파악, 기록 없음", often: "매일", urgency: "중", order: null, status: "todo" },
+      { icon:"💵", name: "급여 정산", where: "전원 월급 고정", often: "월 1회", urgency: "하", order: null, status: "todo" },
+      { icon:"🧑‍💼", name: "직원별 담당 업무/권한", where: "미논의", often: "수시", urgency: "중", order: null, status: "todo", proposed:true },
+      { icon:"📋", name: "채용/인력 계획", where: "미논의", often: "수시", urgency: "하", order: null, status: "todo", proposed:true }
+    ]
+  },
+  {
+    code: "기한", anchor: "cat-deadline", name: "⑤ 기한",
+    sub: "놓치면 과태료로 이어지는 날짜들. 9회차(정부지원사업)와 연결된다.",
+    items: [
+      { icon:"💉", name: "방역 접종 일정", where: "수기 장부/메모, 놓친 경험 있음", often: "접종 주기마다", urgency: "상", order: 2, status: "todo" },
+      { icon:"📜", name: "가축사육업 허가·등록 갱신", where: "미논의", often: "수시", urgency: "중", order: null, status: "todo", proposed:true },
+      { icon:"🧮", name: "부가세 등 세금 신고 마감", where: "직접 처리, 관리 방식 불명", often: "분기/반기", urgency: "중", order: null, status: "todo", proposed:true },
+      { icon:"🛡️", name: "가축재해보험 등 갱신", where: "미논의", often: "수시", urgency: "중", order: null, status: "todo", proposed:true }
+    ]
+  },
+  {
+    code: "알리기", anchor: "cat-promo", name: "⑥ 알리기",
+    sub: "밖에 어떻게 보이는지. 3·5회차(홈페이지·홍보)에서 채운다.",
+    items: [
+      { icon:"🛒", name: "온라인 판매 채널 관리", where: "미논의 (직배 판매 중)", often: "-", urgency: "중", order: null, status: "todo", proposed:true },
+      { icon:"📱", name: "홈페이지/SNS 운영", where: "3회차에 index.html로 제작 중", often: "수시", urgency: "하", order: "3회차", status: "inprogress", proposed:true, file: "index.html" },
+      { icon:"📸", name: "상품 소개/원산지 콘텐츠", where: "미논의", often: "수시", urgency: "하", order: null, status: "todo", proposed:true }
+    ]
+  }
+];
+
+function orderLabel(o){ return typeof o === "number" ? o + "차" : o; }
+
+function render(){
+  let total=0, done=0, inprogress=0;
+  categories.forEach(c=>{ c.items.forEach(i=>{ total++; if(i.status==="done") done++; else if(i.status==="inprogress") inprogress++; }); });
+  const todo = total - done - inprogress;
+
+  document.getElementById("statDone").textContent = done;
+  document.getElementById("statProgress").textContent = inprogress;
+  document.getElementById("statTodo").textContent = todo;
+  document.getElementById("heroBar").style.width = (total? done/total*100:0) + "%";
+
+  // 다음에 붙일 칸: 순서(숫자)가 있고 미완성인 것 중 순서 오름차순 3개
+  const upcoming = [];
+  categories.forEach(c=>{
+    c.items.forEach(i=>{
+      if(typeof i.order === "number" && i.status !== "done") upcoming.push({...i, cat:c.name});
+    });
+  });
+  upcoming.sort((a,b)=>a.order-b.order);
+  document.getElementById("nextList").innerHTML = upcoming.slice(0,3).map(i=>
+    `<div class="row"><span class="n">${i.order}차</span><span>${i.icon} ${i.name} <span style="color:#cbd3e6;">(${i.cat})</span></span></div>`
+  ).join("") || `<div class="row" style="color:#cbd3e6;">순서를 정한 항목이 없습니다.</div>`;
+
+  // 사이드바
+  const favs = [];
+  categories.forEach(c=>{ c.items.forEach(i=>{ if(typeof i.order==="number") favs.push({...i, cat:c}); }); });
+  favs.sort((a,b)=>a.order-b.order);
+  const favHtml = favs.slice(0,6).map(i=>`
+    <a class="fav-item" href="#${i.cat.anchor}">
+      <span class="star">★</span>
+      <span class="dot ${i.status==='done'?'done':'todo'}"></span>
+      <span class="name">${i.icon} ${i.name}</span>
+      <span class="order-tag">${orderLabel(i.order)}</span>
+    </a>`).join("");
+
+  const catListHtml = categories.map(c=>{
+    const d = c.items.filter(i=>i.status==="done").length;
+    return `<a class="cat-item" href="#${c.anchor}">
+      <span class="dot ${d===c.items.length?'done':'todo'}"></span>
+      <span class="name">${c.name}</span>
+      <span class="frac">${d}/${c.items.length}</span>
+    </a>`;
+  }).join("");
+
+  document.getElementById("sidebarInner").innerHTML = `
+    <div class="overview-card">
+      <div class="ttl">📖 ERP 지도</div>
+      <div class="counts">
+        <div><b>${done}</b>완성</div>
+        <div><b>${inprogress}</b>진행중</div>
+        <div><b>${todo}</b>미완성</div>
+      </div>
+      <div class="bar-wrap"><div class="bar" style="width:${total? done/total*100:0}%"></div></div>
+    </div>
+    <div class="side-section">
+      <div class="side-h">즐겨찾기 (1차 착수 순서)</div>
+      ${favHtml}
+    </div>
+    <div class="side-section">
+      <div class="side-h">분류</div>
+      ${catListHtml}
+    </div>
+  `;
+
+  // 본문 카테고리 카드
+  const root = document.getElementById("catRoot");
+  root.innerHTML = categories.map(c=>{
+    const d = c.items.filter(i=>i.status==="done").length;
+    return `
+    <section class="cat-section" id="${c.anchor}">
+      <div class="cat-head"><h3>${c.name}</h3><span class="frac">${d}/${c.items.length} 완성</span></div>
+      <div class="cat-sub">${c.sub}</div>
+      <div class="card-grid">
+        ${c.items.map(i=>`
+          <div class="item-card ${i.status==='done'?'done':''}">
+            <div class="item-icon">${i.icon}</div>
+            <div class="item-body">
+              <div class="item-name">
+                ${i.name}
+                ${(i.urgency==='상' && i.status!=='done') ? '<span title="급한데 아직 미완성">⚠️</span>' : ''}
+                ${i.proposed ? '<span class="tag-proposed">제안</span>' : ''}
+                <span class="tag-urgency ${i.urgency}">${i.urgency}</span>
+              </div>
+              <div class="item-meta">${i.where} · ${i.often}${i.file ? ` · <a href="${i.file}" target="_blank" style="color:var(--teal);font-weight:700;">열기 →</a>` : ''}</div>
+            </div>
+            <div class="item-right">
+              <span class="status-pill ${i.status}">${i.status==='done' ? '완성' : (i.status==='inprogress' ? '진행중' : '미완성')}</span>
+              ${i.order ? `<span class="order-badge">${orderLabel(i.order)}</span>` : ''}
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    </section>`;
+  }).join("");
+}
+
+render();
+
+// ---- 상단 날짜 ----
+document.getElementById("todayLabel").textContent = "농부마을 · 대표";
+
+// ---- 피드백 배너 (이 페이지를 새로고침하면 사라짐 — 진짜 기록은 종이에도 남기세요) ----
+const fbNotes = [];
+function renderFb(){
+  document.getElementById("fbList").innerHTML = fbNotes.map(n =>
+    `<div class="fb-item"><span class="t">${n.time}</span>${n.text}</div>`
+  ).join("");
+}
+document.getElementById("fbBtn").addEventListener("click", () => {
+  const text = window.prompt("무엇이 불편한가요? (막힌 곳을 적어두면 다음 수업 때 고칩니다)");
+  if (text && text.trim()) {
+    const time = new Date().toLocaleString("ko-KR", { month:"numeric", day:"numeric", hour:"2-digit", minute:"2-digit" });
+    fbNotes.unshift({ time, text: text.trim() });
+    renderFb();
+  }
+});
+</script>
+
+</body>
+</html>

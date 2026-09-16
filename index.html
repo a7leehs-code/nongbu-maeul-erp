@@ -1,0 +1,230 @@
+<!-- [AI 생성 초안 - 검토 전] 농부마을 홈페이지 -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>농부마을 — 자유방목 유정란</title>
+<style>
+  :root{
+    --green:#3F7A52; --green-dark:#2c5940; --leaf:#8FC98A;
+    --cream:#F7F3EE; --gold:#E8A33D; --ink:#243140; --muted:#6b7785; --line:#e3dccf;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:"맑은 고딕","Malgun Gothic",sans-serif;
+    background:var(--cream); color:var(--ink); line-height:1.6;
+  }
+  a{color:inherit;text-decoration:none;}
+  img{max-width:100%;}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 20px;}
+
+  /* 상단 공지 바 */
+  .topbar{ background:var(--green-dark); color:#fff; text-align:center; font-size:12.5px; padding:7px 12px; }
+
+  /* 헤더 */
+  header{ background:#fff; border-bottom:1px solid var(--line); position:sticky; top:0; z-index:10; }
+  .header-inner{ display:flex; align-items:center; justify-content:space-between; padding:14px 20px; max-width:1080px; margin:0 auto; gap:20px; }
+  .logo{ font-size:22px; font-weight:800; color:var(--green); display:flex; align-items:center; gap:6px; white-space:nowrap; }
+  .search-box{ flex:1; max-width:420px; display:flex; align-items:center; background:var(--cream); border-radius:20px; padding:8px 16px; font-size:13px; color:var(--muted); }
+  .header-icons{ display:flex; gap:16px; font-size:20px; white-space:nowrap; }
+
+  nav.catnav{ background:#fff; border-bottom:1px solid var(--line); }
+  .catnav-inner{ display:flex; gap:28px; padding:12px 20px; max-width:1080px; margin:0 auto; font-size:14px; font-weight:700; color:var(--ink); overflow-x:auto; }
+  .catnav-inner a{ flex-shrink:0; white-space:nowrap; }
+  .catnav-inner a:hover{ color:var(--green); }
+
+  /* 히어로 */
+  .hero{
+    background:linear-gradient(135deg, var(--green) 0%, var(--green-dark) 100%);
+    color:#fff; padding:60px 20px; position:relative; overflow:hidden;
+  }
+  .hero::after{
+    content:"🥚"; position:absolute; right:6%; top:50%; transform:translateY(-50%) rotate(-8deg);
+    font-size:180px; opacity:0.15;
+  }
+  .hero-inner{ max-width:1080px; margin:0 auto; position:relative; }
+  .hero .tag{ display:inline-block; background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.35); border-radius:20px; padding:6px 16px; font-size:13px; font-weight:700; margin-bottom:16px; }
+  .hero h1{ font-size:32px; line-height:1.4; margin-bottom:14px; max-width:560px; }
+  .hero p{ font-size:15px; color:#e3f2e6; max-width:480px; margin-bottom:24px; }
+  .btn-primary{ display:inline-block; background:var(--gold); color:#2c1a00; font-weight:800; padding:13px 28px; border-radius:8px; font-size:15px; }
+  .btn-primary:hover{ background:#d6931f; }
+
+  /* 신뢰 배지 */
+  .trust{ background:#fff; border-bottom:1px solid var(--line); }
+  .trust-inner{ max-width:1080px; margin:0 auto; display:flex; flex-wrap:wrap; justify-content:space-around; padding:22px 20px; gap:16px; text-align:center; }
+  .trust-item{ flex:1; min-width:140px; }
+  .trust-item .ic{ font-size:26px; margin-bottom:6px; }
+  .trust-item .t{ font-weight:800; font-size:13.5px; }
+  .trust-item .s{ font-size:11.5px; color:var(--muted); margin-top:2px; }
+
+  /* 섹션 공통 */
+  section.block{ padding:48px 20px; }
+  .block-head{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:20px; max-width:1080px; margin-left:auto; margin-right:auto; }
+  .block-head h2{ font-size:20px; color:var(--ink); }
+  .block-head a{ font-size:13px; color:var(--green); font-weight:700; }
+
+  .prod-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(220px,1fr)); gap:16px; max-width:1080px; margin:0 auto; }
+  .prod-card{ background:#fff; border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+  .prod-img{ height:160px; background:linear-gradient(135deg,#eef7ef,#dcefe0); display:flex; align-items:center; justify-content:center; font-size:56px; position:relative; }
+  .prod-badge{ position:absolute; top:10px; left:10px; background:var(--gold); color:#2c1a00; font-size:11px; font-weight:800; padding:3px 9px; border-radius:12px; }
+  .prod-body{ padding:14px 16px; }
+  .prod-title{ font-size:13.5px; font-weight:700; margin-bottom:8px; min-height:38px; }
+  .prod-price{ font-size:16px; font-weight:800; color:var(--ink); }
+  .prod-price .pct{ color:#c0392b; font-weight:800; margin-right:4px; }
+  .prod-old{ font-size:12px; color:var(--muted); text-decoration:line-through; margin-bottom:2px; }
+  .btn-cart{ margin-top:10px; width:100%; border:1px solid var(--green); color:var(--green); background:#fff; padding:8px; border-radius:8px; font-size:12.5px; font-weight:700; }
+
+  /* 스토리 배너 */
+  .story{ background:#fff; }
+  .story-inner{ max-width:1080px; margin:0 auto; display:grid; grid-template-columns:1fr 1fr; gap:32px; align-items:center; padding:50px 20px; }
+  .story-img{ background:linear-gradient(135deg,#f0e6d2,#e3d3ae); border-radius:16px; height:280px; display:flex; align-items:center; justify-content:center; font-size:64px; }
+  .story-text .k{ color:var(--green); font-weight:800; font-size:13px; margin-bottom:8px; }
+  .story-text h2{ font-size:24px; margin-bottom:14px; line-height:1.5; }
+  .story-text p{ font-size:14px; color:var(--muted); margin-bottom:10px; }
+
+  /* 쿠폰/구독 배너 */
+  .promo-strip{ background:var(--cream); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+  .promo-strip-inner{ max-width:1080px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; padding:24px 20px; flex-wrap:wrap; gap:14px; }
+  .promo-strip-inner .t{ font-weight:800; font-size:16px; }
+  .promo-strip-inner .s{ font-size:13px; color:var(--muted); margin-top:4px; }
+
+  footer{ background:var(--green-dark); color:#cfe3d5; padding:36px 20px 24px; font-size:12.5px; }
+  .footer-inner{ max-width:1080px; margin:0 auto; }
+  .footer-inner .brand{ color:#fff; font-weight:800; font-size:16px; margin-bottom:10px; }
+  .footer-inner .line{ margin:3px 0; }
+  .footer-inner .watermark{ margin-top:16px; opacity:.6; font-size:11px; }
+
+  @media (max-width:720px){
+    .header-inner{ flex-wrap:wrap; }
+    .search-box{ order:3; max-width:100%; }
+    .hero h1{ font-size:24px; }
+    .hero::after{ font-size:110px; right:2%; }
+    .story-inner{ grid-template-columns:1fr; }
+    .story-img{ height:200px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">🥚 지금 첫 구매 시 배송비 무료 · 산지에서 오늘 산란한 유정란만 보내드립니다</div>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">🐣 농부마을</div>
+    <div class="search-box">🔍&nbsp;&nbsp;유정란, 왕란, 특란 검색</div>
+    <div class="header-icons">
+      <span title="찜">🤍</span>
+      <span title="장바구니">🛒</span>
+    </div>
+  </div>
+</header>
+
+<nav class="catnav">
+  <div class="catnav-inner">
+    <a href="#home">홈</a>
+    <a href="#products">상품</a>
+    <a href="#story">농장 이야기</a>
+    <a href="erp-schedule.html">주문·방문 일정</a>
+    <a href="#contact">문의</a>
+  </div>
+</nav>
+
+<section class="hero" id="home">
+  <div class="hero-inner">
+    <div class="tag">난각번호 1번 · 자유방목(방사)</div>
+    <h1>9,000평 방사장에서<br>자유롭게 자란 닭이 낳은<br>진짜 유정란</h1>
+    <p>유황·동애등에·비타민을 급여하고, 매일 산란 상태를 직접 확인합니다. 껍데기가 단단하고 노른자가 진한 것이 농부마을 유정란의 특징입니다.</p>
+    <a class="btn-primary" href="#products">상품 보러가기 →</a>
+  </div>
+</section>
+
+<div class="trust">
+  <div class="trust-inner">
+    <div class="trust-item"><div class="ic">🌾</div><div class="t">자유방목 사육</div><div class="s">9,000평 방사장</div></div>
+    <div class="trust-item"><div class="ic">🥗</div><div class="t">건강한 사료</div><div class="s">유황 · 동애등에 · 비타민</div></div>
+    <div class="trust-item"><div class="ic">📅</div><div class="t">당일 산란</div><div class="s">난각번호 1번 초신선란</div></div>
+    <div class="trust-item"><div class="ic">🚚</div><div class="t">산지 직송</div><div class="s">직배 판매 중</div></div>
+  </div>
+</div>
+
+<section class="block" id="products">
+  <div class="block-head">
+    <h2>🥚 농부마을 대표 상품</h2>
+    <a href="#contact">전체 문의하기 →</a>
+  </div>
+  <div class="prod-grid">
+    <div class="prod-card">
+      <div class="prod-img"><span class="prod-badge">인기</span>🥚</div>
+      <div class="prod-body">
+        <div class="prod-title">[농부마을] 자유방목 황동유정란 30구</div>
+        <div class="prod-old">26,000원</div>
+        <div class="prod-price"><span class="pct">9%</span>23,700원</div>
+        <button class="btn-cart">🛒 문의하기</button>
+      </div>
+    </div>
+    <div class="prod-card">
+      <div class="prod-img">🥚</div>
+      <div class="prod-body">
+        <div class="prod-title">[농부마을] 특란 유정란 30구</div>
+        <div class="prod-old">22,000원</div>
+        <div class="prod-price"><span class="pct">10%</span>19,800원</div>
+        <button class="btn-cart">🛒 문의하기</button>
+      </div>
+    </div>
+    <div class="prod-card">
+      <div class="prod-img"><span class="prod-badge">대용량</span>🥚</div>
+      <div class="prod-body">
+        <div class="prod-title">[농부마을] 왕란 유정란 30구</div>
+        <div class="prod-old">28,000원</div>
+        <div class="prod-price"><span class="pct">12%</span>24,600원</div>
+        <button class="btn-cart">🛒 문의하기</button>
+      </div>
+    </div>
+    <div class="prod-card">
+      <div class="prod-img">🥚</div>
+      <div class="prod-body">
+        <div class="prod-title">[농부마을] 대란 유정란 15구 (소용량)</div>
+        <div class="prod-old">13,000원</div>
+        <div class="prod-price"><span class="pct">8%</span>11,960원</div>
+        <button class="btn-cart">🛒 문의하기</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="promo-strip">
+  <div class="promo-strip-inner">
+    <div>
+      <div class="t">📦 매주 정기 배송 안내</div>
+      <div class="s">단골 고객님은 문의 주시면 요일을 정해 정기적으로 보내드립니다</div>
+    </div>
+    <a class="btn-primary" href="#contact">정기 배송 문의</a>
+  </div>
+</div>
+
+<section class="story" id="story">
+  <div class="story-inner">
+    <div class="story-img">🌿🐔🌿</div>
+    <div class="story-text">
+      <div class="k">농장 이야기</div>
+      <h2>산란율과 폐사율을<br>매일 직접 확인합니다</h2>
+      <p>계사 2~3동 규모의 작은 농장이지만, 닭들이 자유롭게 돌아다니는 방사장에서 건강하게 자랍니다.</p>
+      <p>방역 소독과 접종 일정을 꼼꼼히 지키고, 사료도 유황·동애등에·비타민을 직접 배합해 급여합니다.</p>
+      <p>비린 맛이 적고 노른자가 진한 유정란 — 그게 농부마을이 매일 확인하는 품질 기준입니다.</p>
+    </div>
+  </div>
+</section>
+
+<footer id="contact">
+  <div class="footer-inner">
+    <div class="brand">🐣 농부마을</div>
+    <div class="line">양계업 · 산란계 사육 · 계란 생산판매</div>
+    <div class="line">문의 · 주문 : 아래 연락처로 카카오톡 또는 전화 주세요</div>
+    <div class="line">직배 판매 중 · 정기 배송 상담 가능</div>
+    <div class="watermark">[AI 생성 초안 - 검토 전] · 레이아웃은 마켓컬리 홈페이지 구성을 참고했고, 문구·이미지·상품 정보는 농부마을 자체 콘텐츠입니다. · <a href="erp-map.html" style="text-decoration:underline;">농부마을 작업대(관리자)</a></div>
+  </div>
+</footer>
+
+</body>
+</html>
