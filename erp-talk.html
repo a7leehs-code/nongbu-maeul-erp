@@ -1,0 +1,920 @@
+<!-- [AI 생성 초안 - 검토 전] 농부마을 사내메신저 마을톡 -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>마을톡 · 농부마을</title>
+<style>
+  :root{ --navy:#2B3A4E; --copper:#C67B3C; --cream:#F7F3EE; --teal:#3A8FB7; --ink:#243140; --muted:#6b7785; --line:#e3dccf; --green:#3f7a52; --red:#b3503a;
+         --chat-bg:#bacee0; --mine:#fee500; --mine-ink:#3b3300; }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{ font-family:"맑은 고딕","Malgun Gothic",sans-serif; background:var(--cream); color:var(--ink); padding:20px; line-height:1.55; }
+  .wrap{ max-width:1080px; margin:0 auto; }
+  header{ background:linear-gradient(135deg,#2B3A4E,#1a2636 58%,#C67B3C 210%); color:#fff; border-radius:14px; padding:18px 24px; margin-bottom:14px; }
+  header h1{ font-size:19px; margin-bottom:4px; }
+  header p{ font-size:13px; color:#d7dee6; }
+
+  .warn{ background:#fbeee9; border-left:4px solid var(--red); padding:10px 14px; font-size:12.8px; color:#8a3a2a; margin-bottom:14px; }
+  .warn.live{ background:#eef7f0; border-left-color:var(--green); color:#2f5e3e; }
+  .warn a{ color:inherit; font-weight:700; }
+
+  .bar{ display:flex; flex-wrap:wrap; align-items:center; gap:10px; background:#fff; border:1px solid var(--line); border-radius:12px; padding:10px 14px; margin-bottom:14px; }
+  .bar label{ font-size:13px; font-weight:700; color:var(--navy); }
+  .bar select{ font-family:inherit; font-size:14px; padding:6px 10px; border:1px solid var(--line); border-radius:8px; background:#fff; }
+  .bar .who{ font-size:12.5px; color:var(--muted); flex:1; min-width:160px; }
+  .btn{ font-family:inherit; font-size:12.5px; font-weight:700; border:none; border-radius:8px; padding:7px 12px; cursor:pointer; white-space:nowrap; }
+  .btn.ghost{ background:#fff; color:var(--muted); border:1px solid var(--line); }
+  .btn.copper{ background:var(--copper); color:#fff; }
+  .btn.navy{ background:var(--navy); color:#fff; }
+  .btn.red{ background:#fff; color:var(--red); border:1px solid #e8c1b6; }
+  .btn[disabled]{ opacity:.5; cursor:default; }
+
+  /* 구조 그림 */
+  details.overview{ background:#fff; border:1px solid var(--line); border-radius:12px; margin-bottom:14px; }
+  details.overview > summary{ list-style:none; cursor:pointer; padding:12px 16px; display:flex; flex-wrap:wrap; align-items:baseline; gap:8px; }
+  details.overview > summary::-webkit-details-marker{ display:none; }
+  details.overview[open] > summary{ border-bottom:1px solid var(--line); }
+  .ov-title{ font-size:14.5px; font-weight:800; color:var(--navy); }
+  .ov-stats{ font-size:12.5px; color:var(--muted); }
+  .ov-toggle{ margin-left:auto; font-size:12px; color:var(--teal); font-weight:700; }
+  details.overview:not([open]) .ov-toggle::after{ content:"펼쳐 보기 ▾"; }
+  details.overview[open] .ov-toggle::after{ content:"접기 ▴"; }
+  .ov-body{ padding:14px 16px 16px; }
+  .mm-wrap{ overflow-x:auto; }
+  .mm-wrap svg{ width:100%; min-width:720px; height:auto; display:block; }
+  .mm-hint{ font-size:12px; color:var(--muted); margin-top:8px; }
+
+  /* 로그인 */
+  .card{ background:#fff; border:1px solid var(--line); border-radius:12px; padding:18px; margin-bottom:14px; }
+  .card h3{ font-size:15px; color:var(--navy); margin-bottom:10px; }
+  .auth{ max-width:420px; margin:0 auto 14px; }
+  .switch{ display:flex; gap:6px; margin-bottom:12px; }
+  .pill-tab{ font-family:inherit; font-size:13px; font-weight:700; padding:7px 13px; border-radius:20px; border:1px solid var(--line); background:#fff; color:var(--ink); cursor:pointer; }
+  .pill-tab.active{ background:var(--navy); color:#fff; border-color:var(--navy); }
+  .field{ display:flex; flex-direction:column; gap:4px; margin-bottom:10px; }
+  .field label{ font-size:12.5px; font-weight:700; color:var(--navy); }
+  .field input{ font-family:inherit; font-size:14px; padding:8px 10px; border:1px solid var(--line); border-radius:8px; }
+  .err{ font-size:12.5px; color:var(--red); min-height:18px; margin:4px 0; }
+  .ok{ font-size:12.5px; color:var(--green); }
+  .hint{ font-size:12px; color:var(--muted); }
+
+  /* 메신저 본체 */
+  .talk{ display:flex; background:#fff; border:1px solid var(--line); border-radius:14px; overflow:hidden; height:min(78vh, 760px); min-height:480px; }
+  .side{ width:320px; flex:0 0 320px; border-right:1px solid var(--line); display:flex; flex-direction:column; min-height:0; }
+  .side-top{ display:flex; align-items:center; gap:6px; padding:12px; border-bottom:1px solid var(--line); }
+  .side-top .grow{ flex:1; }
+  .stab{ font-family:inherit; font-size:14px; font-weight:800; background:none; border:none; color:#b0aaa0; cursor:pointer; padding:4px 6px; position:relative; }
+  .stab.active{ color:var(--ink); }
+  .stab .n{ position:absolute; top:-6px; right:-10px; background:#ff5a3c; color:#fff; font-size:10.5px; border-radius:10px; padding:0 5px; min-width:17px; text-align:center; }
+  .list{ flex:1; overflow-y:auto; }
+  .row{ display:flex; align-items:center; gap:10px; padding:10px 12px; cursor:pointer; border:none; background:none; width:100%; text-align:left; font-family:inherit; color:inherit; }
+  .row:hover{ background:#f6f3ee; }
+  .row.active{ background:#eef2f6; }
+  .row .mid{ flex:1; min-width:0; }
+  .row .nm{ font-size:14px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .row .nm small{ font-weight:normal; color:var(--muted); margin-left:4px; }
+  .row .pv{ font-size:12.5px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .row .rt{ display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex:0 0 auto; }
+  .row .tm{ font-size:11px; color:#a39c90; }
+  .row .ub{ background:#ff5a3c; color:#fff; font-size:11px; font-weight:800; border-radius:10px; padding:0 6px; min-width:19px; text-align:center; }
+  .av{ width:42px; height:42px; border-radius:15px; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800; font-size:15px; flex:0 0 auto; }
+  .av.sm{ width:36px; height:36px; border-radius:13px; font-size:13px; }
+  .sec-h{ font-size:11.5px; color:var(--muted); padding:10px 12px 4px; }
+
+  .chat{ flex:1; min-width:0; display:flex; flex-direction:column; background:var(--chat-bg); }
+  .chat-head{ display:flex; align-items:center; gap:8px; padding:10px 14px; background:rgba(186,206,224,.95); border-bottom:1px solid rgba(0,0,0,.06); }
+  .chat-head .ttl{ flex:1; min-width:0; font-size:15px; font-weight:800; color:#1d2a36; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .chat-head .ttl small{ font-weight:normal; color:#51606d; margin-left:6px; font-size:12.5px; }
+  .back{ display:none; font-size:20px; background:none; border:none; cursor:pointer; color:#1d2a36; padding:0 6px 0 0; }
+  .notice{ display:flex; gap:8px; align-items:flex-start; background:#fff; margin:10px 12px 0; border-radius:10px; padding:9px 12px; font-size:13px; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+  .notice .b{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+  .notice button{ font-family:inherit; font-size:11.5px; background:none; border:none; color:var(--muted); cursor:pointer; }
+  .msgs{ flex:1; overflow-y:auto; padding:12px 14px; }
+  .day{ text-align:center; margin:14px 0 10px; }
+  .day span{ background:rgba(0,0,0,.14); color:#fff; font-size:11.5px; padding:3px 12px; border-radius:12px; }
+  .sys{ text-align:center; font-size:12px; color:#3c4b58; margin:8px 0; }
+  .m{ display:flex; gap:8px; margin:6px 0; align-items:flex-start; }
+  .m .col{ max-width:72%; display:flex; flex-direction:column; }
+  .m .who{ font-size:12.5px; color:#2c3a46; margin:0 0 3px 2px; }
+  .m .ln{ display:flex; align-items:flex-end; gap:5px; }
+  .bub{ background:#fff; border-radius:4px 14px 14px 14px; padding:8px 11px; font-size:14px; color:#1b1b1b; white-space:normal; word-break:break-word; }
+  .bub a{ color:#1a5fa0; font-weight:700; }
+  .meta{ display:flex; flex-direction:column; font-size:10.5px; color:#51606d; line-height:1.3; flex:0 0 auto; }
+  .meta .rd{ color:#e5a300; font-weight:800; font-size:11px; }
+  .meta .pin{ font-family:inherit; font-size:10.5px; background:none; border:none; color:#51606d; cursor:pointer; padding:0; text-align:left; opacity:0; }
+  .m:hover .meta .pin{ opacity:1; }
+  .m.mine{ justify-content:flex-end; }
+  .m.mine .col{ align-items:flex-end; }
+  .m.mine .ln{ flex-direction:row-reverse; }
+  .m.mine .bub{ background:var(--mine); color:var(--mine-ink); border-radius:14px 4px 14px 14px; }
+  .m.mine .meta{ align-items:flex-end; }
+  .m.cont .av{ visibility:hidden; }
+  .m.cont .who{ display:none; }
+  .compose{ display:flex; gap:8px; padding:10px 12px; background:#fff; border-top:1px solid var(--line); align-items:flex-end; }
+  .compose textarea{ flex:1; font-family:inherit; font-size:14px; border:1px solid var(--line); border-radius:10px; padding:9px 11px; resize:none; min-height:42px; max-height:140px; }
+  .compose .send{ background:var(--mine); color:var(--mine-ink); font-family:inherit; font-weight:800; border:none; border-radius:10px; padding:0 16px; height:42px; cursor:pointer; }
+  .compose .send[disabled]{ opacity:.5; }
+  .keep{ font-size:11px; color:var(--muted); padding:0 12px 8px; background:#fff; }
+  .empty-chat{ flex:1; display:flex; align-items:center; justify-content:center; color:#3c4b58; font-size:14px; text-align:center; padding:20px; }
+
+  .form-pane{ flex:1; overflow-y:auto; background:#fff; padding:18px; }
+  .pick{ display:flex; align-items:center; gap:10px; padding:8px 4px; border-bottom:1px solid #f0ebe3; cursor:pointer; }
+  .pick input{ width:18px; height:18px; }
+
+  footer{ text-align:center; color:var(--muted); font-size:12px; margin-top:18px; line-height:1.8; }
+  footer a{ color:var(--copper); font-weight:700; text-decoration:none; }
+
+  @media (max-width:760px){
+    body{ padding:10px; }
+    .talk{ height:calc(100vh - 20px); min-height:420px; }
+    .side{ width:100%; flex:1 1 auto; border-right:none; }
+    .chat, .form-pane{ display:none; }
+    .talk.open .side{ display:none; }
+    .talk.open .chat, .talk.open .form-pane{ display:flex; }
+    .talk.open .form-pane{ display:block; }
+    .back{ display:block; }
+    .m .col{ max-width:80%; }
+    .meta .pin{ opacity:1; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>💬 마을톡 — 농부마을 사내메신저</h1>
+  <p>카카오톡처럼 쓰되, 회사 계정으로만 들어오고 대화는 회사 기록으로 남습니다</p>
+</header>
+
+<details class="overview" id="mmBox" open>
+  <summary>
+    <span class="ov-title">🧠 구조 한눈에 보기 — 마을톡은 무엇으로 이루어져 있나</span>
+    <span class="ov-stats">표 3개 · 사내용 규칙 4개 · 카톡에서 가져온 것 4개</span>
+    <span class="ov-toggle"></span>
+  </summary>
+  <div class="ov-body">
+    <div class="mm-wrap" id="mindmap"></div>
+    <div class="mm-hint">왼쪽은 「무엇을 적어 두나」(표), 오른쪽은 「어떻게 움직이나」입니다. 점선은 다음 단계에서 붙일 칸입니다.</div>
+  </div>
+</details>
+
+<div class="warn" id="modeNote"></div>
+<div class="bar" id="bar"></div>
+<div id="auth"></div>
+
+<div class="talk" id="talk" hidden>
+  <aside class="side">
+    <div class="side-top">
+      <button class="stab active" data-side="rooms" id="tabRooms">채팅</button>
+      <button class="stab" data-side="people">직원</button>
+      <span class="grow"></span>
+      <button class="btn ghost" id="newGroupBtn">+ 그룹</button>
+    </div>
+    <div class="list" id="list"></div>
+  </aside>
+  <section class="chat" id="chat"></section>
+</div>
+
+<footer>
+  erp-talk.html · 보낸 메시지는 지우거나 고칠 수 없습니다 — 고칠 내용은 새 메시지로 보내주세요<br>
+  <a href="erp-map.html">← 지도로 돌아가기</a> · <a href="erp-approvals.html">전자결재</a> · [AI 생성 초안 - 검토 전]
+</footer>
+
+</div>
+
+<script src="erp-config.js"></script>
+<script>
+const CFG = window.ERP_CONFIG || {};
+const LIVE = Boolean(CFG.supabaseUrl && CFG.supabaseAnonKey);
+const SUPABASE_JS = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js";
+const DOC_NO_RE = /\b(LV|OT|OUT|PR|EX|DS|MT)-\d{4}-\d{3}\b/g;
+const AV_COLORS = ["#C67B3C", "#3A8FB7", "#3f7a52", "#7a5aa8", "#b3503a", "#2B3A4E", "#9a7b2f"];
+
+let people = [];
+let rooms = [];
+let currentUser = null;
+let currentRoom = null;
+let roomMessages = [];
+let roomMembers = [];
+let sideTab = "rooms";
+let pane = "chat";
+let busy = false;
+
+// ─────────────────────────────────────────────
+// 공통 도우미
+// ─────────────────────────────────────────────
+function esc(s) {
+  return String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+function bodyHtml(s) {
+  return esc(s).replace(DOC_NO_RE, m => `<a href="erp-approvals.html" target="_blank" title="전자결재에서 보기">${m}</a>`).replace(/\n/g, "<br>");
+}
+function friendly(msg) {
+  if (/Failed to fetch|NetworkError|Load failed/i.test(msg)) return "서버에 연결하지 못했습니다. 인터넷 연결과 erp-config.js의 주소를 확인하세요.";
+  if (msg === "Invalid login credentials") return "이메일 또는 비밀번호가 틀렸습니다.";
+  if (/Email not confirmed/i.test(msg)) return "메일함의 확인 링크를 먼저 눌러주세요.";
+  if (/already registered/i.test(msg)) return "이미 가입된 이메일입니다. 로그인해주세요.";
+  return msg;
+}
+function person(id) { return people.find(p => p.id === id) || { id, name: "(퇴사·알 수 없음)", role: "", job: "" }; }
+function me() { return person(currentUser); }
+function isCeo() { return me().role === "대표"; }
+function avColor(id) {
+  let h = 0; for (const c of String(id)) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return AV_COLORS[h % AV_COLORS.length];
+}
+function avatar(id, sm) {
+  const p = person(id);
+  const name = p.name || "?";
+  const initials = name.length >= 3 ? name.slice(-2) : name;
+  return `<div class="av${sm ? " sm" : ""}" style="background:${avColor(id)}">${esc(initials)}</div>`;
+}
+function roomAvatar(r) {
+  if (r.kind === "all") return `<div class="av" style="background:#2B3A4E">📢</div>`;
+  if (r.kind === "group") return `<div class="av" style="background:#8aa3b8">👥</div>`;
+  return avatar(r.memberIds.find(id => id !== currentUser) || currentUser);
+}
+function roomTitle(r) {
+  if (r.kind === "direct") {
+    const other = person(r.memberIds.find(id => id !== currentUser));
+    return other.name;
+  }
+  return r.name;
+}
+const fmtTime = iso => new Date(iso).toLocaleTimeString("ko-KR", { hour: "numeric", minute: "2-digit", timeZone: "Asia/Seoul" });
+const fmtDay = iso => new Date(iso).toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric", weekday: "long", timeZone: "Asia/Seoul" });
+const dayKey = iso => new Date(iso).toLocaleDateString("sv-SE", { timeZone: "Asia/Seoul" });
+function listTime(iso) {
+  if (!iso) return "";
+  return dayKey(iso) === dayKey(new Date().toISOString()) ? fmtTime(iso)
+    : new Date(iso).toLocaleDateString("ko-KR", { month: "numeric", day: "numeric", timeZone: "Asia/Seoul" });
+}
+function canPin(r) { return isCeo() || r.createdBy === currentUser; }
+
+// 카톡의 노란 숫자 — 보낸 사람을 빼고, 이 메시지 이후로 아직 안 읽은 멤버 수
+function unreadCount(msg) {
+  if (msg.kind !== "text") return 0;
+  return roomMembers.filter(m => m.userId !== msg.sender && m.lastReadAt < msg.createdAt).length;
+}
+
+// ─────────────────────────────────────────────
+// 저장소 ① 실습판 — 이 브라우저에만 저장 (두 탭을 서로 다른 사람으로 열면 대화가 오갑니다)
+// ─────────────────────────────────────────────
+const SAMPLE_PEOPLE = [
+  { id: "ceo",    name: "이한결", role: "대표", job: "대표", active: true },
+  { id: "minsu",  name: "박민수", role: "직원", job: "사육", active: true },
+  { id: "jieun",  name: "최지은", role: "직원", job: "출하", active: true },
+  { id: "woojin", name: "정우진", role: "직원", job: "방역", active: true }
+];
+
+function seedData() {
+  const t = s => new Date(s).toISOString();
+  const rooms = [
+    { id: 1, kind: "all", name: "농부마을 전체", createdBy: "ceo", pinnedId: 1, createdAt: t("2026-09-01T08:00:00+09:00") },
+    { id: 2, kind: "group", name: "현장팀", createdBy: "ceo", pinnedId: null, createdAt: t("2026-09-01T08:05:00+09:00") },
+    { id: 3, kind: "direct", name: "", createdBy: "jieun", pinnedId: null, createdAt: t("2026-09-01T08:10:00+09:00"), directKey: "ceo:jieun" }
+  ];
+  const messages = [
+    { id: 1, roomId: 1, sender: "ceo", kind: "text", body: "[공지] 10/6(월) 오전 9시 뉴캐슬 백신 접종합니다.\n전원 8시 40분까지 1동 앞으로 모여주세요.", createdAt: t("2026-09-30T08:02:00+09:00") },
+    { id: 2, roomId: 1, sender: "minsu", kind: "text", body: "네 알겠습니다!", createdAt: t("2026-09-30T08:10:00+09:00") },
+    { id: 3, roomId: 1, sender: "jieun", kind: "text", body: "그날 출하 차량은 10시로 미뤄둘게요.", createdAt: t("2026-09-30T08:15:00+09:00") },
+    { id: 4, roomId: 2, sender: null, kind: "system", body: "이한결님이 「현장팀」 방을 만들었습니다.", createdAt: t("2026-09-01T08:05:00+09:00") },
+    { id: 5, roomId: 2, sender: "woojin", kind: "text", body: "2동 환풍기 소리가 이상합니다. 내일 오전에 점검 부를까요?", createdAt: t("2026-09-30T16:40:00+09:00") },
+    { id: 6, roomId: 2, sender: "ceo", kind: "text", body: "네 불러주세요. 견적 받으면 지출결의 다시 올려주시고요.", createdAt: t("2026-09-30T16:52:00+09:00") },
+    { id: 7, roomId: 2, sender: "woojin", kind: "text", body: "업체 10시 방문입니다. 견적 나오면 EX-2026-001 반려된 거 다시 올리겠습니다.", createdAt: t("2026-10-01T07:30:00+09:00") },
+    { id: 8, roomId: 2, sender: "minsu", kind: "text", body: "오늘 산란율 91.2% 나왔어요. 어제보다 0.8%p 올랐습니다.", createdAt: t("2026-10-01T07:45:00+09:00") },
+    { id: 9, roomId: 3, sender: "jieun", kind: "text", body: "대표님, 오늘 출하 왕란 40판 · 특란 60판입니다.", createdAt: t("2026-10-01T06:50:00+09:00") },
+    { id: 10, roomId: 3, sender: "ceo", kind: "text", body: "확인했어요. 수고 많아요.", createdAt: t("2026-10-01T07:05:00+09:00") }
+  ];
+  const m = (roomId, userId, read) => ({ roomId, userId, joinedAt: t("2026-09-01T08:00:00+09:00"), lastReadAt: t(read) });
+  const members = [
+    m(1, "ceo", "2026-09-30T08:20:00+09:00"), m(1, "minsu", "2026-09-30T08:10:00+09:00"),
+    m(1, "jieun", "2026-09-30T08:15:00+09:00"), m(1, "woojin", "2026-09-30T07:00:00+09:00"),
+    m(2, "ceo", "2026-09-30T16:52:00+09:00"), m(2, "minsu", "2026-10-01T07:45:00+09:00"), m(2, "woojin", "2026-10-01T07:30:00+09:00"),
+    m(3, "ceo", "2026-10-01T07:05:00+09:00"), m(3, "jieun", "2026-10-01T06:50:00+09:00")
+  ];
+  return { rooms, messages, members, nextId: 100 };
+}
+
+const LocalStore = {
+  KEY: "nongbu-talk-v1",
+  USER_KEY: "nongbu-talk-user",
+  data: null,
+
+  init() {
+    people = SAMPLE_PEOPLE.slice();
+    this.data = this.load();
+    try { currentUser = localStorage.getItem(this.USER_KEY); } catch (e) {}
+    if (!people.some(p => p.id === currentUser)) currentUser = "ceo";
+  },
+  load() {
+    try { const raw = localStorage.getItem(this.KEY); if (raw) return JSON.parse(raw); } catch (e) {}
+    return seedData();
+  },
+  save() { try { localStorage.setItem(this.KEY, JSON.stringify(this.data)); } catch (e) {} },
+  setUser(id) { currentUser = id; try { localStorage.setItem(this.USER_KEY, id); } catch (e) {} },
+  reset() { this.data = seedData(); this.save(); },
+  now() { return new Date().toISOString(); },
+  isMember(roomId, userId = currentUser) { return this.data.members.some(m => m.roomId === roomId && m.userId === userId); },
+  sys(roomId, body) { this.data.messages.push({ id: this.data.nextId++, roomId, sender: null, kind: "system", body, createdAt: this.now() }); },
+
+  async refreshRooms() {
+    const d = this.data;
+    rooms = d.rooms.filter(r => this.isMember(r.id)).map(r => {
+      const msgs = d.messages.filter(m => m.roomId === r.id);
+      const last = msgs[msgs.length - 1];
+      const mine = d.members.find(m => m.roomId === r.id && m.userId === currentUser);
+      return {
+        id: r.id, kind: r.kind, name: r.name, createdBy: r.createdBy, pinnedId: r.pinnedId,
+        lastBody: last ? last.body : "", lastAt: last ? last.createdAt : r.createdAt, lastSender: last ? last.sender : null,
+        unread: msgs.filter(m => m.createdAt > mine.lastReadAt && m.sender !== currentUser).length,
+        memberIds: d.members.filter(m => m.roomId === r.id).map(m => m.userId)
+      };
+    }).sort((a, b) => b.lastAt.localeCompare(a.lastAt));
+  },
+  async loadRoom(roomId) {
+    if (!this.isMember(roomId)) throw new Error("이 방의 멤버가 아닙니다.");
+    roomMessages = this.data.messages.filter(m => m.roomId === roomId);
+    roomMembers = this.data.members.filter(m => m.roomId === roomId).map(m => ({ userId: m.userId, lastReadAt: m.lastReadAt }));
+  },
+  async send(roomId, body) {
+    if (!this.isMember(roomId)) throw new Error("이 방의 멤버가 아닙니다.");
+    this.data.messages.push({ id: this.data.nextId++, roomId, sender: currentUser, kind: "text", body, createdAt: this.now() });
+    this.markReadSync(roomId);
+    this.save();
+  },
+  markReadSync(roomId) {
+    const m = this.data.members.find(x => x.roomId === roomId && x.userId === currentUser);
+    if (m) m.lastReadAt = this.now();
+  },
+  async markRead(roomId) { this.markReadSync(roomId); this.save(); },
+  async openDirect(otherId) {
+    if (otherId === currentUser) throw new Error("나와의 대화는 만들 수 없습니다.");
+    const key = [currentUser, otherId].sort().join(":");
+    let r = this.data.rooms.find(x => x.directKey === key);
+    if (!r) {
+      r = { id: this.data.nextId++, kind: "direct", name: "", createdBy: currentUser, pinnedId: null, createdAt: this.now(), directKey: key };
+      this.data.rooms.push(r);
+      [currentUser, otherId].forEach(u => this.data.members.push({ roomId: r.id, userId: u, joinedAt: this.now(), lastReadAt: this.now() }));
+      this.save();
+    }
+    return r.id;
+  },
+  async createGroup(name, ids) {
+    const id = this.data.nextId++;
+    this.data.rooms.push({ id, kind: "group", name, createdBy: currentUser, pinnedId: null, createdAt: this.now() });
+    [currentUser, ...ids].forEach(u => this.data.members.push({ roomId: id, userId: u, joinedAt: this.now(), lastReadAt: this.now() }));
+    this.sys(id, `${me().name}님이 「${name}」 방을 만들었습니다.`);
+    this.save();
+    return id;
+  },
+  async leave(roomId) {
+    const r = this.data.rooms.find(x => x.id === roomId);
+    if (!r || r.kind !== "group") throw new Error("전체방과 1:1 대화는 나갈 수 없습니다.");
+    this.sys(roomId, `${me().name}님이 나갔습니다.`);
+    this.data.members = this.data.members.filter(m => !(m.roomId === roomId && m.userId === currentUser));
+    this.save();
+  },
+  async pin(roomId, msgId) {
+    const r = this.data.rooms.find(x => x.id === roomId);
+    if (!(isCeo() || r.createdBy === currentUser)) throw new Error("공지는 대표나 방을 만든 사람만 고정할 수 있습니다.");
+    r.pinnedId = msgId;
+    this.save();
+  }
+};
+
+// ─────────────────────────────────────────────
+// 저장소 ② 실사용 — Supabase. 「방 멤버만 읽기」·「수정·삭제 불가」는 DB 규칙이 지킵니다
+// ─────────────────────────────────────────────
+let sb = null, session = null, profile = null, liveError = "", channel = null;
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = src; s.onload = resolve;
+    s.onerror = () => reject(new Error("라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인하세요."));
+    document.head.appendChild(s);
+  });
+}
+async function rpc(fn, args) {
+  const { data, error } = await sb.rpc(fn, args);
+  if (error) throw new Error(error.message);
+  return data;
+}
+const toMsg = r => ({ id: r.id, roomId: r.room_id, sender: r.sender, kind: r.kind, body: r.body, createdAt: new Date(r.created_at).toISOString() });
+
+const LiveStore = {
+  async init() {
+    if (!window.supabase) await loadScript(SUPABASE_JS);
+    sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey);
+    sb.auth.onAuthStateChange((_e, s) => { session = s; setTimeout(loadLive, 0); });
+  },
+  async refreshRooms() {
+    const data = await rpc("my_rooms", {});
+    rooms = data.map(r => ({
+      id: r.id, kind: r.kind, name: r.name, createdBy: r.created_by, pinnedId: r.pinned_message_id,
+      lastBody: r.last_body || "", lastAt: r.last_at ? new Date(r.last_at).toISOString() : "", lastSender: r.last_sender,
+      unread: Number(r.unread || 0), memberIds: r.member_ids || []
+    }));
+  },
+  async loadRoom(roomId) {
+    const [m, mem] = await Promise.all([
+      sb.from("talk_messages").select("*").eq("room_id", roomId).order("created_at", { ascending: false }).limit(300),
+      sb.from("talk_members").select("user_id,last_read_at").eq("room_id", roomId)
+    ]);
+    if (m.error) throw new Error(m.error.message);
+    if (mem.error) throw new Error(mem.error.message);
+    roomMessages = m.data.map(toMsg).reverse();
+    roomMembers = mem.data.map(r => ({ userId: r.user_id, lastReadAt: new Date(r.last_read_at).toISOString() }));
+  },
+  async send(roomId, body) {
+    const { error } = await sb.from("talk_messages").insert({ room_id: roomId, sender: currentUser, body });
+    if (error) throw new Error(error.message.includes("row-level security") ? "이 방에 메시지를 보낼 권한이 없습니다." : error.message);
+    await rpc("talk_mark_read", { p_room: roomId });
+  },
+  async markRead(roomId) { await rpc("talk_mark_read", { p_room: roomId }); },
+  async openDirect(otherId) { return await rpc("talk_open_direct", { p_other: otherId }); },
+  async createGroup(name, ids) { return await rpc("talk_create_group", { p_name: name, p_members: ids }); },
+  async leave(roomId) { await rpc("talk_leave", { p_room: roomId }); },
+  async pin(roomId, msgId) { await rpc("talk_pin", { p_room: roomId, p_message: msgId }); },
+  subscribe() {
+    if (channel) sb.removeChannel(channel);
+    channel = sb.channel("talk")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "talk_messages" }, onRemoteChange)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "talk_members" }, onRemoteChange)
+      .subscribe();
+  }
+};
+
+async function loadLive() {
+  liveError = ""; profile = null;
+  if (!session) { currentUser = null; people = []; rooms = []; currentRoom = null; render(); return; }
+  currentUser = session.user.id;
+  try {
+    const { data, error } = await sb.from("profiles").select("*").eq("id", currentUser).maybeSingle();
+    if (error) throw new Error(error.message);
+    profile = data;
+    if (profile && profile.active) {
+      const p = await sb.from("profiles").select("id,name,email,role,job,active").order("created_at");
+      if (p.error) throw new Error(p.error.message);
+      people = p.data.map(r => ({ id: r.id, name: r.name || r.email, role: r.role, job: r.job, active: r.active }));
+      await LiveStore.refreshRooms();
+      if (currentRoom && rooms.some(r => r.id === currentRoom)) await LiveStore.loadRoom(currentRoom); else currentRoom = null;
+      LiveStore.subscribe();
+    }
+  } catch (e) { liveError = friendly(e.message); }
+  render();
+}
+
+const store = LIVE ? LiveStore : LocalStore;
+
+let remoteTimer = null;
+function onRemoteChange() {
+  clearTimeout(remoteTimer);
+  remoteTimer = setTimeout(syncFromStore, 150);
+}
+async function syncFromStore() {
+  if (busy) return;
+  try {
+    if (!LIVE) LocalStore.data = LocalStore.load();
+    const atBottom = isAtBottom();
+    await store.refreshRooms();
+    if (currentRoom && !rooms.some(r => r.id === currentRoom)) currentRoom = null;
+    if (currentRoom) {
+      await store.loadRoom(currentRoom);
+      const hasNew = rooms.find(r => r.id === currentRoom)?.unread > 0;
+      if (hasNew && document.visibilityState === "visible") { await store.markRead(currentRoom); await store.refreshRooms(); await store.loadRoom(currentRoom); }
+    }
+    renderTalk(atBottom);
+  } catch (e) { /* 다음 동기화 때 다시 시도 */ }
+}
+
+// ─────────────────────────────────────────────
+// 그리기
+// ─────────────────────────────────────────────
+function renderModeNote() {
+  const el = document.getElementById("modeNote");
+  if (LIVE) {
+    el.className = "warn live";
+    el.innerHTML = "✅ 실사용 모드 — 회사 계정(전자결재와 같은 로그인)으로만 들어옵니다. 방 멤버만 대화를 볼 수 있고, 보낸 메시지는 지우거나 고칠 수 없습니다.";
+  } else {
+    el.className = "warn";
+    el.innerHTML = `⚠ 실습판입니다. 대화는 이 브라우저에만 저장되고 직원은 샘플입니다. <b>탭 두 개</b>를 열어 서로 다른 사람으로 바꾸면 대화가 오가는 걸 볼 수 있습니다. 실제로 쓰려면 <a href="supabase/setup-guide.html" target="_blank">연결 안내</a>대로 Supabase를 연결하세요.`;
+  }
+}
+
+function renderBar() {
+  const bar = document.getElementById("bar");
+  if (!LIVE) {
+    bar.hidden = false;
+    bar.innerHTML = `<label for="userSel">접속한 사람</label>
+      <select id="userSel">${people.map(p => `<option value="${esc(p.id)}" ${p.id === currentUser ? "selected" : ""}>${esc(p.name)} — ${esc(p.role === "대표" ? "대표" : "직원 · " + p.job)}</option>`).join("")}</select>
+      <span class="who">탭마다 다른 사람을 고르면 1:1로 대화하는 모습을 볼 수 있습니다</span>
+      <button class="btn ghost" id="resetBtn">실습 초기화</button>`;
+    return;
+  }
+  if (!session) { bar.hidden = true; return; }
+  bar.hidden = false;
+  const p = profile || {};
+  bar.innerHTML = `<span class="who">👤 <b>${esc(p.name || session.user.email)}</b> · ${esc(p.role === "대표" ? "대표" : "직원" + (p.job ? " · " + p.job : ""))}</span>
+    <button class="btn ghost" id="logoutBtn">로그아웃</button>`;
+}
+
+let authMode = "login";
+function authHtml() {
+  const s = authMode === "signup";
+  return `<div class="card auth">
+    <div class="switch">
+      <button class="pill-tab ${!s ? "active" : ""}" data-auth="login">로그인</button>
+      <button class="pill-tab ${s ? "active" : ""}" data-auth="signup">처음 가입</button>
+    </div>
+    <div class="field"><label for="aEmail">이메일</label><input id="aEmail" type="email" autocomplete="email"></div>
+    <div class="field"><label for="aPw">비밀번호${s ? " (6자 이상)" : ""}</label><input id="aPw" type="password" autocomplete="${s ? "new-password" : "current-password"}"></div>
+    ${s ? `<div class="field"><label for="aName">이름</label><input id="aName" autocomplete="name"></div>
+           <div class="field"><label for="aJob">맡은 일</label><input id="aJob" placeholder="예: 사육, 출하, 방역"></div>` : ""}
+    <div class="err" id="aErr"></div><div class="ok" id="aOk"></div>
+    <button class="btn copper" id="authBtn" style="width:100%;padding:10px;font-size:14px">${s ? "가입하기" : "로그인"}</button>
+    <p class="hint" style="margin-top:10px">전자결재와 같은 계정입니다. 한 번 로그인하면 두 화면 모두 들어가집니다.${s ? " 가입 후 대표가 「사용 허용」을 눌러야 쓸 수 있습니다." : ""}</p>
+  </div>`;
+}
+
+function render() {
+  renderModeNote();
+  renderBar();
+  const auth = document.getElementById("auth");
+  const talk = document.getElementById("talk");
+  if (LIVE && liveError) {
+    auth.innerHTML = `<div class="card"><h3>연결에 문제가 있습니다</h3><p class="err">${esc(liveError)}</p>
+      <p class="hint">DB 설정(supabase/approvals.sql → supabase/talk.sql 순서)을 실행했는지, erp-config.js가 맞는지 확인하세요.</p></div>`;
+    talk.hidden = true; return;
+  }
+  if (LIVE && !session) { auth.innerHTML = authHtml(); talk.hidden = true; return; }
+  if (LIVE && (!profile || !profile.active)) {
+    auth.innerHTML = `<div class="card"><h3>⏳ 대표 승인 대기 중</h3><p>대표가 전자결재의 「직원 관리」에서 「사용 허용」을 누르면 마을톡을 쓸 수 있습니다.</p></div>`;
+    talk.hidden = true; return;
+  }
+  auth.innerHTML = "";
+  talk.hidden = false;
+  renderTalk(true);
+}
+
+function renderTalk(scrollBottom) {
+  const totalUnread = rooms.reduce((s, r) => s + r.unread, 0);
+  document.title = (totalUnread ? `(${totalUnread}) ` : "") + "마을톡 · 농부마을";
+  document.getElementById("tabRooms").innerHTML = `채팅${totalUnread ? `<span class="n">${totalUnread > 99 ? "99+" : totalUnread}</span>` : ""}`;
+  document.querySelectorAll(".stab").forEach(b => b.classList.toggle("active", b.dataset.side === sideTab));
+  document.getElementById("list").innerHTML = sideTab === "rooms" ? roomsListHtml() : peopleListHtml();
+  document.getElementById("talk").classList.toggle("open", Boolean(currentRoom) || pane === "newGroup");
+  renderChat(scrollBottom);
+}
+
+function roomsListHtml() {
+  if (!rooms.length) return `<div class="sec-h">아직 대화가 없습니다. 「직원」에서 사람을 눌러 대화를 시작하세요.</div>`;
+  return rooms.map(r => {
+    const prefix = r.lastSender && r.lastSender !== currentUser && r.kind !== "direct" ? `${person(r.lastSender).name}: ` : "";
+    const count = r.kind === "direct" ? "" : `<small>${r.memberIds.length}</small>`;
+    return `<button class="row ${r.id === currentRoom ? "active" : ""}" data-room="${r.id}">
+      ${roomAvatar(r)}
+      <div class="mid"><div class="nm">${esc(roomTitle(r))}${count}</div><div class="pv">${esc(prefix + (r.lastBody || "").replace(/\n/g, " "))}</div></div>
+      <div class="rt"><span class="tm">${esc(listTime(r.lastAt))}</span>${r.unread ? `<span class="ub">${r.unread > 99 ? "99+" : r.unread}</span>` : ""}</div>
+    </button>`;
+  }).join("");
+}
+
+function peopleListHtml() {
+  const self = me();
+  const others = people.filter(p => p.id !== currentUser && p.active !== false);
+  return `<div class="sec-h">나</div>
+    <div class="row" style="cursor:default">${avatar(self.id)}<div class="mid"><div class="nm">${esc(self.name)}<small>${esc(self.role === "대표" ? "대표" : self.job)}</small></div></div></div>
+    <div class="sec-h">직원 ${others.length}명 — 누르면 1:1 대화</div>
+    ${others.map(p => `<button class="row" data-person="${esc(p.id)}">${avatar(p.id)}
+      <div class="mid"><div class="nm">${esc(p.name)}<small>${esc(p.role === "대표" ? "대표" : p.job)}</small></div></div></button>`).join("")}`;
+}
+
+function renderChat(scrollBottom) {
+  const chat = document.getElementById("chat");
+  if (pane === "newGroup") { chat.outerHTML = newGroupHtml(); return; }
+  if (chat.classList.contains("form-pane")) chat.className = "chat";
+  const r = rooms.find(x => x.id === currentRoom);
+  if (!r) {
+    chat.innerHTML = `<div class="empty-chat">왼쪽에서 대화방을 고르세요.<br>「직원」 탭에서 사람을 누르면 1:1 대화가 열립니다.</div>`;
+    return;
+  }
+  const pinned = r.pinnedId ? roomMessages.find(m => m.id === r.pinnedId) : null;
+  const allowPin = canPin(r);
+  chat.innerHTML = `
+    <div class="chat-head">
+      <button class="back" id="backBtn" aria-label="목록으로">‹</button>
+      <div class="ttl">${esc(roomTitle(r))}<small>${r.kind === "direct" ? "1:1" : r.memberIds.length + "명"}</small></div>
+      ${r.kind === "group" ? `<button class="btn ghost" id="leaveBtn">나가기</button>` : ""}
+    </div>
+    ${pinned ? `<div class="notice"><span>📌</span><div class="b">${bodyHtml(pinned.body)}</div>${allowPin ? `<button id="unpinBtn">내리기</button>` : ""}</div>` : ""}
+    <div class="msgs" id="msgs">${messagesHtml(allowPin, r.pinnedId)}</div>
+    <div class="compose">
+      <textarea id="input" rows="1" maxlength="2000" placeholder="메시지 입력 · Enter 보내기, Shift+Enter 줄바꿈"></textarea>
+      <button class="send" id="sendBtn">전송</button>
+    </div>
+    <div class="keep">🔒 보낸 메시지는 지우거나 고칠 수 없습니다 · 대화는 회사 기록으로 남습니다</div>`;
+  const box = document.getElementById("msgs");
+  if (scrollBottom) box.scrollTop = box.scrollHeight;
+}
+
+function messagesHtml(allowPin, pinnedId) {
+  if (!roomMessages.length) return `<div class="sys">첫 메시지를 보내보세요.</div>`;
+  let out = "", prevDay = "", prevSender = null, prevMin = "";
+  roomMessages.forEach(m => {
+    const dk = dayKey(m.createdAt);
+    if (dk !== prevDay) { out += `<div class="day"><span>${esc(fmtDay(m.createdAt))}</span></div>`; prevDay = dk; prevSender = null; }
+    if (m.kind === "system") { out += `<div class="sys">${esc(m.body)}</div>`; prevSender = null; return; }
+    const mine = m.sender === currentUser;
+    const minute = m.createdAt.slice(0, 16);
+    const cont = prevSender === m.sender && prevMin === minute;
+    const rd = unreadCount(m);
+    const pinBtn = allowPin && m.id !== pinnedId ? `<button class="pin" data-pin="${m.id}">📌공지</button>` : "";
+    out += `<div class="m ${mine ? "mine" : ""} ${cont ? "cont" : ""}">
+      ${mine ? "" : avatar(m.sender, true)}
+      <div class="col">
+        ${mine ? "" : `<div class="who">${esc(person(m.sender).name)}</div>`}
+        <div class="ln"><div class="bub">${bodyHtml(m.body)}</div>
+          <div class="meta">${rd ? `<span class="rd">${rd}</span>` : ""}${pinBtn}<span>${esc(fmtTime(m.createdAt))}</span></div></div>
+      </div>
+    </div>`;
+    prevSender = m.sender; prevMin = minute;
+  });
+  return out;
+}
+
+function newGroupHtml() {
+  const others = people.filter(p => p.id !== currentUser && p.active !== false);
+  return `<section class="form-pane" id="chat">
+    <div class="chat-head" style="margin:-18px -18px 14px;background:#f6f3ee">
+      <button class="back" id="backBtn" aria-label="목록으로">‹</button>
+      <div class="ttl">새 그룹 만들기</div>
+    </div>
+    <div class="field"><label for="gName">방 이름</label><input id="gName" maxlength="40" placeholder="예: 출하팀, 10월 방역"></div>
+    <div class="field"><label>함께할 직원</label></div>
+    ${others.map(p => `<label class="pick"><input type="checkbox" value="${esc(p.id)}" class="gPick">${avatar(p.id, true)}<span>${esc(p.name)} <span class="hint">${esc(p.role === "대표" ? "대표" : p.job)}</span></span></label>`).join("")}
+    <div class="err" id="gErr"></div>
+    <button class="btn navy" id="gCreate">만들기</button>
+    <button class="btn ghost" id="gCancel">취소</button>
+  </section>`;
+}
+
+function isAtBottom() {
+  const box = document.getElementById("msgs");
+  return !box || box.scrollHeight - box.scrollTop - box.clientHeight < 60;
+}
+
+// ─────────────────────────────────────────────
+// 동작
+// ─────────────────────────────────────────────
+async function run(fn, errEl) {
+  if (busy) return;
+  busy = true;
+  try { await fn(); }
+  catch (e) { if (errEl) errEl.textContent = friendly(e.message); else window.alert(friendly(e.message)); }
+  finally { busy = false; }
+}
+
+async function openRoom(id) {
+  await run(async () => {
+    currentRoom = id; pane = "chat";
+    await store.loadRoom(id);
+    await store.markRead(id);
+    await store.refreshRooms();
+    await store.loadRoom(id);
+    renderTalk(true);
+    const input = document.getElementById("input");
+    if (input && window.matchMedia("(min-width: 761px)").matches) input.focus();
+  });
+}
+
+async function sendMessage() {
+  const input = document.getElementById("input");
+  const body = input.value.trim();
+  if (!body || !currentRoom) return;
+  const btn = document.getElementById("sendBtn");
+  btn.disabled = true;
+  await run(async () => {
+    await store.send(currentRoom, body);
+    input.value = "";
+    await store.refreshRooms();
+    await store.loadRoom(currentRoom);
+    renderTalk(true);
+    document.getElementById("input").focus();
+  });
+  const b = document.getElementById("sendBtn");
+  if (b) b.disabled = false;
+}
+
+document.getElementById("list").addEventListener("click", e => {
+  const r = e.target.closest("[data-room]");
+  if (r) { openRoom(Number(r.dataset.room)); return; }
+  const p = e.target.closest("[data-person]");
+  if (p) openDirectWith(p.dataset.person);
+});
+
+async function openDirectWith(personId) {
+  let id = null;
+  await run(async () => { id = await store.openDirect(personId); await store.refreshRooms(); });
+  if (id) { sideTab = "rooms"; await openRoom(Number(id)); }
+}
+
+document.querySelector(".side-top").addEventListener("click", e => {
+  const t = e.target.closest("[data-side]");
+  if (t) { sideTab = t.dataset.side; renderTalk(false); return; }
+  if (e.target.id === "newGroupBtn") { pane = "newGroup"; currentRoom = null; renderTalk(false); }
+});
+
+document.getElementById("talk").addEventListener("click", async e => {
+  const id = e.target.id;
+  if (id === "sendBtn") { sendMessage(); return; }
+  if (id === "backBtn") { currentRoom = null; pane = "chat"; renderTalk(false); return; }
+  if (id === "gCancel") { pane = "chat"; renderTalk(false); return; }
+  if (id === "leaveBtn") {
+    const r = rooms.find(x => x.id === currentRoom);
+    if (!window.confirm(`「${r.name}」 방에서 나갈까요? 다시 들어오려면 다른 멤버가 새 방을 만들어야 합니다.`)) return;
+    run(async () => { await store.leave(currentRoom); currentRoom = null; await store.refreshRooms(); renderTalk(false); });
+    return;
+  }
+  if (id === "unpinBtn") {
+    run(async () => { await store.pin(currentRoom, null); await store.refreshRooms(); await store.loadRoom(currentRoom); renderTalk(false); });
+    return;
+  }
+  const pinBtn = e.target.closest("[data-pin]");
+  if (pinBtn) {
+    run(async () => { await store.pin(currentRoom, Number(pinBtn.dataset.pin)); await store.refreshRooms(); await store.loadRoom(currentRoom); renderTalk(false); });
+    return;
+  }
+  if (id === "gCreate") {
+    const err = document.getElementById("gErr");
+    const name = document.getElementById("gName").value.trim();
+    const ids = [...document.querySelectorAll(".gPick:checked")].map(x => x.value);
+    if (!name) { err.textContent = "방 이름을 적어주세요."; return; }
+    if (!ids.length) { err.textContent = "함께할 직원을 한 명 이상 골라주세요."; return; }
+    let newId = null;
+    await run(async () => { newId = await store.createGroup(name, ids); await store.refreshRooms(); }, err);
+    if (newId) { sideTab = "rooms"; await openRoom(Number(newId)); }
+  }
+});
+
+document.getElementById("talk").addEventListener("keydown", e => {
+  if (e.target.id !== "input") return;
+  if (e.key === "Enter" && !e.shiftKey && !e.isComposing && e.keyCode !== 229) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+document.getElementById("talk").addEventListener("input", e => {
+  if (e.target.id === "input") {
+    e.target.style.height = "auto";
+    e.target.style.height = Math.min(e.target.scrollHeight, 140) + "px";
+  }
+  if (e.target.id === "gName") document.getElementById("gErr").textContent = "";
+});
+
+document.getElementById("bar").addEventListener("change", async e => {
+  if (e.target.id !== "userSel") return;
+  LocalStore.setUser(e.target.value);
+  currentRoom = null; pane = "chat";
+  await store.refreshRooms();
+  render();
+});
+document.getElementById("bar").addEventListener("click", async e => {
+  if (e.target.id === "resetBtn") {
+    if (!window.confirm("실습 대화를 모두 지우고 처음 샘플로 되돌릴까요?")) return;
+    LocalStore.reset(); currentRoom = null;
+    await store.refreshRooms(); render();
+  } else if (e.target.id === "logoutBtn") {
+    await sb.auth.signOut();
+  }
+});
+
+document.getElementById("auth").addEventListener("click", async e => {
+  const t = e.target.closest("[data-auth]");
+  if (t) { authMode = t.dataset.auth; render(); return; }
+  if (e.target.id !== "authBtn") return;
+  const err = document.getElementById("aErr"), ok = document.getElementById("aOk"), btn = e.target;
+  const email = document.getElementById("aEmail").value.trim();
+  const password = document.getElementById("aPw").value;
+  if (!email.includes("@")) { err.textContent = "이메일을 확인해주세요."; return; }
+  if (password.length < 6) { err.textContent = "비밀번호는 6자 이상이어야 합니다."; return; }
+  btn.disabled = true;
+  try {
+    if (authMode === "signup") {
+      const name = document.getElementById("aName").value.trim();
+      const job = document.getElementById("aJob").value.trim();
+      if (!name) { err.textContent = "이름을 적어주세요."; return; }
+      const { data, error } = await sb.auth.signUp({ email, password, options: { data: { name, job }, emailRedirectTo: location.href.split("#")[0] } });
+      if (error) throw error;
+      if (!data.session) ok.textContent = "가입 신청이 됐습니다. 메일함에서 확인 링크를 누른 뒤 로그인하세요.";
+    } else {
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+    }
+  } catch (x) { err.textContent = friendly(x.message); }
+  finally { btn.disabled = false; }
+});
+document.getElementById("auth").addEventListener("input", () => { const e = document.getElementById("aErr"); if (e) e.textContent = ""; });
+
+window.addEventListener("storage", e => { if (!LIVE && e.key === LocalStore.KEY) onRemoteChange(); });
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && (!LIVE || (session && profile && profile.active))) onRemoteChange(); });
+setInterval(() => { if (LIVE && session && profile && profile.active && document.visibilityState === "visible") onRemoteChange(); }, 20000);
+
+document.getElementById("mmBox").addEventListener("toggle", e => {
+  try { localStorage.setItem("nongbu-talk-mm-open", e.target.open ? "1" : "0"); } catch (x) {}
+});
+try { if (localStorage.getItem("nongbu-talk-mm-open") === "0") document.getElementById("mmBox").open = false; } catch (x) {}
+
+// ─────────────────────────────────────────────
+// 구조 마인드맵 — 가지 이름·잎을 바꾸려면 여기만 고치면 됩니다
+// ─────────────────────────────────────────────
+const MINDMAP = {
+  center: "마을톡",
+  left: [
+    { title: "방", sub: "표", color: "blue",
+      leaves: ["종류 — 전체·그룹·1:1", "방 이름", "공지 고정", "만든 사람"] },
+    { title: "방 멤버", sub: "표", color: "green",
+      leaves: ["누가 들어 있나", "어디까지 읽었나", "들어온 날"] },
+    { title: "메시지", sub: "표", color: "amber",
+      leaves: ["보낸 사람", "내용 — 2천 자까지", "보낸 시각"] },
+    { title: "사진·파일", sub: "다음 단계", color: "gray", dashed: true,
+      leaves: ["저장 공간 설정 후 추가"] }
+  ],
+  right: [
+    { title: "사내용 규칙", sub: "카톡과 다른 점", color: "copper",
+      leaves: ["회사 계정만 · 중지 즉시 차단", "보낸 메시지 삭제·수정 없음", "방 멤버만 읽기 — 서버가 확인", "공지는 대표·방 만든 사람"] },
+    { title: "카톡에서 가져온 것", sub: "익숙한 그대로", color: "yellow",
+      leaves: ["1:1 · 단톡방 · 전체방", "안 읽은 사람 수 (노란 숫자)", "안 읽음 배지 · 날짜 구분선", "결재번호 쓰면 전자결재 링크"] }
+  ]
+};
+
+const MM_COLORS = {
+  blue:   { fill: "#eaf3f8", leaf: "#f5fafd", stroke: "#3A8FB7", text: "#1f4f6b" },
+  green:  { fill: "#e3f2e6", leaf: "#f3faf4", stroke: "#3f7a52", text: "#2f5e3e" },
+  amber:  { fill: "#fff2d6", leaf: "#fffaf0", stroke: "#d4a24a", text: "#7a5010" },
+  gray:   { fill: "#ffffff", leaf: "#ffffff", stroke: "#b9b2a4", text: "#8a8375" },
+  copper: { fill: "#fbeee4", leaf: "#fdf6f0", stroke: "#C67B3C", text: "#8a5324" },
+  yellow: { fill: "#fff7b8", leaf: "#fffce6", stroke: "#d9b800", text: "#5c4d00" }
+};
+
+function renderMindmap() {
+  const W = 940, LEAF_H = 28, STEP = 34, GROUP_GAP = 18, PAD = 22, BR_H = 46;
+  const L = { leafX: 20, leafW: 160, brX: 220, brW: 130 };
+  const R = { leafX: 730, leafW: 200, brX: 560, brW: 140 };
+  const C = { x: 395, w: 120, h: 64 };
+  const sideHeight = groups => groups.reduce((s, g) => s + g.leaves.length * STEP, 0) + (groups.length - 1) * GROUP_GAP - (STEP - LEAF_H);
+  const H = Math.max(sideHeight(MINDMAP.left), sideHeight(MINDMAP.right)) + PAD * 2;
+  const cy = H / 2;
+  const curve = (x1, y1, x2, y2) => { const xm = (x1 + x2) / 2; return `M${x1} ${y1} C${xm} ${y1}, ${xm} ${y2}, ${x2} ${y2}`; };
+  const lines = [], boxes = [];
+
+  function layoutSide(groups, pos, isLeft) {
+    let y = (H - sideHeight(groups)) / 2;
+    groups.forEach(g => {
+      const col = MM_COLORS[g.color];
+      const dash = g.dashed ? ` stroke-dasharray="5 4"` : "";
+      const leafYs = g.leaves.map((_, i) => y + i * STEP);
+      const gc = (leafYs[0] + leafYs[leafYs.length - 1] + LEAF_H) / 2;
+      const brY = gc - BR_H / 2;
+      lines.push(`<path d="${curve(isLeft ? C.x : C.x + C.w, cy, isLeft ? pos.brX + pos.brW : pos.brX, gc)}" fill="none" stroke="${col.stroke}" stroke-width="2"${dash}/>`);
+      g.leaves.forEach((leaf, i) => {
+        const ly = leafYs[i];
+        lines.push(`<path d="${curve(isLeft ? pos.brX : pos.brX + pos.brW, gc, isLeft ? pos.leafX + pos.leafW : pos.leafX, ly + LEAF_H / 2)}" fill="none" stroke="${col.stroke}" stroke-width="1.2" opacity="0.7"${dash}/>`);
+        boxes.push(`<rect x="${pos.leafX}" y="${ly}" width="${pos.leafW}" height="${LEAF_H}" rx="14" fill="${col.leaf}" stroke="${col.stroke}" stroke-width="1"${dash}/>
+          <text x="${pos.leafX + pos.leafW / 2}" y="${ly + 18.5}" text-anchor="middle" font-size="12.5" fill="${col.text}">${esc(leaf)}</text>`);
+      });
+      boxes.push(`<rect x="${pos.brX}" y="${brY}" width="${pos.brW}" height="${BR_H}" rx="10" fill="${col.fill}" stroke="${col.stroke}" stroke-width="1.8"${dash}/>
+        <text x="${pos.brX + pos.brW / 2}" y="${brY + 20}" text-anchor="middle" font-size="14.5" font-weight="800" fill="${col.text}">${esc(g.title)}</text>
+        <text x="${pos.brX + pos.brW / 2}" y="${brY + 37}" text-anchor="middle" font-size="11.5" fill="${col.text}" opacity="0.85">${esc(g.sub)}</text>`);
+      y += g.leaves.length * STEP + GROUP_GAP;
+    });
+  }
+  layoutSide(MINDMAP.left, L, true);
+  layoutSide(MINDMAP.right, R, false);
+  const center = `<rect x="${C.x}" y="${cy - C.h / 2}" width="${C.w}" height="${C.h}" rx="32" fill="#2B3A4E"/>
+    <text x="${C.x + C.w / 2}" y="${cy - 2}" text-anchor="middle" font-size="18" font-weight="800" fill="#ffffff">${esc(MINDMAP.center)}</text>
+    <text x="${C.x + C.w / 2}" y="${cy + 17}" text-anchor="middle" font-size="12" fill="#f0c89a">사내메신저</text>`;
+  const label = "마을톡 구조 마인드맵. 왼쪽 가지는 방, 방 멤버, 메시지 표와 다음 단계의 사진·파일, 오른쪽 가지는 사내용 규칙과 카카오톡에서 가져온 기능.";
+  document.getElementById("mindmap").innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(label)}">${lines.join("")}${boxes.join("")}${center}</svg>`;
+}
+
+// ─────────────────────────────────────────────
+// 시작
+// ─────────────────────────────────────────────
+async function boot() {
+  renderMindmap();
+  if (!LIVE) {
+    LocalStore.init();
+    await store.refreshRooms();
+    render();
+    return;
+  }
+  try { await LiveStore.init(); }
+  catch (e) { liveError = e.message; render(); }
+}
+boot();
+</script>
+</body>
+</html>

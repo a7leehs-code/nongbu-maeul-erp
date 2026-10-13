@@ -9,9 +9,10 @@
   :root{
     --navy:#2B3A4E; --copper:#C67B3C; --cream:#F7F3EE; --teal:#3A8FB7;
     --ink:#243140; --line:#e3dccf; --muted:#6b7785; --red:#b3503a; --green:#3f7a52;
-    --sidebar-w: 260px;
+    --sidebar-w: 270px;
   }
   *{box-sizing:border-box;margin:0;padding:0;}
+  html, body{ height:100%; }
   body{
     background:var(--cream); color:var(--ink);
     font-family:"맑은 고딕","Malgun Gothic",sans-serif;
@@ -40,170 +41,233 @@
   .overview-card .bar-wrap{ background:rgba(255,255,255,.18); border-radius:6px; height:8px; margin-top:12px; overflow:hidden; }
   .overview-card .bar{ background:var(--copper); height:100%; }
 
-  .side-section{ margin-bottom:18px; }
-  .side-h{ font-size:11.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; padding:0 4px; margin-bottom:8px; }
-  .fav-item, .cat-item{
-    display:flex; align-items:center; gap:8px; padding:8px 8px; border-radius:8px; font-size:13.5px; color:var(--ink);
+  .side-section{ margin-bottom:14px; }
+  .side-h{ font-size:11.5px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; padding:0 4px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; }
+  .side-hint{ font-size:10.5px; color:var(--muted); font-weight:normal; text-transform:none; padding:0 4px 8px; }
+
+  .cat-item{
+    display:flex; align-items:center; gap:8px; padding:9px 8px; border-radius:8px; font-size:13.5px; color:var(--ink);
+    cursor:pointer; border:1px solid transparent; margin-bottom:3px;
   }
-  .fav-item:hover, .cat-item:hover{ background:var(--cream); }
-  .fav-item .dot, .cat-item .dot{ width:7px; height:7px; border-radius:50%; flex:0 0 auto; }
+  .cat-item:hover{ background:var(--cream); }
+  .cat-item.active{ background:var(--navy); color:#fff; }
+  .cat-item.active .frac{ color:#cfd8e3; }
+  .cat-item .dot{ width:7px; height:7px; border-radius:50%; flex:0 0 auto; }
   .dot.done{ background:var(--green); }
   .dot.todo{ background:#c9c2b4; }
-  .fav-item .star{ color:var(--copper); font-size:12px; }
-  .fav-item .name{ flex:1; }
-  .fav-item .order-tag{ font-size:11px; color:var(--copper); font-weight:800; }
-  .cat-item .name{ flex:1; }
-  .cat-item .frac{ font-size:12px; color:var(--muted); font-weight:700; }
+  .cat-item.active .dot.todo{ background:rgba(255,255,255,.4); }
+  .cat-item .name{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .cat-item .frac{ font-size:11.5px; color:var(--muted); font-weight:700; }
+  .cat-item .handle{ color:#c9c2b4; font-size:12px; cursor:grab; padding:0 2px; }
+  .cat-item.active .handle{ color:rgba(255,255,255,.5); }
+  .cat-item.dragging{ opacity:.4; }
+  .cat-item.drag-over{ border-top:2px solid var(--copper); }
+
+  #detailCard{ display:none; }
+  #detailCard .d-name{ font-size:14px; font-weight:800; color:var(--navy); margin-bottom:8px; }
+  #detailCard .d-row{ font-size:12.5px; color:var(--muted); margin-bottom:4px; }
+  #detailCard .d-row b{ color:var(--ink); font-weight:700; }
+  #detailCard .d-open{ display:inline-block; margin-top:10px; background:var(--teal); color:#fff; font-weight:700; font-size:12.5px; padding:7px 12px; border-radius:8px; }
+  #detailCard .d-status{ display:inline-block; font-size:11px; font-weight:800; padding:3px 9px; border-radius:10px; margin-top:8px; }
+  #detailCard .d-status.done{ background:#e3f2e6; color:var(--green); }
+  #detailCard .d-status.todo{ background:#f1ece2; color:var(--muted); }
+  #detailCard .d-status.inprogress{ background:#fff2d6; color:#b7791f; }
 
   /* ---------- 메인 ---------- */
-  main{ flex:1; min-width:0; padding:28px 32px 80px; }
+  main{ flex:1; min-width:0; display:flex; flex-direction:column; height:100vh; overflow:hidden; }
   .page-ttl{ font-size:22px; font-weight:800; color:var(--navy); margin-bottom:18px; }
 
-  .hero{
-    background:linear-gradient(135deg,#2B3A4E,#1a2636 58%,#C67B3C 210%);
-    color:#fff; border-radius:16px; padding:22px 24px; margin-bottom:26px;
-  }
-  .hero .k{ display:inline-block; background:rgba(198,123,60,.28); border:1px solid rgba(198,123,60,.5); color:#f0c89a; font-size:12.5px; font-weight:700; border-radius:20px; padding:5px 13px; margin-bottom:10px; }
-  .hero h2{ font-size:19px; margin-bottom:6px; }
-  .hero .sub{ color:#d7dee6; font-size:14px; max-width:640px; }
-  .hero .stats{ display:flex; gap:22px; margin-top:16px; flex-wrap:wrap; }
-  .hero .stats div b{ display:block; font-size:22px; }
-  .hero .stats div span{ font-size:12px; color:#cbd3e6; }
-  .hero .bar-wrap{ background:rgba(255,255,255,.18); border-radius:8px; height:12px; margin-top:16px; overflow:hidden; }
-  .hero .bar{ background:var(--copper); height:100%; }
-  .hero .next-box{ background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.2); border-radius:10px; padding:12px 16px; margin-top:18px; font-size:13px; }
-  .hero .next-box .lbl{ color:#f0c89a; font-weight:800; margin-bottom:8px; font-size:12px; }
-  .hero .next-box div.row{ display:flex; gap:8px; padding:3px 0; }
-  .hero .next-box .n{ color:var(--copper); font-weight:800; min-width:34px; }
-
-  .cat-section{ margin-bottom:30px; scroll-margin-top:20px; }
-  .cat-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px; }
-  .cat-head h3{ font-size:16.5px; color:var(--navy); }
-  .cat-head .frac{ font-size:13px; color:var(--muted); font-weight:700; }
-  .cat-sub{ font-size:12.5px; color:var(--muted); margin-bottom:12px; }
-
-  .card-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-  .item-card{
-    background:#fff; border:1px solid var(--line); border-radius:12px;
-    padding:13px 14px; display:flex; align-items:center; gap:11px;
-    box-shadow:0 2px 8px rgba(0,0,0,.03);
-  }
-  .item-card.done{ background:#f4faf5; }
-  .item-icon{ width:34px; height:34px; border-radius:9px; background:var(--cream); display:flex; align-items:center; justify-content:center; font-size:16px; flex:0 0 auto; }
-  .item-card.done .item-icon{ background:#e3f2e6; }
-  .item-body{ flex:1; min-width:0; }
-  .item-name{ font-size:13.8px; font-weight:700; color:var(--ink); display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
-  .item-meta{ font-size:11.8px; color:var(--muted); margin-top:2px; }
-  .item-right{ display:flex; flex-direction:column; align-items:flex-end; gap:5px; }
-  .status-pill{ font-size:10.5px; font-weight:800; padding:2px 8px; border-radius:10px; white-space:nowrap; }
-  .status-pill.done{ background:#e3f2e6; color:var(--green); }
-  .status-pill.todo{ background:#f1ece2; color:var(--muted); }
-  .status-pill.inprogress{ background:#fff2d6; color:#b7791f; }
-  .order-badge{ font-size:10.5px; font-weight:800; background:var(--copper); color:#fff; border-radius:10px; padding:2px 8px; }
-  .tag-proposed{ font-size:10px; padding:1px 6px; border-radius:8px; background:#f0f0f0; color:#999; border:1px dashed #ccc; font-weight:normal; }
-  .tag-urgency{ font-size:10px; padding:1px 6px; border-radius:8px; font-weight:800; }
-  .tag-urgency.상{ background:#fde2e2; color:#c0392b; }
-  .tag-urgency.중{ background:#fff2d6; color:#b7791f; }
-  .tag-urgency.하{ background:#e6f0e6; color:#4b7a4b; }
-
-  .foot{ text-align:center; color:var(--muted); font-size:12px; margin-top:40px; line-height:1.7; }
-
-  /* ---------- 상단 바 ---------- */
   .topbar{
-    display:flex; justify-content:flex-end; align-items:center; gap:14px;
-    padding:9px 24px; background:#fff; border-bottom:1px solid var(--line);
-    font-size:12.5px; color:var(--muted);
+    display:flex; flex-wrap:wrap; justify-content:flex-end; align-items:center; gap:10px;
+    padding:9px 20px; background:#fff; border-bottom:1px solid var(--line);
+    font-size:12.5px; color:var(--muted); flex:0 0 auto;
   }
   .topbar .badge-ok{ background:#e3f2e6; color:var(--green); font-weight:700; padding:3px 10px; border-radius:20px; }
 
-  /* ---------- 피드백 배너 ---------- */
   .feedback-banner{
-    background:#fff7ec; border:1px solid #f0d9b8; border-radius:12px;
-    padding:12px 16px; margin-bottom:20px; font-size:13px; color:#7a5a30;
-    display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    background:#fff7ec; border:1px solid #f0d9b8; border-radius:0; margin:0;
+    padding:10px 20px; font-size:12.5px; color:#7a5a30;
+    display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; flex:0 0 auto;
   }
   .feedback-banner button{
     background:var(--copper); color:#fff; border:none; border-radius:8px;
-    padding:7px 14px; font-size:12.5px; font-weight:700; cursor:pointer; font-family:inherit; white-space:nowrap;
+    padding:6px 13px; font-size:12px; font-weight:700; cursor:pointer; font-family:inherit; white-space:nowrap;
   }
-  .fb-list{ margin-bottom:20px; }
-  .fb-item{ background:#fff; border:1px solid var(--line); border-left:4px solid var(--copper); border-radius:8px; padding:9px 13px; font-size:12.8px; margin-bottom:6px; color:var(--ink); }
-  .fb-item span.t{ color:var(--muted); font-size:11px; margin-right:6px; }
 
-  /* 사이드바는 화면 크기와 상관없이 항상 펼쳐진 채로 보인다(접히지 않음) */
-  .sidebar-inner{ display:block; }
+  .hero{
+    background:linear-gradient(135deg,#2B3A4E,#1a2636 58%,#C67B3C 210%);
+    color:#fff; padding:18px 22px; flex:0 0 auto;
+  }
+  .hero-top{ display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap; }
+  .hero .k{ display:inline-block; background:rgba(198,123,60,.28); border:1px solid rgba(198,123,60,.5); color:#f0c89a; font-size:11.5px; font-weight:700; border-radius:20px; padding:4px 12px; margin-bottom:6px; }
+  .hero h2{ font-size:17px; }
+  .hero .stats{ display:flex; gap:18px; }
+  .hero .stats div b{ display:block; font-size:19px; }
+  .hero .stats div span{ font-size:11px; color:#cbd3e6; }
 
-  /* ---------- 모바일 ---------- */
+  /* ---------- 마인드맵 툴바 ---------- */
+  .maptoolbar{
+    display:flex; align-items:center; gap:8px; padding:8px 16px; background:#fff; border-bottom:1px solid var(--line); flex:0 0 auto;
+    font-size:12.5px; flex-wrap:wrap;
+  }
+  .maptoolbar button{
+    border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:8px;
+    padding:6px 12px; font-size:12.5px; cursor:pointer; font-family:inherit; font-weight:700;
+  }
+  .maptoolbar button:hover{ background:var(--cream); }
+  .maptoolbar button.primary{ background:var(--copper); color:#fff; border-color:var(--copper); }
+  .maptoolbar .sep{ width:1px; height:20px; background:var(--line); margin:0 4px; }
+  .maptoolbar .hint{ color:var(--muted); font-size:11.5px; margin-left:auto; }
+  .maptoolbar .toast{ color:var(--green); font-weight:700; font-size:12px; opacity:0; transition:opacity .3s; }
+  .maptoolbar .toast.show{ opacity:1; }
+
+  /* ---------- 마인드맵 캔버스 ---------- */
+  .canvas-wrap{ flex:1; min-height:0; position:relative; overflow:hidden; background:
+    radial-gradient(circle, #eae3d6 1px, transparent 1px) 0 0/22px 22px, var(--cream); }
+  svg#mapSvg{ width:100%; height:100%; display:block; cursor:grab; }
+  svg#mapSvg.panning{ cursor:grabbing; }
+
+  .node{ cursor:grab; }
+  .node:active{ cursor:grabbing; }
+  .node rect{ filter:drop-shadow(0 2px 6px rgba(0,0,0,.08)); }
+  .node.root rect{ fill:var(--navy); stroke:#1a2636; }
+  .node.root text.n-name{ fill:#fff; font-weight:800; }
+  .node.root text.n-frac{ fill:#cfe0d9; }
+
+  .node.cat rect{ fill:#fff; stroke:var(--navy); stroke-width:2px; }
+  .node.cat text.n-name{ fill:var(--navy); font-weight:800; }
+  .node.cat text.n-frac{ fill:var(--muted); }
+  .node.cat.selected rect{ stroke:var(--copper); }
+
+  .node.item rect{ fill:#fff; stroke:var(--line); stroke-width:1.5px; }
+  .node.item.selected rect{ stroke:var(--teal); stroke-width:2px; }
+  .node.item.status-done rect{ fill:#f4faf5; }
+  .node.item text.n-name{ fill:var(--ink); font-size:12.5px; font-weight:700; }
+
+  text.n-icon{ font-size:16px; }
+  circle.status-dot{ }
+  .status-dot.done{ fill:var(--green); }
+  .status-dot.todo{ fill:#c9c2b4; }
+  .status-dot.inprogress{ fill:#e0a83d; }
+
+  path.link{ fill:none; stroke:#c9c2b4; stroke-width:2px; }
+  path.link.link-cat{ stroke:#b9c2cc; stroke-width:2.5px; }
+
+  .empty-hint{
+    position:absolute; left:50%; top:14px; transform:translateX(-50%);
+    background:#fff; border:1px solid var(--line); border-radius:20px;
+    padding:6px 16px; font-size:12px; color:var(--muted); box-shadow:0 2px 8px rgba(0,0,0,.06);
+    pointer-events:none;
+  }
+
+  footer.foot{ text-align:center; color:var(--muted); font-size:11.5px; padding:8px; flex:0 0 auto; background:#fff; border-top:1px solid var(--line); }
+
   @media (max-width: 760px){
     .app{ flex-direction:column; }
-    aside.sidebar{ position:static; width:100%; height:auto; border-right:none; border-bottom:1px solid var(--line); padding:16px; }
-    .brand{ padding:0 4px 12px; }
-    .sidebar-inner{ padding:0; }
-    main{ padding:20px 16px 60px; }
-    .card-grid{ grid-template-columns:1fr; }
-    .hero .stats{ gap:16px; }
-    .topbar{ padding:8px 16px; font-size:11.5px; }
-    .feedback-banner{ font-size:12px; }
+    aside.sidebar{ position:static; width:100%; height:auto; max-height:38vh; border-right:none; border-bottom:1px solid var(--line); }
+    main{ height:auto; }
+    .canvas-wrap{ height:60vh; }
+    .topbar{ padding:8px 14px; font-size:11.5px; }
   }
 </style>
 </head>
 <body>
 
-<div class="topbar">
-  <a class="badge-ok" href="https://a7leehs-code.github.io/nongbu-maeul-erp/" target="_blank" style="text-decoration:none;">🌐 홈페이지 바로가기</a>
-  <span class="badge-ok">🖥️ 바탕화면 아이콘 완료</span>
-  <span id="todayLabel"></span>
-</div>
-
 <div class="app">
 
   <aside class="sidebar">
     <div class="brand">🐣 농부마을 작업대<small>양계업 · 산란계 사육 · 계란 생산판매</small></div>
-    <div class="sidebar-inner" id="sidebarInner"></div>
+
+    <div class="overview-card">
+      <div class="ttl">📖 ERP 지도</div>
+      <div class="counts">
+        <div><b id="statDone">0</b>완성</div>
+        <div><b id="statProgress">0</b>진행중</div>
+        <div><b id="statTodo">0</b>미완성</div>
+      </div>
+      <div class="bar-wrap"><div class="bar" id="heroBarSide" style="width:0%"></div></div>
+    </div>
+
+    <div class="side-section">
+      <div class="side-h">분류 <span style="font-weight:normal;">(≡ 끌어서 순서 변경)</span></div>
+      <div class="side-hint">눌러서 지도에서 펼치기·접기</div>
+      <div id="catList"></div>
+    </div>
+
+    <div class="card" id="detailCard" style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;">
+      <div class="side-h">선택한 항목</div>
+      <div id="detailBody"></div>
+    </div>
   </aside>
 
   <main>
+    <div class="topbar">
+      <a class="badge-ok" href="erp-console.html" style="text-decoration:none;">📚 ERP 콘솔(왼쪽 메뉴)로 보기</a>
+      <a class="badge-ok" href="https://a7leehs-code.github.io/nongbu-maeul-erp/" target="_blank" style="text-decoration:none;">🌐 홈페이지 바로가기</a>
+      <span class="badge-ok">🖥️ 바탕화면 아이콘 완료</span>
+      <span id="todayLabel"></span>
+    </div>
+
     <div class="feedback-banner">
       <span>안 되는 것·불편한 것이 있으면 바로 적어두세요 — 다음 수업 때 고칩니다.</span>
       <button id="fbBtn">이 화면 불편해요</button>
     </div>
-    <div class="fb-list" id="fbList"></div>
 
-    <div id="overview" class="hero">
-      <div class="k">ERP 지도</div>
-      <h2>🌾 농부마을 ERP 지도</h2>
-      <div class="sub">완성된 ERP의 설계도가 아니다. 지금 있는 것과 앞으로 붙일 것을 한 장에 놓고, 일주일에 한 칸씩 채워가기 위한 지도다. 칸이 비어 있는 것은 실패가 아니라 순서.</div>
-      <div class="stats">
-        <div><b id="statDone">0</b><span>완성</span></div>
-        <div><b id="statProgress">0</b><span>진행중</span></div>
-        <div><b id="statTodo">0</b><span>미완성</span></div>
-      </div>
-      <div class="bar-wrap"><div class="bar" id="heroBar" style="width:0%"></div></div>
-      <div class="next-box">
-        <div class="lbl">🡒 다음에 붙일 칸</div>
-        <div id="nextList"></div>
+    <div class="hero">
+      <div class="hero-top">
+        <div>
+          <div class="k">ERP 지도 · 마인드맵</div>
+          <h2>🌾 지금 있는 것과 앞으로 붙일 것을 한 장에</h2>
+        </div>
+        <div class="stats">
+          <div><b id="statDone2">0</b><span>완성</span></div>
+          <div><b id="statProgress2">0</b><span>진행중</span></div>
+          <div><b id="statTodo2">0</b><span>미완성</span></div>
+        </div>
       </div>
     </div>
 
-    <div id="catRoot"></div>
-
-    <div class="foot">
-      erp-map.html · 정본 1장 · 매주 목요일 수업 후 갱신 · 최근 갱신 2026-09-10<br>
-      <a href="erp-schedule.html">📅 회사 일정판 열기</a> &nbsp;·&nbsp; <a href="https://a7leehs-code.github.io/nongbu-maeul-erp/" target="_blank">🌐 홈페이지 열기</a> &nbsp;·&nbsp; [AI 생성 초안 - 검토 전]
+    <div class="maptoolbar">
+      <button onclick="expandAll(true)">모두 펼치기</button>
+      <button onclick="expandAll(false)">모두 접기</button>
+      <div class="sep"></div>
+      <button onclick="fitView()">화면 맞춤</button>
+      <button onclick="zoomBy(1.2)">확대 +</button>
+      <button onclick="zoomBy(1/1.2)">축소 −</button>
+      <div class="sep"></div>
+      <button class="primary" onclick="doSave()">저장</button>
+      <button onclick="resetLayout()">원래대로</button>
+      <span class="toast" id="toast">저장됨 ✓</span>
+      <span class="hint">칸을 끌어서 옮기기 · 빈 곳 드래그 = 화면 이동 · 휠 = 확대축소</span>
     </div>
+
+    <div class="canvas-wrap" id="canvasWrap">
+      <svg id="mapSvg"><g id="viewport"></g></svg>
+      <div class="empty-hint">칸(노드)을 누르면 왼쪽에 상세정보가 나옵니다</div>
+    </div>
+
+    <footer class="foot">
+      erp-map.html · 정본 1장 · 매주 목요일 수업 후 갱신 · 최근 갱신 2026-09-30 · [AI 생성 초안 - 검토 전]
+    </footer>
   </main>
 
 </div>
 
 <script>
-// ---- 데이터 ----
+// =================================================================
+// 데이터
+// =================================================================
 const categories = [
   {
     code: "전사", anchor: "cat-all", name: "⭐ 전사 공통",
     sub: "대표·직원 전원이 매일 보는 항목.",
     items: [
       { icon:"📅", name: "회사 일정판 (첫 칸)", where: "구글 캘린더", often: "상시", urgency: "상",
-        order: "2회차", status: "done", file: "erp-schedule.html" }
+        order: "2회차", status: "done", file: "erp-schedule.html" },
+      { icon:"📝", name: "전자결재", where: "기안 → 대표 · 승인되면 근태·연차 집계에 반영 (실습판 · 이 브라우저에 저장)", often: "수시", urgency: "중",
+        order: "4회차", status: "inprogress", file: "erp-approvals.html" },
+      { icon:"💬", name: "마을톡 (사내메신저)", where: "1:1·단톡·전체방 · 대화는 회사 기록으로 남음 (실습판 · Supabase 연결 전)", often: "매일", urgency: "중",
+        order: "4회차", status: "inprogress", file: "erp-talk.html" }
     ]
   },
   {
@@ -225,7 +289,7 @@ const categories = [
     sub: "매일 반복되는 현장 업무 기록. 수업에서 다루지 않아 혼자 붙이는 칸 — 오늘 순서를 전부 정했다.",
     items: [
       { icon:"🐔", name: "산란율/폐사율 기록", where: "직원 수기 → 대표 취합", often: "매일", urgency: "상", order: 3, status: "todo" },
-      { icon:"📇", name: "거래처 목록/연락처", where: "기억/개별 확인 추정", often: "수시", urgency: "중", order: 6, status: "todo" },
+      { icon:"📇", name: "거래처 목록/연락처", where: "지도에서 등록·수정 (이 컴퓨터에 저장)", often: "수시", urgency: "중", order: 6, status: "inprogress", file: "erp-clients-map.html" },
       { icon:"🧴", name: "방역 소독 스케줄 체크", where: "수기/기억, 매번 번거로움", often: "정기", urgency: "중", order: 7, status: "todo" },
       { icon:"🔍", name: "폐사 원인 기록", where: "숫자만 기록, 원인 분석 없음", often: "발생 시", urgency: "중", order: 8, status: "todo", proposed:true },
       { icon:"🚚", name: "판매처별 배송/납품 일정", where: "미논의", often: "수시", urgency: "중", order: 9, status: "todo", proposed:true }
@@ -274,121 +338,391 @@ const categories = [
   }
 ];
 
-function orderLabel(o){ return typeof o === "number" ? o + "차" : o; }
+// =================================================================
+// 순서 · 펼침상태 · 노드 위치 저장 (localStorage)
+// =================================================================
+const ORDER_KEY = "nongbuErpMapCatOrder";
+const EXPAND_KEY = "nongbuErpMapExpanded";
+const LAYOUT_KEY = "nongbuErpMapLayout";
+const codes = categories.map(c => c.code);
 
-function render(){
+function loadOrder(){
+  try{
+    const raw = localStorage.getItem(ORDER_KEY);
+    if(!raw) return codes.slice();
+    const saved = JSON.parse(raw).filter(c => codes.includes(c));
+    codes.forEach(c => { if(!saved.includes(c)) saved.push(c); });
+    return saved;
+  }catch(e){ return codes.slice(); }
+}
+function saveOrder(o){ try{ localStorage.setItem(ORDER_KEY, JSON.stringify(o)); }catch(e){} }
+
+function loadExpanded(){
+  try{
+    const raw = localStorage.getItem(EXPAND_KEY);
+    return raw ? JSON.parse(raw) : codes.slice(); // 기본: 전부 펼침
+  }catch(e){ return codes.slice(); }
+}
+function saveExpanded(a){ try{ localStorage.setItem(EXPAND_KEY, JSON.stringify(a)); }catch(e){} }
+
+function loadLayout(){
+  try{
+    const raw = localStorage.getItem(LAYOUT_KEY);
+    return raw ? JSON.parse(raw) : {};
+  }catch(e){ return {}; }
+}
+function saveLayout(l){ try{ localStorage.setItem(LAYOUT_KEY, JSON.stringify(l)); }catch(e){} }
+
+let order = loadOrder();
+let expanded = new Set(loadExpanded());
+let layout = loadLayout(); // { nodeId: {x,y} }
+let selectedId = null;
+let dragCatId = null;
+
+const byCode = {}; categories.forEach(c => byCode[c.code] = c);
+
+// =================================================================
+// 통계 · 좌측 사이드바
+// =================================================================
+function computeStats(){
   let total=0, done=0, inprogress=0;
-  categories.forEach(c=>{ c.items.forEach(i=>{ total++; if(i.status==="done") done++; else if(i.status==="inprogress") inprogress++; }); });
-  const todo = total - done - inprogress;
+  categories.forEach(c => c.items.forEach(i => { total++; if(i.status==="done") done++; else if(i.status==="inprogress") inprogress++; }));
+  return { total, done, inprogress, todo: total-done-inprogress };
+}
 
-  document.getElementById("statDone").textContent = done;
-  document.getElementById("statProgress").textContent = inprogress;
-  document.getElementById("statTodo").textContent = todo;
-  document.getElementById("heroBar").style.width = (total? done/total*100:0) + "%";
+function renderSidebarStats(){
+  const s = computeStats();
+  ["statDone","statDone2"].forEach(id => document.getElementById(id).textContent = s.done);
+  ["statProgress","statProgress2"].forEach(id => document.getElementById(id).textContent = s.inprogress);
+  ["statTodo","statTodo2"].forEach(id => document.getElementById(id).textContent = s.todo);
+  document.getElementById("heroBarSide").style.width = (s.total? s.done/s.total*100:0) + "%";
+}
 
-  // 다음에 붙일 칸: 순서(숫자)가 있고 미완성인 것 중 순서 오름차순 3개
-  const upcoming = [];
-  categories.forEach(c=>{
-    c.items.forEach(i=>{
-      if(typeof i.order === "number" && i.status !== "done") upcoming.push({...i, cat:c.name});
+function renderCatList(){
+  const el = document.getElementById("catList");
+  el.innerHTML = order.map(code => {
+    const c = byCode[code];
+    const d = c.items.filter(i=>i.status==="done").length;
+    const isExp = expanded.has(code);
+    return `
+      <div class="cat-item ${isExp?'active':''}" draggable="true" data-code="${code}"
+           ondragstart="onCatDragStart(event,'${code}')" ondragover="onCatDragOver(event,'${code}')"
+           ondrop="onCatDrop(event,'${code}')" ondragend="onCatDragEnd(event)"
+           onclick="toggleCategory('${code}', true)">
+        <span class="dot ${d===c.items.length?'done':'todo'}"></span>
+        <span class="name">${c.name}</span>
+        <span class="frac">${d}/${c.items.length}</span>
+        <span class="handle">≡</span>
+      </div>`;
+  }).join("");
+}
+
+// =================================================================
+// 좌표 계산 (기본 방사형/가지형 배치)
+// =================================================================
+const ROOT_ID = "root";
+function defaultLayout(){
+  const L = {};
+  const rootX = 1650, rootY = 720;
+  L[ROOT_ID] = { x: rootX, y: rootY };
+
+  const n = order.length;
+  const catGapY = 190;
+  const catX = rootX - 430;
+  order.forEach((code, i) => {
+    const y = rootY + (i - (n-1)/2) * catGapY;
+    L["cat-"+code] = { x: catX, y: y };
+
+    const c = byCode[code];
+    const m = c.items.length;
+    const itemGapY = 62;
+    const itemX = catX - 420;
+    c.items.forEach((it, j) => {
+      const iy = y + (j - (m-1)/2) * itemGapY;
+      L["item-"+code+"-"+j] = { x: itemX, y: iy };
     });
   });
-  upcoming.sort((a,b)=>a.order-b.order);
-  document.getElementById("nextList").innerHTML = upcoming.slice(0,3).map(i=>
-    `<div class="row"><span class="n">${i.order}차</span><span>${i.icon} ${i.name} <span style="color:#cbd3e6;">(${i.cat})</span></span></div>`
-  ).join("") || `<div class="row" style="color:#cbd3e6;">순서를 정한 항목이 없습니다.</div>`;
-
-  // 사이드바
-  const favs = [];
-  categories.forEach(c=>{ c.items.forEach(i=>{ if(typeof i.order==="number") favs.push({...i, cat:c}); }); });
-  favs.sort((a,b)=>a.order-b.order);
-  const favHtml = favs.slice(0,6).map(i=>`
-    <a class="fav-item" href="#${i.cat.anchor}">
-      <span class="star">★</span>
-      <span class="dot ${i.status==='done'?'done':'todo'}"></span>
-      <span class="name">${i.icon} ${i.name}</span>
-      <span class="order-tag">${orderLabel(i.order)}</span>
-    </a>`).join("");
-
-  const catListHtml = categories.map(c=>{
-    const d = c.items.filter(i=>i.status==="done").length;
-    return `<a class="cat-item" href="#${c.anchor}">
-      <span class="dot ${d===c.items.length?'done':'todo'}"></span>
-      <span class="name">${c.name}</span>
-      <span class="frac">${d}/${c.items.length}</span>
-    </a>`;
-  }).join("");
-
-  document.getElementById("sidebarInner").innerHTML = `
-    <div class="overview-card">
-      <div class="ttl">📖 ERP 지도</div>
-      <div class="counts">
-        <div><b>${done}</b>완성</div>
-        <div><b>${inprogress}</b>진행중</div>
-        <div><b>${todo}</b>미완성</div>
-      </div>
-      <div class="bar-wrap"><div class="bar" style="width:${total? done/total*100:0}%"></div></div>
-    </div>
-    <div class="side-section">
-      <div class="side-h">즐겨찾기 (1차 착수 순서)</div>
-      ${favHtml}
-    </div>
-    <div class="side-section">
-      <div class="side-h">분류</div>
-      ${catListHtml}
-    </div>
-  `;
-
-  // 본문 카테고리 카드
-  const root = document.getElementById("catRoot");
-  root.innerHTML = categories.map(c=>{
-    const d = c.items.filter(i=>i.status==="done").length;
-    return `
-    <section class="cat-section" id="${c.anchor}">
-      <div class="cat-head"><h3>${c.name}</h3><span class="frac">${d}/${c.items.length} 완성</span></div>
-      <div class="cat-sub">${c.sub}</div>
-      <div class="card-grid">
-        ${c.items.map(i=>`
-          <div class="item-card ${i.status==='done'?'done':''}">
-            <div class="item-icon">${i.icon}</div>
-            <div class="item-body">
-              <div class="item-name">
-                ${i.name}
-                ${(i.urgency==='상' && i.status!=='done') ? '<span title="급한데 아직 미완성">⚠️</span>' : ''}
-                ${i.proposed ? '<span class="tag-proposed">제안</span>' : ''}
-                <span class="tag-urgency ${i.urgency}">${i.urgency}</span>
-              </div>
-              <div class="item-meta">${i.where} · ${i.often}${i.file ? ` · <a href="${i.file}" target="_blank" style="color:var(--teal);font-weight:700;">열기 →</a>` : ''}</div>
-            </div>
-            <div class="item-right">
-              <span class="status-pill ${i.status}">${i.status==='done' ? '완성' : (i.status==='inprogress' ? '진행중' : '미완성')}</span>
-              ${i.order ? `<span class="order-badge">${orderLabel(i.order)}</span>` : ''}
-            </div>
-          </div>
-        `).join("")}
-      </div>
-    </section>`;
-  }).join("");
+  return L;
 }
 
-render();
+function posOf(id, defaults){
+  return layout[id] || defaults[id] || { x: 0, y: 0 };
+}
 
-// ---- 상단 날짜 ----
+// =================================================================
+// SVG 렌더링
+// =================================================================
+const svg = document.getElementById("mapSvg");
+const viewport = document.getElementById("viewport");
+let zoom = 0.75, panX = 200, panY = 40;
+
+function applyTransform(){
+  viewport.setAttribute("transform", `translate(${panX},${panY}) scale(${zoom})`);
+}
+
+function bezier(x1,y1,x2,y2){
+  const mx = (x1+x2)/2;
+  return `M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`;
+}
+
+const NS = "http://www.w3.org/2000/svg";
+function el(tag, attrs, parent){
+  const e = document.createElementNS(NS, tag);
+  for(const k in attrs) e.setAttribute(k, attrs[k]);
+  if(parent) parent.appendChild(e);
+  return e;
+}
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+function renderMap(){
+  viewport.innerHTML = "";
+  const defaults = defaultLayout();
+  const s = computeStats();
+
+  const rootPos = posOf(ROOT_ID, defaults);
+
+  // 카테고리 노드들 & 연결선
+  order.forEach(code => {
+    const c = byCode[code];
+    const catPos = posOf("cat-"+code, defaults);
+    const catW = 190, catH = 54;
+
+    // root -> category 연결선
+    const link = el("path", { class:"link link-cat", d: bezier(rootPos.x-90, rootPos.y, catPos.x+catW/2, catPos.y) }, viewport);
+
+    if(expanded.has(code)){
+      const m = c.items.length;
+      c.items.forEach((it, j) => {
+        const itemId = "item-"+code+"-"+j;
+        const itemPos = posOf(itemId, defaults);
+        const itemW = 260, itemH = 48;
+        el("path", { class:"link", d: bezier(catPos.x-catW/2, catPos.y, itemPos.x+itemW/2, itemPos.y) }, viewport);
+        drawItemNode(itemId, itemPos, itemW, itemH, it, code, j);
+      });
+    }
+
+    drawCatNode("cat-"+code, catPos, catW, catH, c);
+  });
+
+  drawRootNode(ROOT_ID, rootPos, s);
+
+  applyTransform();
+}
+
+function drawRootNode(id, pos, s){
+  const w=180, h=64;
+  const g = el("g", { class:"node root", "data-id":id, transform:`translate(${pos.x-w/2},${pos.y-h/2})` }, viewport);
+  el("rect", { width:w, height:h, rx:16, ry:16 }, g);
+  const t1 = el("text", { class:"n-name", x:w/2, y:26, "text-anchor":"middle", "font-size":15 }, g);
+  t1.textContent = "🌾 농부마을 ERP";
+  const t2 = el("text", { class:"n-frac", x:w/2, y:46, "text-anchor":"middle", "font-size":12 }, g);
+  t2.textContent = `${s.done}/${s.total} 완성`;
+  makeDraggable(g, id);
+}
+
+function drawCatNode(id, pos, w, h, c){
+  const d = c.items.filter(i=>i.status==="done").length;
+  const g = el("g", { class:"node cat" + (selectedId===id?" selected":""), "data-id":id, transform:`translate(${pos.x-w/2},${pos.y-h/2})` }, viewport);
+  el("rect", { width:w, height:h, rx:14, ry:14 }, g);
+  const t1 = el("text", { class:"n-name", x:16, y:24, "font-size":13.5 }, g);
+  t1.textContent = c.name;
+  const t2 = el("text", { class:"n-frac", x:16, y:42, "font-size":11.5 }, g);
+  t2.textContent = `${d}/${c.items.length} 완성 · 눌러서 ${expanded.has(c.code)?'접기':'펼치기'}`;
+  g.addEventListener("click", (e) => { if(!g.dataset.dragged){ toggleCategory(c.code); } });
+  makeDraggable(g, id);
+}
+
+function drawItemNode(id, pos, w, h, it, code, idx){
+  const statusClass = it.status === "done" ? "status-done" : (it.status==="inprogress" ? "status-inprogress" : "status-todo");
+  const g = el("g", { class:`node item ${statusClass}` + (selectedId===id?" selected":""), "data-id":id, transform:`translate(${pos.x-w/2},${pos.y-h/2})` }, viewport);
+  el("rect", { width:w, height:h, rx:12, ry:12 }, g);
+  const icon = el("text", { class:"n-icon", x:14, y:30 }, g);
+  icon.textContent = it.icon;
+  const name = el("text", { class:"n-name", x:40, y:22 }, g);
+  name.textContent = it.name.length > 20 ? it.name.slice(0,19)+"…" : it.name;
+  const meta = el("text", { x:40, y:38, "font-size":10.5, fill:"#6b7785" }, g);
+  meta.textContent = it.where ? (it.where.length>26 ? it.where.slice(0,25)+"…" : it.where) : "";
+  const dot = el("circle", { class:`status-dot ${it.status}`, cx:w-14, cy:14, r:5 }, g);
+  g.addEventListener("click", (e) => { if(!g.dataset.dragged){ selectItem(code, idx); } });
+  makeDraggable(g, id);
+}
+
+// =================================================================
+// 드래그(노드 이동) · 팬/줌
+// =================================================================
+function svgPoint(evt){
+  const rect = svg.getBoundingClientRect();
+  const x = (evt.clientX - rect.left - panX) / zoom;
+  const y = (evt.clientY - rect.top - panY) / zoom;
+  return { x, y };
+}
+
+function makeDraggable(g, id){
+  let startPt = null, moved = false;
+  g.addEventListener("pointerdown", (e) => {
+    e.stopPropagation();
+    g.setPointerCapture(e.pointerId);
+    const defaults = defaultLayout();
+    const cur = posOf(id, defaults);
+    startPt = { px: svgPoint(e), ox: cur.x, oy: cur.y };
+    moved = false;
+    g.dataset.dragged = "";
+  });
+  g.addEventListener("pointermove", (e) => {
+    if(!startPt) return;
+    const p = svgPoint(e);
+    const dx = p.x - startPt.px.x, dy = p.y - startPt.px.y;
+    if(Math.abs(dx) > 3 || Math.abs(dy) > 3) moved = true;
+    if(!moved) return;
+    const nx = startPt.ox + dx, ny = startPt.oy + dy;
+    layout[id] = { x: nx, y: ny };
+    g.dataset.dragged = "1";
+    renderMap();
+  });
+  g.addEventListener("pointerup", (e) => {
+    if(startPt && moved){ saveLayout(layout); }
+    startPt = null;
+    setTimeout(() => { g.dataset.dragged = ""; }, 0);
+  });
+}
+
+let panning = false, panStart = null;
+svg.addEventListener("pointerdown", (e) => {
+  if(e.target !== svg && e.target.id !== "viewport") return; // 빈 곳만
+  panning = true;
+  svg.classList.add("panning");
+  panStart = { x: e.clientX - panX, y: e.clientY - panY };
+});
+window.addEventListener("pointermove", (e) => {
+  if(!panning) return;
+  panX = e.clientX - panStart.x;
+  panY = e.clientY - panStart.y;
+  applyTransform();
+});
+window.addEventListener("pointerup", () => { panning = false; svg.classList.remove("panning"); });
+
+svg.addEventListener("wheel", (e) => {
+  e.preventDefault();
+  const rect = svg.getBoundingClientRect();
+  const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+  const before = { x: (mx-panX)/zoom, y: (my-panY)/zoom };
+  const factor = e.deltaY < 0 ? 1.1 : 1/1.1;
+  zoom = Math.min(2.2, Math.max(0.3, zoom*factor));
+  panX = mx - before.x*zoom;
+  panY = my - before.y*zoom;
+  applyTransform();
+}, { passive:false });
+
+function zoomBy(f){
+  const wrap = document.getElementById("canvasWrap");
+  const cx = wrap.clientWidth/2, cy = wrap.clientHeight/2;
+  const before = { x:(cx-panX)/zoom, y:(cy-panY)/zoom };
+  zoom = Math.min(2.2, Math.max(0.3, zoom*f));
+  panX = cx - before.x*zoom;
+  panY = cy - before.y*zoom;
+  applyTransform();
+}
+
+function fitView(){
+  zoom = 0.62;
+  const wrap = document.getElementById("canvasWrap");
+  panX = 40; panY = wrap.clientHeight/2 - 720*zoom;
+  applyTransform();
+}
+
+// =================================================================
+// 카테고리 펼침/접기 · 순서 드래그
+// =================================================================
+function toggleCategory(code, fromSidebarClick){
+  if(expanded.has(code)) expanded.delete(code); else expanded.add(code);
+  saveExpanded([...expanded]);
+  renderCatList();
+  renderMap();
+}
+function expandAll(v){
+  expanded = new Set(v ? codes : []);
+  saveExpanded([...expanded]);
+  renderCatList();
+  renderMap();
+}
+
+function onCatDragStart(e, code){ dragCatId = code; e.currentTarget.classList.add("dragging"); }
+function onCatDragOver(e, code){
+  e.preventDefault();
+  document.querySelectorAll(".cat-item").forEach(el => el.classList.remove("drag-over"));
+  if(code !== dragCatId) e.currentTarget.classList.add("drag-over");
+}
+function onCatDrop(e, code){
+  e.preventDefault();
+  document.querySelectorAll(".cat-item").forEach(el => el.classList.remove("drag-over"));
+  if(!dragCatId || dragCatId===code) return;
+  const from = order.indexOf(dragCatId), to = order.indexOf(code);
+  order.splice(from,1); order.splice(to,0,dragCatId);
+  saveOrder(order);
+  dragCatId = null;
+  renderCatList();
+  renderMap();
+}
+function onCatDragEnd(e){
+  e.currentTarget.classList.remove("dragging");
+  document.querySelectorAll(".cat-item").forEach(el => el.classList.remove("drag-over"));
+}
+
+// =================================================================
+// 상세 패널
+// =================================================================
+function selectItem(code, idx){
+  const it = byCode[code].items[idx];
+  selectedId = "item-"+code+"-"+idx;
+  const card = document.getElementById("detailCard");
+  const body = document.getElementById("detailBody");
+  card.style.display = "block";
+  const statusLabel = it.status==="done"?"완성":(it.status==="inprogress"?"진행중":"미완성");
+  body.innerHTML = `
+    <div class="d-name">${it.icon} ${escapeHtml(it.name)}</div>
+    <div class="d-row"><b>분류</b> ${escapeHtml(byCode[code].name)}</div>
+    <div class="d-row"><b>현황</b> ${escapeHtml(it.where||'-')}</div>
+    <div class="d-row"><b>주기</b> ${escapeHtml(it.often||'-')}</div>
+    <div class="d-row"><b>중요도</b> ${escapeHtml(it.urgency||'-')}</div>
+    <div class="d-status ${it.status}">${statusLabel}</div>
+    ${it.file ? `<div><a class="d-open" href="${it.file}" target="_blank">열기 →</a></div>` : ''}
+  `;
+  renderMap();
+}
+
+// =================================================================
+// 저장 / 초기화
+// =================================================================
+function doSave(){
+  saveLayout(layout); saveOrder(order); saveExpanded([...expanded]);
+  const t = document.getElementById("toast");
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 1400);
+}
+function resetLayout(){
+  if(!window.confirm("칸 위치를 기본 배치로 되돌릴까요? (순서·펼침 상태는 유지됩니다)")) return;
+  layout = {};
+  saveLayout(layout);
+  renderMap();
+  fitView();
+}
+
+// =================================================================
+// 초기 실행
+// =================================================================
+renderSidebarStats();
+renderCatList();
+fitView();
+renderMap();
 document.getElementById("todayLabel").textContent = "농부마을 · 대표";
 
-// ---- 피드백 배너 (이 페이지를 새로고침하면 사라짐 — 진짜 기록은 종이에도 남기세요) ----
 const fbNotes = [];
-function renderFb(){
-  document.getElementById("fbList").innerHTML = fbNotes.map(n =>
-    `<div class="fb-item"><span class="t">${n.time}</span>${n.text}</div>`
-  ).join("");
-}
 document.getElementById("fbBtn").addEventListener("click", () => {
   const text = window.prompt("무엇이 불편한가요? (막힌 곳을 적어두면 다음 수업 때 고칩니다)");
   if (text && text.trim()) {
-    const time = new Date().toLocaleString("ko-KR", { month:"numeric", day:"numeric", hour:"2-digit", minute:"2-digit" });
-    fbNotes.unshift({ time, text: text.trim() });
-    renderFb();
+    window.alert("남겨주셔서 감사합니다! 다음 수업 때 확인할게요.\n(이 창을 새로고침하면 방금 남긴 메모는 사라집니다 — 종이에도 적어두세요.)");
   }
 });
 </script>

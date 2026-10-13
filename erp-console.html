@@ -1,0 +1,214 @@
+<!-- [AI 생성 초안 - 검토 전] 농부마을 ERP 콘솔 -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>농부마을 ERP</title>
+<style>
+  :root{ --navy:#2B3A4E; --copper:#C67B3C; --cream:#F7F3EE; --teal:#3A8FB7; --ink:#243140; --muted:#6b7785; --line:#e3dccf; --green:#3f7a52; }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html, body{ height:100%; }
+  body{
+    font-family:"맑은 고딕","Malgun Gothic",sans-serif; background:var(--cream); color:var(--ink);
+    overflow:hidden;
+  }
+
+  .shell{ display:flex; height:100vh; }
+
+  /* ---------- 사이드바 ---------- */
+  aside.sidebar{
+    width:250px; flex:0 0 250px; background:#fff; border-right:1px solid var(--line);
+    display:flex; flex-direction:column; height:100vh;
+  }
+  .brand{
+    display:flex; align-items:center; gap:10px; padding:18px 16px;
+    border-bottom:1px solid var(--line);
+  }
+  .brand img{ width:34px; height:34px; border-radius:9px; flex:0 0 auto; }
+  .brand .t{ font-size:15px; font-weight:800; color:var(--navy); }
+  .brand .t small{ display:block; font-weight:normal; color:var(--muted); font-size:11px; margin-top:1px; }
+
+  .menu-hint{ font-size:11px; color:var(--muted); padding:12px 16px 4px; }
+
+  nav#menuList{ flex:1; overflow-y:auto; padding:6px 10px; }
+  .menu-item{
+    display:flex; align-items:center; gap:10px; padding:11px 10px; border-radius:10px;
+    cursor:grab; user-select:none; font-size:13.8px; font-weight:700; color:var(--ink);
+    margin-bottom:4px; border:1px solid transparent;
+  }
+  .menu-item:hover{ background:var(--cream); }
+  .menu-item.active{ background:var(--navy); color:#fff; }
+  .menu-item.active .handle{ color:rgba(255,255,255,.55); }
+  .menu-item .ic{ font-size:16px; flex:0 0 auto; }
+  .menu-item .lbl{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .menu-item .handle{ color:#c9c2b4; font-size:13px; cursor:grab; padding:2px 4px; flex:0 0 auto; }
+  .menu-item.dragging{ opacity:.4; }
+  .menu-item.drag-over{ border-top:2px solid var(--copper); }
+
+  .sidebar-foot{ padding:12px 16px; border-top:1px solid var(--line); font-size:11px; color:var(--muted); line-height:1.6; }
+
+  /* ---------- 메인 ---------- */
+  main{ flex:1; min-width:0; height:100vh; display:flex; flex-direction:column; }
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:10px 18px; background:#fff; border-bottom:1px solid var(--line); font-size:12.5px; color:var(--muted);
+  }
+  .topbar .cur{ font-weight:800; color:var(--navy); font-size:14px; }
+  .topbar .actions{ display:flex; gap:8px; }
+  .topbar button{
+    border:1px solid var(--line); background:#fff; color:var(--muted); border-radius:8px;
+    padding:6px 12px; font-size:12px; cursor:pointer; font-family:inherit;
+  }
+  .topbar button:hover{ background:var(--cream); }
+  .frame-wrap{ flex:1; min-height:0; }
+  iframe{ width:100%; height:100%; border:none; display:block; background:#fff; }
+
+  @media (max-width: 760px){
+    .shell{ flex-direction:column; height:auto; overflow:auto; }
+    aside.sidebar{ width:100%; flex:none; height:auto; max-height:40vh; }
+    main{ height:auto; }
+    .frame-wrap{ height:70vh; }
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <img src="nongbu-chicken.ico" alt="농부마을">
+      <div class="t">농부마을 ERP<small>내부 콘솔</small></div>
+    </div>
+    <div class="menu-hint">≡ 을 끌어서 메뉴 순서를 바꿀 수 있어요</div>
+    <nav id="menuList"></nav>
+    <div class="sidebar-foot">
+      erp-console.html · [AI 생성 초안 - 검토 전]
+    </div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <span class="cur">📄 <span id="curLabel">불러오는 중...</span></span>
+      <div class="actions">
+        <button onclick="reloadFrame()">새로고침</button>
+        <button onclick="openInNewTab()">새 탭에서 열기</button>
+      </div>
+    </div>
+    <div class="frame-wrap">
+      <iframe id="mainFrame" src=""></iframe>
+    </div>
+  </main>
+
+</div>
+
+<script>
+// ---------------------------------------------------------------
+// 메뉴 정의 (고정 목록) + 순서는 localStorage에 저장
+// ---------------------------------------------------------------
+const MENU_DEFS = {
+  "erp-map":     { icon: "🗺️", label: "ERP 지도",        file: "erp-map.html" },
+  "schedule":    { icon: "📅", label: "회사 일정판",      file: "erp-schedule.html" },
+  "approvals":   { icon: "📝", label: "전자결재",          file: "erp-approvals.html" },
+  "talk":        { icon: "💬", label: "마을톡 (사내메신저)", file: "erp-talk.html" },
+  "inquiries":   { icon: "✉️", label: "고객 문의 관리",    file: "erp-inquiries.html" },
+  "clients-map": { icon: "📍", label: "거래처·배송지 지도", file: "erp-clients-map.html" },
+  "homepage":    { icon: "🌐", label: "홈페이지 보기",     file: "index.html" }
+};
+const DEFAULT_ORDER = ["erp-map", "schedule", "approvals", "talk", "inquiries", "clients-map", "homepage"];
+const ORDER_KEY = "nongbuErpMenuOrder";
+const ACTIVE_KEY = "nongbuErpActiveMenu";
+
+function loadOrder(){
+  try{
+    const raw = localStorage.getItem(ORDER_KEY);
+    if(!raw) return DEFAULT_ORDER.slice();
+    const saved = JSON.parse(raw);
+    // 저장된 목록에 없는 새 항목은 뒤에 자동 추가, 삭제된 항목은 제외
+    const known = Object.keys(MENU_DEFS);
+    const cleaned = saved.filter(id => known.includes(id));
+    known.forEach(id => { if(!cleaned.includes(id)) cleaned.push(id); });
+    return cleaned;
+  }catch(e){ return DEFAULT_ORDER.slice(); }
+}
+function saveOrder(order){
+  try{ localStorage.setItem(ORDER_KEY, JSON.stringify(order)); }catch(e){}
+}
+
+let order = loadOrder();
+let activeId = order[0];
+try{ activeId = localStorage.getItem(ACTIVE_KEY) || order[0]; }catch(e){}
+if(!MENU_DEFS[activeId]) activeId = order[0];
+
+let dragId = null;
+
+function renderMenu(){
+  const nav = document.getElementById("menuList");
+  nav.innerHTML = order.map(id => {
+    const def = MENU_DEFS[id];
+    return `
+      <div class="menu-item ${id===activeId?'active':''}" draggable="true" data-id="${id}"
+           ondragstart="onDragStart(event,'${id}')" ondragover="onDragOver(event,'${id}')"
+           ondrop="onDrop(event,'${id}')" ondragend="onDragEnd(event)" onclick="selectMenu('${id}')">
+        <span class="ic">${def.icon}</span>
+        <span class="lbl">${def.label}</span>
+        <span class="handle">≡</span>
+      </div>`;
+  }).join("");
+}
+
+function selectMenu(id){
+  activeId = id;
+  try{ localStorage.setItem(ACTIVE_KEY, id); }catch(e){}
+  renderMenu();
+  loadFrame();
+}
+
+function loadFrame(){
+  const def = MENU_DEFS[activeId];
+  document.getElementById("curLabel").textContent = def.label;
+  document.getElementById("mainFrame").src = def.file;
+}
+function reloadFrame(){ document.getElementById("mainFrame").src = MENU_DEFS[activeId].file; }
+function openInNewTab(){ window.open(MENU_DEFS[activeId].file, "_blank"); }
+
+// ---------------------------------------------------------------
+// 드래그로 순서 바꾸기
+// ---------------------------------------------------------------
+function onDragStart(e, id){
+  dragId = id;
+  e.currentTarget.classList.add("dragging");
+  e.dataTransfer.effectAllowed = "move";
+}
+function onDragOver(e, id){
+  e.preventDefault();
+  if(id === dragId) return;
+  document.querySelectorAll(".menu-item").forEach(el => el.classList.remove("drag-over"));
+  e.currentTarget.classList.add("drag-over");
+}
+function onDrop(e, targetId){
+  e.preventDefault();
+  document.querySelectorAll(".menu-item").forEach(el => el.classList.remove("drag-over"));
+  if(!dragId || dragId === targetId) return;
+  const from = order.indexOf(dragId);
+  const to = order.indexOf(targetId);
+  if(from === -1 || to === -1) return;
+  order.splice(from, 1);
+  order.splice(to, 0, dragId);
+  saveOrder(order);
+  dragId = null;
+  renderMenu();
+}
+function onDragEnd(e){
+  e.currentTarget.classList.remove("dragging");
+  document.querySelectorAll(".menu-item").forEach(el => el.classList.remove("drag-over"));
+  dragId = null;
+}
+
+renderMenu();
+loadFrame();
+</script>
+
+</body>
+</html>
