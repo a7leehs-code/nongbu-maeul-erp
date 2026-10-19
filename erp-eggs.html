@@ -98,6 +98,13 @@
   .filters{ display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
   .filters select{ width:auto; padding:5px 8px; font-size:13px; }
 
+  /* 월별·연별 누적 */
+  .seg{ display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+  .seg button{ border:none; background:#fff; padding:5px 14px; font-size:13px; font-weight:700; color:var(--muted); cursor:pointer; font-family:inherit; }
+  .seg button.on{ background:var(--navy); color:#fff; }
+  table.cum tr.total td{ background:#eef4f8; font-weight:800; border-top:2px solid #c9dde9; }
+  table.cum td.acc{ color:var(--copper); font-weight:700; }
+
   .empty{ text-align:center; color:var(--muted); font-size:13px; padding:26px 10px; }
   .empty .big{ font-size:30px; margin-bottom:8px; }
 
@@ -228,6 +235,33 @@
         <input type="date" id="sumDate" onchange="renderSummary()">
       </div>
       <div class="tiles" id="tiles"></div>
+    </div>
+
+    <div class="card">
+      <h3>📅 월별 · 연별 누적</h3>
+      <div class="filters">
+        <div class="seg" id="cumMode">
+          <button data-mode="month" class="on">월별</button>
+          <button data-mode="year">연별</button>
+        </div>
+        <select id="cumYear" onchange="renderCumulative()"></select>
+        <select id="cumHouse" onchange="renderCumulative()"></select>
+      </div>
+      <div class="tbl-wrap">
+        <table class="cum">
+          <thead id="cumHead"></thead>
+          <tbody id="cumBody"></tbody>
+        </table>
+      </div>
+      <div class="empty" id="cumEmpty" style="display:none">
+        <div class="big">📅</div>
+        <div>이 기간에는 기록이 없습니다.</div>
+      </div>
+      <div class="help" style="margin-top:10px;">
+        <b>산란율</b> = 그 기간 계란 합계 ÷ 그 기간 매일 닭 마릿수를 더한 수 × 100 (= 하루 평균 산란율)<br>
+        <b>폐사율</b> = 그 기간 폐사 합계 ÷ 그 기간 첫 기록 날의 닭 마릿수 × 100<br>
+        <b>누적</b> = 1월부터 그달까지 더한 계란 수
+      </div>
     </div>
 
     <div class="card">
@@ -547,9 +581,86 @@ function saveHouses(){
 // ───────── 공통 ─────────
 function esc(s){ return String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
 
+// ───────── 월별 · 연별 누적 ─────────
+let cumMode = "month";
+
+// 여러 날의 기록을 한 덩어리로 합치기
+function aggregate(list){
+  const grades = {};
+  GRADES.forEach(g => { grades[g.key] = list.reduce((s,r) => s + ((r.grades && r.grades[g.key]) || 0), 0); });
+  const eggs     = list.reduce((s,r) => s + r.eggs, 0);
+  const birdDays = list.reduce((s,r) => s + r.birds, 0);     // 매일 마릿수를 더한 수
+  const dead     = list.reduce((s,r) => s + r.dead, 0);
+  // 폐사율 기준: 동마다 그 기간 첫 기록 날의 마릿수를 더함
+  const firstBirds = {};
+  list.slice().sort((a,b) => a.date.localeCompare(b.date)).forEach(r => {
+    if(!(r.houseId in firstBirds)) firstBirds[r.houseId] = r.birds;
+  });
+  const startBirds = Object.values(firstBirds).reduce((s,n) => s + n, 0);
+  const days = new Set(list.map(r => r.date)).size;
+  return { grades, eggs, dead, days, lay: pct(eggs, birdDays), mort: pct(dead, startBirds) };
+}
+
+function fillCumSelects(){
+  const years = [...new Set(records.map(r => r.date.slice(0,4)))].sort().reverse();
+  if(!years.length) years.push(today().slice(0,4));
+  const keepY = $("cumYear").value;
+  $("cumYear").innerHTML = years.map(y => `<option value="${y}">${y}년</option>`).join("");
+  if(years.includes(keepY)) $("cumYear").value = keepY;
+  const keepH = $("cumHouse").value;
+  $("cumHouse").innerHTML = `<option value="">모든 동</option>` + houses.map(h => `<option value="${h.id}">${esc(h.name)}</option>`).join("");
+  $("cumHouse").value = keepH;
+  $("cumYear").style.display = cumMode === "month" ? "" : "none";
+}
+
+function renderCumulative(){
+  const hf = $("cumHouse").value, year = $("cumYear").value;
+  const base = records.filter(r => !hf || r.houseId === hf);
+  const isMonth = cumMode === "month";
+  const list = isMonth ? base.filter(r => r.date.startsWith(year)) : base;
+
+  // 기간 이름표: 월별이면 "2026-10", 연별이면 "2026"
+  const keyOf = r => isMonth ? r.date.slice(0,7) : r.date.slice(0,4);
+  const keys = [...new Set(list.map(keyOf))].sort();
+
+  $("cumHead").innerHTML = `<tr><th>${isMonth ? "월" : "연도"}</th><th class="num">기록일</th>`
+    + GRADES.map(g => `<th class="grade${g.bad ? " bad" : ""}">${g.name}</th>`).join("")
+    + `<th class="num">계란 합계</th>${isMonth ? `<th class="num">누적</th>` : ""}<th class="num">산란율</th><th class="num">폐사</th><th class="num">폐사율</th></tr>`;
+
+  let acc = 0;
+  const row = (label, a, cls, accCell) => `<tr class="${cls}">
+      <td>${label}</td><td class="num">${a.days}일</td>
+      ${GRADES.map(g => `<td class="grade${g.bad ? " bad" : ""}">${fmtNum(a.grades[g.key])}</td>`).join("")}
+      <td class="num"><b>${fmtNum(a.eggs)}</b></td>${accCell}
+      <td class="num">${fmtPct(a.lay,1)}</td><td class="num">${fmtNum(a.dead)}</td><td class="num">${fmtPct(a.mort,2)}</td>
+    </tr>`;
+
+  let html = keys.map(k => {
+    const a = aggregate(list.filter(r => keyOf(r) === k));
+    acc += a.eggs;
+    const label = isMonth ? Number(k.slice(5)) + "월" : k + "년";
+    return row(label, a, "", isMonth ? `<td class="num acc">${fmtNum(acc)}</td>` : "");
+  }).join("");
+  if(isMonth && keys.length) html += row(year + "년 합계", aggregate(list), "total", `<td class="num acc">${fmtNum(acc)}</td>`);
+
+  $("cumBody").innerHTML = html;
+  $("cumEmpty").style.display = keys.length ? "none" : "block";
+}
+
+$("cumMode").addEventListener("click", e => {
+  const b = e.target.closest("button");
+  if(!b) return;
+  cumMode = b.dataset.mode;
+  document.querySelectorAll("#cumMode button").forEach(x => x.classList.toggle("on", x === b));
+  fillCumSelects();
+  renderCumulative();
+});
+
 function renderAll(){
   fillHouseSelects();
+  fillCumSelects();
   renderSummary();
+  renderCumulative();
   renderTable();
 }
 
