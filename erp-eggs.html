@@ -120,6 +120,15 @@
   .house-row input{ padding:6px 8px; font-size:13px; }
   .house-row .x{ border:none; background:none; color:var(--red); cursor:pointer; font-size:14px; }
 
+  /* 모드 안내 · 로그인 */
+  .warn{ background:#fbeee9; border-left:4px solid var(--red); padding:11px 15px; font-size:12.8px; color:#8a3a2a; margin-bottom:16px; border-radius:6px; }
+  .warn.live{ background:#eef7f0; border-left-color:var(--green); color:#2f5e3e; }
+  .bar{ display:flex; flex-wrap:wrap; align-items:center; gap:10px; background:#fff; border:1px solid var(--line); border-radius:12px; padding:10px 16px; margin-bottom:14px; }
+  .bar .who{ font-size:13px; color:var(--muted); flex:1; min-width:180px; }
+  .auth{ max-width:420px; margin:0 auto 16px; }
+  .auth .switch{ display:flex; gap:6px; margin-bottom:6px; }
+  .auth .switch .btn{ flex:1; }
+
   footer{ text-align:center; color:var(--muted); font-size:12px; margin-top:20px; line-height:1.7; }
   a.back{ color:var(--copper); font-weight:700; text-decoration:none; }
 
@@ -135,13 +144,13 @@
 
 <header>
   <h1>🐔 산란·폐사 기록</h1>
-  <p>매일 계사(동)마다 「계란 몇 개 · 닭 몇 마리 죽었나」만 적으면 산란율과 폐사율은 자동으로 계산됩니다. 이 화면에 남긴 내용은 이 컴퓨터의 이 브라우저에만 저장됩니다 (실습판).</p>
+  <p>매일 계사(동)마다 「계란 몇 개 · 닭 몇 마리 죽었나」만 적으면 산란율과 폐사율은 자동으로 계산됩니다. 직원이 휴대폰으로 적으면 대표 컴퓨터에서도 바로 보입니다.</p>
 </header>
 
 <details class="overview" open>
   <summary>
     <span class="ov-title">🧠 구조 한눈에 보기 — 이 화면은 어떻게 돌아가나</span>
-    <span class="ov-stats">적는 칸: 날짜·동, 계란 5등급, 폐사 · 자동 계산 2개 · 서랍 2칸</span>
+    <span class="ov-stats">적는 칸: 날짜·동, 계란 5등급, 폐사 · 자동 계산 2개 · 창고 표 2개</span>
     <span class="ov-toggle"></span>
   </summary>
   <div class="ov-body">
@@ -161,8 +170,8 @@
         <text x="90" y="86" text-anchor="middle" font-size="12.5" fill="#4a6275">날짜·동·계란 5등급·폐사</text>
 
         <rect x="210" y="30" width="170" height="80" rx="12" fill="#faf7f1" stroke="#C67B3C" stroke-width="1.5"/>
-        <text x="295" y="62" text-anchor="middle" font-size="18" font-weight="800" fill="#2B3A4E">② 서랍에 넣기</text>
-        <text x="295" y="86" text-anchor="middle" font-size="12.5" fill="#7a6a58">이 브라우저에 저장</text>
+        <text x="295" y="62" text-anchor="middle" font-size="18" font-weight="800" fill="#2B3A4E">② 창고에 넣기</text>
+        <text x="295" y="86" text-anchor="middle" font-size="12.5" fill="#7a6a58">농부마을 DB (Supabase)</text>
 
         <rect x="420" y="30" width="170" height="80" rx="12" fill="#faf7f1" stroke="#C67B3C" stroke-width="1.5"/>
         <text x="505" y="62" text-anchor="middle" font-size="18" font-weight="800" fill="#2B3A4E">③ 자동 계산</text>
@@ -173,7 +182,7 @@
         <text x="690" y="86" text-anchor="middle" font-size="12.5" fill="#4a6a52">요약 · 표</text>
 
         <rect x="110" y="140" width="580" height="44" rx="10" fill="#ffffff" stroke="#b9b2a4" stroke-width="1.5" stroke-dasharray="6 4"/>
-        <text x="400" y="167" text-anchor="middle" font-size="13" fill="#9a9384">나중에: 서랍 → 창고(Supabase)로 옮기면 직원 폰에서 적고 대표 PC에서 봄</text>
+        <text x="400" y="167" text-anchor="middle" font-size="13" fill="#9a9384">직원은 휴대폰으로 적고 · 대표는 컴퓨터에서 바로 봄 · 지우기는 대표만</text>
         <line x1="295" y1="110" x2="295" y2="136" stroke="#9a9384" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#ah)"/>
       </svg>
     </div>
@@ -181,11 +190,15 @@
       <div><b>산란율(전체)</b> = 그날 계란 합계(중·특·왕·오·파란 모두) ÷ 그날 아침 닭 마릿수 × 100<br><b style="color:var(--teal)">산란율(정상란)</b> = 오란·파란을 뺀 계란(중·특·왕란) ÷ 그날 아침 닭 마릿수 × 100<br><span style="color:var(--muted)">예) 전체 9,000개 중 오·파란 200개 → 전체 90.0%, 정상란 88.0% (닭 10,000마리)</span></div>
       <div><b>폐사율</b> = 그날 죽은 닭 수 ÷ 그날 아침 닭 마릿수 × 100<br><span style="color:var(--muted)">예) 5마리 ÷ 10,000마리 = 0.05%</span></div>
     </div>
-    <div class="ov-hint">서랍 2칸: 「계사 목록(동 이름·처음 마릿수)」과 「매일 기록」. 닭 마릿수는 지난 기록에서 죽은 닭을 빼서 자동으로 채워 줍니다 (틀리면 고쳐 적으면 됩니다).</div>
+    <div class="ov-hint">창고(DB) 표 2개: 「계사 목록(동 이름·처음 마릿수)」과 「매일 기록(하루·한 동에 한 줄)」. 적은 사람은 로그인한 이름으로 자동 기록됩니다. 닭 마릿수는 지난 기록에서 죽은 닭을 빼서 자동으로 채워 줍니다 (틀리면 고쳐 적으면 됩니다).</div>
   </div>
 </details>
 
-<div class="layout">
+<div class="warn" id="modeNote"></div>
+<div class="bar" id="bar" style="display:none"></div>
+<div id="auth"></div>
+
+<div class="layout" id="app" style="display:none">
 
   <div class="panel">
     <div class="card">
@@ -216,18 +229,20 @@
       <label>특이사항 · 폐사 원인 (선택)</label>
       <textarea id="fMemo" placeholder="예) 2동 환기팬 고장, 더위로 폐사 2마리"></textarea>
 
+      <div id="writerBox">
       <label>적은 사람</label>
       <input type="text" id="fWriter" placeholder="이름">
+      </div>
 
       <div class="msg" id="formMsg"></div>
-      <button class="btn btn-copper btn-block" onclick="saveRecord()">저장</button>
+      <button class="btn btn-copper btn-block" id="saveBtn" onclick="saveRecord()">저장</button>
     </div>
 
     <div class="card">
       <h3>🏚️ 계사(동) 목록</h3>
-      <div class="help" style="margin-bottom:10px;">동 이름과 처음 들어온(입추) 마릿수를 적어 두면, 첫 기록 때 마릿수를 자동으로 채워 줍니다.</div>
+      <div class="help" id="houseHelp" style="margin-bottom:10px;"></div>
       <div id="houseList"></div>
-      <div class="row2" style="margin-top:8px;">
+      <div class="row2" id="houseEdit" style="margin-top:8px;">
         <button class="btn btn-line" style="flex:1" onclick="addHouse()">+ 동 추가</button>
         <button class="btn btn-copper" style="flex:1" onclick="saveHouses()">목록 저장</button>
       </div>
@@ -300,35 +315,132 @@
 </div>
 
 <footer>
-  erp-eggs.html · 정본 1장 · 데이터는 이 브라우저(localStorage)에 저장됨 · <a class="back" href="erp-map.html">← 지도로 돌아가기</a><br>
+  erp-eggs.html · 정본 1장 · 기록은 농부마을 창고(Supabase)에 저장됨 (실습판: 주소 끝 ?practice=1) · <a class="back" href="erp-map.html">← 지도로 돌아가기</a><br>
   [AI 생성 초안 - 검토 전]
 </footer>
 
+<script src="erp-config.js"></script>
 <script>
-// ───────── 서랍 (localStorage) ─────────
-// 서랍 2칸: 계사 목록 / 매일 기록
+const CFG = window.ERP_CONFIG || {};
+// 주소 끝에 ?practice=1 을 붙이면 창고(DB)에 연결하지 않고 이 브라우저에만 저장하는 실습판으로 열립니다
+const LIVE = Boolean(CFG.supabaseUrl && CFG.supabaseAnonKey) && !/[?&]practice=1(&|$)/.test(location.search);
+const SUPABASE_JS = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js";
+
+// 계사 목록: [{ id, name, startBirds, active }]  — id는 항상 글자("1", "h1")
+let houses  = [];
+// 매일 기록: [{ id, date, houseId, birds, grades:{mid,special,king,dirty,broken}, eggs(=합계), dead, memo, writer }]
+let records = [];
+let me = null;          // 지금 접속한 사람 (실사용 모드)
+
+function activeHouses(){ return houses.filter(h => h.active !== false); }
+function isCeo(){ return !LIVE || (!!me && me.role === "대표"); }
+
+// ───────── 저장소 ① 실습판 — 서랍 (이 브라우저에만) ─────────
 const HOUSE_KEY  = "nongbuErpHouses";
 const RECORD_KEY = "nongbuErpEggRecords";
-
 function load(key, fallback){
   try{
     const raw = localStorage.getItem(key);
     return raw ? JSON.parse(raw) : fallback;
   }catch(e){ return fallback; }
 }
-function store(key, value){
+function put(key, value){
   try{ localStorage.setItem(key, JSON.stringify(value)); return true; }catch(e){ return false; }
 }
+const Practice = {
+  async load(){
+    houses = load(HOUSE_KEY, [
+      { id:"h1", name:"1동", startBirds:null },
+      { id:"h2", name:"2동", startBirds:null },
+      { id:"h3", name:"3동", startBirds:null },
+      { id:"h4", name:"4동", startBirds:null }
+    ]);
+    records = load(RECORD_KEY, []);
+  },
+  async saveRecord(rec){
+    const i = records.findIndex(r => r.date === rec.date && r.houseId === rec.houseId);
+    if(i >= 0) records[i] = { ...records[i], ...rec };
+    else records.push({ id: "r" + Date.now(), ...rec });
+    if(!put(RECORD_KEY, records)) throw new Error("서랍에 저장하지 못했어요. 새로고침하면 사라집니다 (브라우저 저장소 문제).");
+  },
+  async remove(id){ records = records.filter(x => x.id !== id); put(RECORD_KEY, records); },
+  async saveHouses(){ put(HOUSE_KEY, houses); }
+};
 
-// 계사 목록: [{ id, name, startBirds }]
-let houses  = load(HOUSE_KEY, [
-  { id:"h1", name:"1동", startBirds:null },
-  { id:"h2", name:"2동", startBirds:null },
-  { id:"h3", name:"3동", startBirds:null },
-  { id:"h4", name:"4동", startBirds:null }
-]);
-// 매일 기록: [{ id, date, houseId, birds, grades:{mid,special,king,dirty,broken}, eggs(=합계), dead, memo, writer }]
-let records = load(RECORD_KEY, []);
+// ───────── 저장소 ② 실사용 — 창고 (농부마을 DB · Supabase) ─────────
+// 누가 무엇을 할 수 있는지는 창고(DB)가 판정합니다: 직원은 적기·고치기, 대표는 지우기·계사 관리까지
+let sb = null, session = null, liveError = "";
+
+function loadScript(src){
+  return new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = src; s.onload = resolve;
+    s.onerror = () => reject(new Error("라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인하세요."));
+    document.head.appendChild(s);
+  });
+}
+function friendly(msg){
+  if(/Failed to fetch|NetworkError|Load failed/i.test(msg)) return "창고(서버)에 연결하지 못했습니다. 인터넷 연결을 확인하세요.";
+  if(msg === "Invalid login credentials") return "이메일 또는 비밀번호가 틀렸습니다.";
+  if(/Email not confirmed/i.test(msg)) return "메일함의 확인 링크를 먼저 눌러주세요.";
+  if(/already registered/i.test(msg)) return "이미 가입된 이메일입니다. 로그인해주세요.";
+  if(/egg_(records|houses).*does not exist|Could not find the table/i.test(msg)) return "산란 기록 표가 아직 없습니다. supabase/eggs.sql 을 실행했는지 확인하세요.";
+  if(/row-level security|permission denied/i.test(msg)) return "이 일은 권한이 없어요. (기록 지우기·계사 관리는 대표만 할 수 있어요)";
+  if(/egg_records_check|dead/i.test(msg)) return "폐사 수가 마릿수보다 많아요.";
+  return msg;
+}
+function rowToRec(r){
+  const grades = { mid:r.mid, special:r.special, king:r.king, dirty:r.dirty, broken:r.broken };
+  return { id: String(r.id), date: r.record_date, houseId: String(r.house_id), birds: r.birds, grades,
+           eggs: gradeSum(grades), dead: r.dead, memo: r.memo || "", writer: (r.writer && r.writer.name) || "" };
+}
+const Live = {
+  async init(){
+    if(!window.supabase) await loadScript(SUPABASE_JS);
+    sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey);
+    sb.auth.onAuthStateChange((_e, s) => { session = s; setTimeout(loadLive, 0); });
+  },
+  async load(){
+    const h = await sb.from("egg_houses").select("*").order("sort").order("id");
+    if(h.error) throw new Error(h.error.message);
+    houses = h.data.map(x => ({ id: String(x.id), name: x.name, startBirds: x.start_birds, active: x.active, sort: x.sort }));
+    // 한 번에 1000줄까지만 오므로 나눠서 모두 가져오기
+    let all = [];
+    for(let from = 0; ; from += 1000){
+      const q = await sb.from("egg_records")
+        .select("id,record_date,house_id,birds,mid,special,king,dirty,broken,dead,memo,writer:profiles(name)")
+        .order("record_date").order("id").range(from, from + 999);
+      if(q.error) throw new Error(q.error.message);
+      all = all.concat(q.data);
+      if(q.data.length < 1000) break;
+    }
+    records = all.map(rowToRec);
+  },
+  async saveRecord(rec){
+    const row = { record_date: rec.date, house_id: Number(rec.houseId), birds: rec.birds, dead: rec.dead, memo: rec.memo, ...rec.grades };
+    const { error } = await sb.from("egg_records").upsert(row, { onConflict: "record_date,house_id" });
+    if(error) throw new Error(friendly(error.message));
+    await this.load();
+  },
+  async remove(id){
+    const { data, error } = await sb.from("egg_records").delete().eq("id", Number(id)).select("id");
+    if(error) throw new Error(friendly(error.message));
+    if(!data.length) throw new Error("지우지 못했어요. 기록 지우기는 대표만 할 수 있어요.");
+    await this.load();
+  },
+  async saveHouses(){
+    for(const [i, h] of houses.entries()){
+      const row = { name: h.name, start_birds: h.startBirds, active: h.active !== false, sort: i + 1 };
+      const res = h.id.startsWith("new")
+        ? await sb.from("egg_houses").insert(row)
+        : await sb.from("egg_houses").update(row).eq("id", Number(h.id));
+      if(res.error) throw new Error(/duplicate|unique/i.test(res.error.message) ? "같은 이름의 동이 이미 있어요: " + h.name : friendly(res.error.message));
+    }
+    await this.load();
+  }
+};
+
+const DB = LIVE ? Live : Practice;
 
 // 계란 등급 5가지 — 오란·파란은 낳았지만 정상 판매가 어려운 계란 (bad)
 const GRADES = [
@@ -349,7 +461,7 @@ function pct(part, whole, digits){
 }
 function fmtPct(v, digits){ return v === null ? "-" : v.toFixed(digits) + "%"; }
 function fmtNum(n){ return (n ?? 0).toLocaleString("ko-KR"); }
-function houseName(id){ const h = houses.find(h => h.id === id); return h ? h.name : "(삭제된 동)"; }
+function houseName(id){ const h = houses.find(h => h.id === id); return h ? h.name : "(없는 동)"; }
 function today(){
   const d = new Date();
   return new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10);
@@ -370,10 +482,10 @@ function suggestBirds(houseId, date){
 const $ = id => document.getElementById(id);
 
 function fillHouseSelects(){
-  const opts = houses.map(h => `<option value="${h.id}">${esc(h.name)}</option>`).join("");
+  const opts = activeHouses().map(h => `<option value="${h.id}">${esc(h.name)}</option>`).join("");
   const keep = $("fHouse").value;
   $("fHouse").innerHTML = opts;
-  if(houses.some(h => h.id === keep)) $("fHouse").value = keep;
+  if(activeHouses().some(h => h.id === keep)) $("fHouse").value = keep;
   const keepF = $("filterHouse").value;
   $("filterHouse").innerHTML = `<option value="">모든 동</option>` + opts;
   $("filterHouse").value = keepF;
@@ -435,7 +547,7 @@ function readInt(id){
   return Number.isInteger(n) && n >= 0 ? n : NaN;
 }
 
-function saveRecord(){
+async function saveRecord(){
   const date = $("fDate").value, houseId = $("fHouse").value;
   const birds = readInt("fBirds");
   const dead = readInt("fDead") ?? 0;
@@ -452,18 +564,23 @@ function saveRecord(){
   if(dead > birds)                 return showMsg(msg, "폐사 수가 마릿수보다 많아요. 다시 확인해 주세요.", false);
   if(eggs > birds * 1.2 && !confirm("계란 수가 마릿수보다 훨씬 많아요 (산란율 " + Math.round(eggs/birds*100) + "%). 그대로 저장할까요?")) return;
 
-  const rec = { date, houseId, birds, grades, eggs, dead, memo: $("fMemo").value.trim(), writer: $("fWriter").value.trim() };
-  const i = records.findIndex(r => r.date === date && r.houseId === houseId);
-  if(i >= 0) records[i] = { ...records[i], ...rec };
-  else records.push({ id: "r" + Date.now(), ...rec });
+  const rec = { date, houseId, birds, grades, eggs, dead, memo: $("fMemo").value.trim(), writer: LIVE ? (me ? me.name : "") : $("fWriter").value.trim() };
+  const existed = records.some(r => r.date === date && r.houseId === houseId);
+  if(!LIVE){ try{ localStorage.setItem("nongbuErpEggWriter", rec.writer); }catch(e){} }
 
-  const saved = store(RECORD_KEY, records);
-  try{ localStorage.setItem("nongbuErpEggWriter", rec.writer); }catch(e){}
+  const btn = $("saveBtn");
+  btn.disabled = true; btn.textContent = "저장하는 중…";
+  try{
+    await DB.saveRecord(rec);
+    showMsg(msg, houseName(houseId) + " " + date + " 기록을 " + (existed ? "고쳤어요." : "저장했어요."), true);
+  }catch(e){
+    showMsg(msg, e.message, false);
+  }finally{
+    btn.disabled = false; btn.textContent = "저장";
+  }
   $("sumDate").value = date;
   renderAll();
   onFormKeyChange();
-  if(!saved) return showMsg(msg, "화면에는 넣었지만 서랍에 저장하지 못했어요. 새로고침하면 사라집니다 (브라우저 저장소 문제).", false);
-  showMsg(msg, houseName(houseId) + " " + date + " 기록을 " + (i >= 0 ? "고쳤어요." : "저장했어요."), true);
 }
 
 function editRecord(id){
@@ -474,11 +591,10 @@ function editRecord(id){
   window.scrollTo({ top: $("fDate").getBoundingClientRect().top + window.scrollY - 80, behavior:"smooth" });
 }
 
-function deleteRecord(id){
+async function deleteRecord(id){
   const r = records.find(r => r.id === id);
-  if(!r || !confirm(r.date + " " + houseName(r.houseId) + " 기록을 지울까요?")) return;
-  records = records.filter(x => x.id !== id);
-  store(RECORD_KEY, records);
+  if(!r || !confirm(r.date + " " + houseName(r.houseId) + " 기록을 지울까요? 지우면 되돌릴 수 없어요.")) return;
+  try{ await DB.remove(id); }catch(e){ alert(e.message); }
   renderAll();
   onFormKeyChange();
 }
@@ -519,7 +635,7 @@ function renderSummary(){
   // 전체 비교는 두 날 모두 같은 동들이 적혀 있을 때만 (안 그러면 숫자가 엉뚱해짐)
   const sameHouses = prev.length === day.length && day.every(r => prev.some(p => p.houseId === r.houseId));
   if(day.length) html += tile("농장 전체", day, sameHouses ? prev : [], "total");
-  houses.forEach(h => {
+  activeHouses().forEach(h => {
     const list = day.filter(r => r.houseId === h.id);
     if(list.length) html += tile(h.name, list, prev.filter(r => r.houseId === h.id), "");
     else html += `<div class="tile missing"><div class="name">${esc(h.name)}</div><div class="line" style="margin-top:6px;">이 날 기록이 아직 없어요</div></div>`;
@@ -554,16 +670,22 @@ function renderTable(){
       <td class="num">${fmtPct(pct(r.dead, r.birds),2)}</td>
       <td class="memo">${esc(r.memo || "")}</td>
       <td>${esc(r.writer || "")}</td>
-      <td style="white-space:nowrap"><button class="edit" onclick="editRecord('${r.id}')">고치기</button><button class="del" onclick="deleteRecord('${r.id}')">지우기</button></td>
+      <td style="white-space:nowrap"><button class="edit" onclick="editRecord('${r.id}')">고치기</button>${isCeo() ? `<button class="del" onclick="deleteRecord('${r.id}')">지우기</button>` : ""}</td>
     </tr>`).join("");
 }
 
 // ───────── 계사 목록 ─────────
 function renderHouses(){
-  $("houseList").innerHTML = houses.map((h, i) => `<div class="house-row">
-      <input type="text" value="${esc(h.name)}" data-i="${i}" data-f="name" placeholder="동 이름" style="flex:1">
-      <input type="number" value="${h.startBirds ?? ""}" data-i="${i}" data-f="startBirds" placeholder="처음 마릿수" min="0" style="flex:1.2">
-      <button class="x" title="이 동 빼기" onclick="removeHouse(${i})">✕</button>
+  // 계사 관리는 대표만 — 직원에게는 읽기 전용으로 보여줌
+  const can = isCeo();
+  $("houseEdit").style.display = can ? "" : "none";
+  $("houseHelp").textContent = can
+    ? "동 이름과 처음 들어온(입추) 마릿수를 적어 두면, 첫 기록 때 마릿수를 자동으로 채워 줍니다."
+    : "계사 목록은 대표만 고칠 수 있어요.";
+  $("houseList").innerHTML = houses.map((h, i) => h.active === false ? "" : `<div class="house-row">
+      <input type="text" value="${esc(h.name)}" data-i="${i}" data-f="name" placeholder="동 이름" style="flex:1" ${can ? "" : "disabled"}>
+      <input type="number" value="${h.startBirds ?? ""}" data-i="${i}" data-f="startBirds" placeholder="처음 마릿수" min="0" style="flex:1.2" ${can ? "" : "disabled"}>
+      ${can ? `<button class="x" title="이 동 빼기" onclick="removeHouse(${i})">✕</button>` : ""}
     </div>`).join("");
 }
 function readHouseInputs(){
@@ -575,22 +697,29 @@ function readHouseInputs(){
 }
 function addHouse(){
   readHouseInputs();
-  houses.push({ id: "h" + Date.now(), name: (houses.length + 1) + "동", startBirds: null });
+  houses.push({ id: (LIVE ? "new" : "h") + Date.now(), name: (activeHouses().length + 1) + "동", startBirds: null, active: true });
   renderHouses();
 }
 function removeHouse(i){
   readHouseInputs();
   const h = houses[i];
   const used = records.filter(r => r.houseId === h.id).length;
-  if(used && !confirm(h.name + "에는 기록이 " + used + "건 있어요. 목록에서 빼도 기록은 남지만 「삭제된 동」으로 보입니다. 뺄까요?")) return;
-  houses.splice(i, 1);
+  if(used && !confirm(h.name + "에는 기록이 " + used + "건 있어요. 목록에서 빼도 지난 기록은 그대로 남아요. 뺄까요?")) return;
+  // 기록이 없는 새 동은 그냥 지우고, 기록이 있으면 목록에서만 숨김
+  if(!used && (h.id.startsWith("new") || !LIVE)) houses.splice(i, 1);
+  else h.active = false;
   renderHouses();
 }
-function saveHouses(){
+async function saveHouses(){
   readHouseInputs();
-  if(houses.some(h => !h.name)) return showMsg($("houseMsg"), "동 이름이 빈 칸이 있어요.", false);
-  store(HOUSE_KEY, houses);
-  showMsg($("houseMsg"), "계사 목록을 저장했어요.", true);
+  if(activeHouses().some(h => !h.name)) return showMsg($("houseMsg"), "동 이름이 빈 칸이 있어요.", false);
+  try{
+    await DB.saveHouses();
+    showMsg($("houseMsg"), "계사 목록을 저장했어요.", true);
+  }catch(e){
+    showMsg($("houseMsg"), e.message, false);
+  }
+  renderHouses();
   renderAll();
   onFormKeyChange();
 }
@@ -682,16 +811,145 @@ function renderAll(){
   renderTable();
 }
 
-// 처음 열 때
+// ───────── 로그인 · 화면 열고 닫기 (실사용 모드) ─────────
+let authMode = "login";
+
+function renderModeNote(){
+  const el = $("modeNote");
+  if(LIVE){
+    el.className = "warn live";
+    el.innerHTML = "✅ 함께 쓰는 모드 — 기록은 농부마을 창고(DB · Supabase)에 저장됩니다. 직원이 휴대폰으로 적으면 대표 컴퓨터에서도 바로 보입니다. 로그인한 승인된 직원만 볼 수 있어요.";
+  }else{
+    el.className = "warn";
+    el.innerHTML = "⚠ 실습판입니다. 기록이 <b>이 컴퓨터의 이 브라우저에만</b> 저장되고 다른 사람과 공유되지 않습니다. 함께 쓰려면 주소 끝의 <b>?practice=1</b>을 빼고 여세요.";
+  }
+}
+
+function renderBar(){
+  const bar = $("bar");
+  if(!LIVE){ bar.style.display = "none"; return; }
+  if(!session){ bar.style.display = "none"; return; }
+  bar.style.display = "";
+  bar.innerHTML = `<span class="who">${me ? `👤 <b>${esc(me.name)}</b> (${esc(me.role)}) 로그인 중` : "로그인 중"}</span>
+    <button class="btn btn-line" id="refreshBtn">새로고침</button>
+    <button class="btn btn-line" id="logoutBtn">로그아웃</button>`;
+}
+
+function authView(){
+  return `<div class="card auth">
+    <div class="switch">
+      <button class="btn ${authMode === "login" ? "btn-copper" : "btn-line"}" data-auth="login">로그인</button>
+      <button class="btn ${authMode === "signup" ? "btn-copper" : "btn-line"}" data-auth="signup">처음 가입</button>
+    </div>
+    <label for="aEmail">이메일</label><input id="aEmail" type="email" autocomplete="email">
+    <label for="aPw">비밀번호${authMode === "signup" ? " (6자 이상)" : ""}</label><input id="aPw" type="password" autocomplete="${authMode === "signup" ? "new-password" : "current-password"}">
+    ${authMode === "signup" ? `
+      <label for="aName">이름</label><input id="aName" autocomplete="name">
+      <label for="aJob">맡은 일</label><input id="aJob" placeholder="예: 사육, 출하, 방역">` : ""}
+    <div class="msg err" id="aErr" style="display:none"></div>
+    <div class="msg ok" id="aOk" style="display:none"></div>
+    <button class="btn btn-copper btn-block" id="authBtn">${authMode === "signup" ? "가입하기" : "로그인"}</button>
+    <p class="help" style="margin-top:10px">${authMode === "signup"
+      ? "가입 후 대표가 전자결재 화면의 「직원 관리」에서 「사용 허용」을 눌러야 쓸 수 있습니다."
+      : "전자결재·마을톡·고객관리와 같은 계정입니다."}</p>
+  </div>`;
+}
+function authMsg(id, text){ const el = $(id); el.textContent = text; el.style.display = text ? "block" : "none"; }
+
+function bindAuth(){
+  document.querySelectorAll("[data-auth]").forEach(b => b.addEventListener("click", () => { authMode = b.dataset.auth; renderGate(); }));
+  $("authBtn").addEventListener("click", async () => {
+    authMsg("aErr", ""); authMsg("aOk", "");
+    const email = $("aEmail").value.trim(), password = $("aPw").value;
+    if(!email.includes("@"))  return authMsg("aErr", "이메일을 확인해주세요.");
+    if(password.length < 6)   return authMsg("aErr", "비밀번호는 6자 이상이어야 합니다.");
+    const btn = $("authBtn"); btn.disabled = true;
+    try{
+      if(authMode === "signup"){
+        const name = $("aName").value.trim(), job = $("aJob").value.trim();
+        if(!name){ btn.disabled = false; return authMsg("aErr", "이름을 적어주세요."); }
+        const { data, error } = await sb.auth.signUp({ email, password, options: { data: { name, job }, emailRedirectTo: location.href.split("#")[0] } });
+        if(error) throw error;
+        if(!data.session) authMsg("aOk", "가입 신청이 됐습니다. 메일함에서 확인 링크를 누른 뒤 로그인하세요.");
+      }else{
+        const { error } = await sb.auth.signInWithPassword({ email, password });
+        if(error) throw error;
+      }
+    }catch(e){
+      authMsg("aErr", friendly(e.message));
+    }finally{
+      btn.disabled = false;
+    }
+  });
+}
+
+// 로그인·승인 상태에 따라 「입력 화면」을 보여줄지, 「로그인 칸」을 보여줄지 정함
+function renderGate(){
+  renderModeNote();
+  renderBar();
+  const auth = $("auth"), app = $("app");
+  let gate = "";
+  if(LIVE && liveError) gate = `<div class="card auth"><h3>연결에 문제가 있습니다</h3><p class="msg err" style="display:block">${esc(liveError)}</p></div>`;
+  else if(LIVE && !sb) gate = `<div class="card auth" style="text-align:center;color:var(--muted)">창고(DB)에 연결하는 중…</div>`;
+  else if(LIVE && !session) gate = authView();
+  else if(LIVE && (!me || !me.active)) gate = `<div class="card auth"><h3>⏳ 대표 승인 대기 중</h3>
+      <p style="font-size:13.5px">${me ? esc(me.name) + "님, 가입은 됐습니다." : "직원 정보가 아직 없습니다."} 대표가 전자결재 화면의 「직원 관리」에서 「사용 허용」을 누르면 쓸 수 있습니다. 허용받은 뒤 「새로고침」을 누르세요.</p></div>`;
+  auth.innerHTML = gate;
+  app.style.display = gate ? "none" : "";
+  if(LIVE && sb && !session && !liveError) bindAuth();
+  $("writerBox").style.display = LIVE ? "none" : "";
+}
+
+async function loadLive(){
+  liveError = ""; me = null;
+  if(session){
+    try{
+      const { data, error } = await sb.from("profiles").select("id,name,email,role,active").eq("id", session.user.id).maybeSingle();
+      if(error) throw new Error(error.message);
+      me = data ? { id: data.id, name: data.name || data.email, role: data.role, active: data.active } : null;
+      if(me && me.active) await Live.load();
+    }catch(e){
+      liveError = friendly(e.message);
+    }
+  }else{
+    houses = []; records = [];
+  }
+  renderGate();
+  if(!$("app").style.display){ renderHouses(); renderAll(); onFormKeyChange(); }
+}
+
+$("bar").addEventListener("click", async e => {
+  if(e.target.id === "refreshBtn") await loadLive();
+  else if(e.target.id === "logoutBtn") await sb.auth.signOut();
+});
+
+// 다른 직원이 적은 기록을 1분마다 다시 불러옴 (입력 중일 때는 건드리지 않음)
+async function backgroundRefresh(){
+  if(!LIVE || !me || !me.active || document.visibilityState !== "visible") return;
+  if(document.activeElement && document.activeElement.closest(".panel")) return;
+  try{ await Live.load(); renderHouses(); renderAll(); }catch(e){}
+}
+document.addEventListener("visibilitychange", backgroundRefresh);
+setInterval(backgroundRefresh, 60 * 1000);
+
+// ───────── 처음 열 때 ─────────
 $("fDate").value = today();
 $("sumDate").value = today();
-try{ $("fWriter").value = localStorage.getItem("nongbuErpEggWriter") || ""; }catch(e){}
 $("fDate").addEventListener("change", onFormKeyChange);
 $("fHouse").addEventListener("change", onFormKeyChange);
 renderGradeInputs();
-renderHouses();
-renderAll();
-onFormKeyChange();
+
+async function boot(){
+  if(!LIVE){
+    try{ $("fWriter").value = localStorage.getItem("nongbuErpEggWriter") || ""; }catch(e){}
+    await Practice.load();
+    renderGate(); renderHouses(); renderAll(); onFormKeyChange();
+    return;
+  }
+  renderGate();
+  try{ await Live.init(); }catch(e){ liveError = e.message; renderGate(); }
+}
+boot();
 </script>
 </body>
 </html>
