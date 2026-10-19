@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>전자결재 연습 ⑤-2 창고</title>
+
+  <!-- ▼ CSS = 옷 (⑤-1과 같음) -->
+  <style>
+    body    { font-family: "맑은 고딕"; background: #F7F3EE; padding: 30px; }
+    .doc    { background: white; border: 1px solid #e3dccf; border-radius: 12px; padding: 16px; max-width: 420px; margin-bottom: 10px; }
+    .doc h2 { color: #2B3A4E; font-size: 18px; margin: 0 0 8px; }
+    .status { display: inline-block; font-weight: bold; padding: 3px 10px; border-radius: 10px; }
+    .진행중 { background: #fff2d6; color: #b7791f; }
+    .승인   { background: #e3f2e6; color: #3f7a52; }
+    .반려   { background: #fbeee9; color: #b3503a; }
+    .회수   { background: #eef0f2; color: #6b7785; }
+    .사유   { color: #b3503a; font-size: 14px; }
+    button  { font-family: inherit; font-size: 14px; padding: 6px 14px; margin: 10px 6px 0 0; border-radius: 8px; border: 1px solid #ccc; background: white; cursor: pointer; }
+    .보는사람 { margin-bottom: 16px; font-size: 15px; }
+    .보는사람 select { font-size: 15px; padding: 4px 8px; }
+    .창고안내 { font-size: 13px; color: #2f5e3e; background: #eef7f0; border-left: 4px solid #3f7a52; padding: 10px 14px; margin-bottom: 16px; max-width: 520px; }
+    .창고안내 code { font-size: 12px; }
+  </style>
+</head>
+
+<body>
+  <h1>📝 전자결재</h1>
+
+  <div class="보는사람">
+    지금 보는 사람:
+    <select onchange="보는사람 = this.value; 그리기();">
+      <option>이한결</option>
+      <option>박민수</option>
+      <option>정우진</option>
+      <option>최지은</option>
+    </select>
+    (이한결 = 대표)
+  </div>
+
+  <div class="창고안내">
+    🏢 결재 내용은 <b>회사 창고(서버)</b>에 저장됩니다. 어느 기기에서 열어도 같은 장부가 보입니다.<br>
+    창고 주소: <code>https://ehdsvtrlnuzpbaszygoj.supabase.co</code>
+    <div>
+      <button onclick="창고에서꺼내기()">새로고침 (창고에서 다시 꺼내기)</button>
+      <button onclick="처음으로()">연습 처음으로</button>
+    </div>
+  </div>
+
+  <div id="목록">창고에서 장부를 꺼내는 중…</div>
+
+  <!-- 창고와 이야기하는 도구 (Supabase가 만든 것을 빌려 씀) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+
+  <script>
+    const 대표 = "이한결";
+    let 보는사람 = "이한결";
+    let 장부 = [];
+
+    // ▼ 새로 생긴 것 ①: 창고 주소(URL)와 출입증(공개 키)
+    //    출입증은 「창고 정문 방문증」 — 공개돼도 됩니다. 누가 무엇을 할 수 있는지는 창고가 정합니다(⑥ 단계).
+    const 창고주소 = "https://ehdsvtrlnuzpbaszygoj.supabase.co";
+    const 출입증 = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVoZHN2dHJsbnV6cGJhc3p5Z29qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA3ODg4MDEsImV4cCI6MjEwNjM2NDgwMX0.CsO6lRDmfspJ5EXNJaYyXQt4Dfv5eVkY4e_uH84xkUw";
+    const 창고 = supabase.createClient(창고주소, 출입증);
+
+    // ▼ 새로 생긴 것 ②: 서랍 대신 창고에 넣고 꺼내기
+    //    창고 장부는 칸 이름이 영어라서(no, kind, …), 꺼낼 때 한글 이름표로 바꿔 붙입니다.
+    async function 창고에서꺼내기() {
+      const { data, error } = await 창고.from("practice_docs").select("*").order("no");
+      if (error) { document.getElementById("목록").textContent = "창고에 연결하지 못했습니다: " + error.message; return; }
+      장부 = data.map(줄 => ({ 번호: 줄.no, 종류: 줄.kind, 기안자: 줄.drafter, 날짜: 줄.day, 상태: 줄.status, 사유: 줄.reason }));
+      그리기();
+    }
+
+    async function 창고에넣기(문서) {
+      const { error } = await 창고.from("practice_docs")
+        .update({ status: 문서.상태, reason: 문서.사유 || null })
+        .eq("no", 문서.번호);
+      if (error) alert("창고에 저장하지 못했습니다: " + error.message);
+    }
+
+    async function 처음으로() {
+      const 처음상태 = { 1: "진행중", 2: "진행중", 3: "진행중", 4: "승인" };
+      for (const 번호 of [1, 2, 3, 4]) {
+        await 창고.from("practice_docs").update({ status: 처음상태[번호], reason: null }).eq("no", 번호);
+      }
+      await 창고에서꺼내기();
+    }
+
+    // 규칙표 — ④와 같음
+    function 누를수있는버튼(문서) {
+      if (문서.상태 !== "진행중") return [];
+      if (보는사람 === 대표 && 문서.기안자 !== 대표) return ["승인", "반려"];
+      if (보는사람 === 문서.기안자) return ["회수"];
+      return [];
+    }
+
+    function 글자만(s) {
+      return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    }
+
+    // 일꾼 — ④와 같음
+    function 그리기() {
+      const 빈자리 = document.getElementById("목록");
+      빈자리.innerHTML = "";
+      for (const 문서 of 장부) {
+        const 버튼들 = 누를수있는버튼(문서)
+          .map(이름 => `<button onclick="누르기(${문서.번호}, '${이름}')">${이름}</button>`)
+          .join("");
+        빈자리.innerHTML += `
+          <div class="doc">
+            <h2>${문서.종류} 신청</h2>
+            <p>기안자: ${문서.기안자} · ${문서.날짜}</p>
+            <span class="status ${문서.상태}">${문서.상태}</span>
+            ${문서.사유 ? `<p class="사유">반려 사유: ${글자만(문서.사유)}</p>` : ""}
+            <div>${버튼들}</div>
+          </div>`;
+      }
+    }
+
+    async function 누르기(번호, 버튼이름) {
+      const 문서 = 장부.find(d => d.번호 === 번호);
+      if (!누를수있는버튼(문서).includes(버튼이름)) return;
+      if (버튼이름 === "반려") {
+        const 사유 = prompt("반려 사유를 적어주세요");
+        if (!사유 || !사유.trim()) { alert("사유를 적어야 반려할 수 있습니다."); return; }
+        문서.사유 = 사유.trim();
+      }
+      문서.상태 = 버튼이름;
+      await 창고에넣기(문서);      // ▼ 서랍 대신 창고에 넣음
+      await 창고에서꺼내기();      // ▼ 창고에서 다시 꺼내 그림 (다른 사람이 바꾼 것도 같이 보임)
+    }
+
+    창고에서꺼내기();
+  </script>
+</body>
+</html>

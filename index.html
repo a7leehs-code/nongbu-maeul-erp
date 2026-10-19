@@ -221,13 +221,14 @@
     <h2>✉️ 문의하기</h2>
   </div>
   <div style="max-width:640px;margin:0 auto;">
-    <p style="font-size:13.5px;color:var(--muted);margin-bottom:18px;">가격·수량·정기배송·방문 등 무엇이든 남겨주세요. 접수하신 문의는 대표님에게만 전달되며, 다른 방문자에게 공개되지 않습니다.</p>
+    <p style="font-size:13.5px;color:var(--muted);margin-bottom:18px;">가격·수량·정기배송·방문 등 무엇이든 남겨주세요. 접수하신 문의는 농부마을 담당자만 확인하며, 다른 방문자에게 공개되지 않습니다.</p>
     <form id="inquiryForm" style="display:grid;gap:12px;">
       <input id="inqName" type="text" placeholder="성함" required style="padding:12px 14px;border:1px solid var(--line);border-radius:8px;font-size:14px;font-family:inherit;">
       <input id="inqContact" type="text" placeholder="연락처 (전화번호 또는 이메일)" required style="padding:12px 14px;border:1px solid var(--line);border-radius:8px;font-size:14px;font-family:inherit;">
       <textarea id="inqMessage" placeholder="문의 내용" rows="4" required style="padding:12px 14px;border:1px solid var(--line);border-radius:8px;font-size:14px;font-family:inherit;resize:vertical;"></textarea>
-      <button type="submit" class="btn-primary" style="border:none;cursor:pointer;font-family:inherit;">문의 보내기 →</button>
-      <div id="inqNote" style="font-size:12px;color:var(--muted);display:none;">📧 메일 앱이 열립니다 — 내용을 확인하시고 보내기를 눌러주세요. 메일 앱이 없으면 아래 연락처로 직접 연락해주세요.</div>
+      <input id="inqWebsite" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;">
+      <button type="submit" id="inqBtn" class="btn-primary" style="border:none;cursor:pointer;font-family:inherit;">문의 보내기 →</button>
+      <div id="inqNote" role="status" style="font-size:13px;color:var(--muted);display:none;"></div>
     </form>
   </div>
 </section>
@@ -242,17 +243,69 @@
   </div>
 </footer>
 
+<script src="erp-config.js"></script>
 <script>
-document.getElementById('inquiryForm').addEventListener('submit', function(e){
-  e.preventDefault();
-  var name = document.getElementById('inqName').value;
-  var contact = document.getElementById('inqContact').value;
-  var message = document.getElementById('inqMessage').value;
-  var subject = encodeURIComponent('[농부마을 문의] ' + name);
-  var body = encodeURIComponent('이름: ' + name + '\n연락처: ' + contact + '\n\n문의 내용:\n' + message);
-  document.getElementById('inqNote').style.display = 'block';
-  window.location.href = 'mailto:a7leehs@gmail.com?subject=' + subject + '&body=' + body;
-});
+// 문의 폼: 1) DB(Supabase)의 「접수 함수」로 바로 저장  2) 연결이 안 되면 메일 앱으로 대체
+(function(){
+  var form = document.getElementById('inquiryForm');
+  var btn = document.getElementById('inqBtn');
+  var note = document.getElementById('inqNote');
+  var CFG = window.ERP_CONFIG || {};
+  var LIVE = !!(CFG.supabaseUrl && CFG.supabaseAnonKey);
+  var LAST_KEY = 'nongbuInquiryLast';
+
+  function say(msg, color){ note.style.display = 'block'; note.style.color = color || ''; note.textContent = msg; }
+  function lastSentAt(){ try { return Number(localStorage.getItem(LAST_KEY)) || 0; } catch (e) { return 0; } }
+  function markSent(){ try { localStorage.setItem(LAST_KEY, String(Date.now())); } catch (e) {} }
+  function openMail(name, contact, message){
+    var subject = encodeURIComponent('[농부마을 문의] ' + name);
+    var body = encodeURIComponent('이름: ' + name + '\n연락처: ' + contact + '\n\n문의 내용:\n' + message);
+    window.location.href = 'mailto:a7leehs@gmail.com?subject=' + subject + '&body=' + body;
+  }
+
+  form.addEventListener('submit', async function(e){
+    e.preventDefault();
+    var name = document.getElementById('inqName').value.trim();
+    var contact = document.getElementById('inqContact').value.trim();
+    var message = document.getElementById('inqMessage').value.trim();
+
+    // 사람이 볼 수 없는 칸이 채워져 있으면 자동 입력 프로그램 — 조용히 넘어감
+    if (document.getElementById('inqWebsite').value) { say('✅ 문의가 접수되었습니다.', '#2f5e3e'); form.reset(); return; }
+    if (Date.now() - lastSentAt() < 30000) { say('방금 문의를 보내셨습니다. 30초 뒤에 다시 보내주세요.', '#b3503a'); return; }
+
+    if (!LIVE) {
+      say('📧 메일 앱이 열립니다 — 내용을 확인하시고 보내기를 눌러주세요. 메일 앱이 없으면 카카오톡·전화로 연락해주세요.');
+      openMail(name, contact, message);
+      return;
+    }
+
+    btn.disabled = true;
+    say('접수하는 중입니다…');
+    try {
+      var res = await fetch(CFG.supabaseUrl + '/rest/v1/rpc/submit_inquiry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': CFG.supabaseAnonKey, 'Authorization': 'Bearer ' + CFG.supabaseAnonKey, 'Prefer': 'return=minimal' },
+        body: JSON.stringify({ p_name: name, p_contact: contact, p_message: message })
+      });
+      if (res.ok) {
+        markSent();
+        form.reset();
+        say('✅ 문의가 접수되었습니다. 확인 후 연락드리겠습니다. 감사합니다.', '#2f5e3e');
+        return;
+      }
+      var err = {};
+      try { err = await res.json(); } catch (x) {}
+      // 서버가 「이 내용은 안 됩니다」라고 알려준 경우(빈칸·너무 긴 글)는 그대로 보여준다
+      if (res.status === 400 && err.code === 'P0001' && err.message) { say(err.message, '#b3503a'); return; }
+      throw new Error('HTTP ' + res.status);
+    } catch (ex) {
+      say('📧 접수 서버에 연결하지 못해 메일 앱을 엽니다 — 내용을 확인하시고 보내기를 눌러주세요.', '#b3503a');
+      openMail(name, contact, message);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+})();
 </script>
 </body>
 </html>

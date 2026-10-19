@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>전자결재 연습 ②</title>
+
+  <!-- ▼ CSS = 옷 (①과 같음) -->
+  <style>
+    body    { font-family: "맑은 고딕"; background: #F7F3EE; padding: 30px; }
+    .doc    { background: white; border: 1px solid #e3dccf; border-radius: 12px; padding: 16px; max-width: 420px; margin-bottom: 10px; }
+    .doc h2 { color: #2B3A4E; font-size: 18px; margin: 0 0 8px; }
+    .status { color: #b7791f; font-weight: bold; }
+  </style>
+</head>
+
+<!-- ▼ HTML = 뼈대: 이번엔 카드를 직접 적지 않고, 카드가 들어갈 「빈 자리」만 만들어 둠 -->
+<body>
+  <h1>📝 전자결재</h1>
+  <div id="목록"></div>
+
+  <!-- ▼ JavaScript = 일꾼: 장부를 읽어서 카드를 그려 넣음 -->
+  <script>
+    // ① 장부 — 한 줄이 문서 한 장. 문서가 늘면 여기에 한 줄만 추가하면 됩니다.
+    const 장부 = [
+      { 종류: "연차",     기안자: "박민수", 날짜: "2026-10-20", 상태: "대표 대기" },
+      { 종류: "구매품의", 기안자: "정우진", 날짜: "2026-10-21", 상태: "대표 대기" },
+      { 종류: "초과근무", 기안자: "최지은", 날짜: "2026-10-22", 상태: "대표 대기" },
+      { 종류: "연차",     기안자: "박민수", 날짜: "2026-11-03", 상태: "대표 대기" }
+    ];
+
+    // ② 일꾼 — 장부를 한 줄씩 읽어서, 줄마다 카드 한 장을 「빈 자리」에 넣음
+    const 빈자리 = document.getElementById("목록");
+    for (const 문서 of 장부) {
+      빈자리.innerHTML += `
+        <div class="doc">
+          <h2>${문서.종류} 신청</h2>
+          <p>기안자: ${문서.기안자}</p>
+          <p>날짜: ${문서.날짜}</p>
+          <p class="status">${문서.상태}</p>
+        </div>`;
+    }
+  </script>
+</body>
+</html>

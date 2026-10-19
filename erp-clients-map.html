@@ -1,0 +1,372 @@
+<!-- [AI 생성 초안 - 검토 전] 농부마을 거래처·배송지 지도 -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>거래처·배송지 지도</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+  :root{ --navy:#2B3A4E; --copper:#C67B3C; --cream:#F7F3EE; --teal:#3A8FB7; --ink:#243140; --muted:#6b7785; --line:#e3dccf; --green:#3f7a52; --red:#b3503a; }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{ font-family:"맑은 고딕","Malgun Gothic",sans-serif; background:var(--cream); color:var(--ink); padding:24px; line-height:1.6; }
+  header{ background:linear-gradient(135deg,#2B3A4E,#1a2636 58%,#C67B3C 210%); color:#fff; border-radius:14px; padding:22px 26px; margin-bottom:20px; }
+  header h1{ font-size:20px; margin-bottom:6px; }
+  header p{ font-size:13.5px; color:#d7dee6; }
+
+  .layout{ display:flex; gap:18px; align-items:flex-start; }
+  .panel{ width:340px; flex:0 0 340px; }
+  .mapcol{ flex:1; min-width:0; }
+
+  .card{ background:#fff; border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin-bottom:16px; }
+  .card h3{ font-size:14.5px; color:var(--navy); margin-bottom:12px; }
+
+  label{ display:block; font-size:12px; color:var(--muted); font-weight:700; margin:10px 0 4px; }
+  label:first-of-type{ margin-top:0; }
+  input[type=text], input[type=tel], textarea{
+    width:100%; border:1px solid var(--line); border-radius:8px; padding:8px 10px;
+    font-size:13.5px; font-family:inherit; background:#fdfbf8;
+  }
+  textarea{ resize:vertical; min-height:44px; }
+  .row2{ display:flex; gap:8px; }
+  .row2 > div{ flex:1; }
+
+  .btn{ border:none; border-radius:8px; padding:9px 14px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; }
+  .btn-copper{ background:var(--copper); color:#fff; }
+  .btn-teal{ background:var(--teal); color:#fff; }
+  .btn-line{ background:#fff; color:var(--muted); border:1px solid var(--line); }
+  .btn-red{ background:#fbeee9; color:var(--red); }
+  .btn-block{ width:100%; margin-top:12px; }
+  .btn-row{ display:flex; gap:8px; margin-top:12px; }
+  .btn-row .btn{ flex:1; }
+
+  .geo-status{ font-size:12px; margin-top:8px; padding:8px 10px; border-radius:8px; display:none; }
+  .geo-status.ok{ background:#e3f2e6; color:var(--green); display:block; }
+  .geo-status.err{ background:#fbeee9; color:var(--red); display:block; }
+  .geo-status.busy{ background:#fff2d6; color:#b7791f; display:block; }
+
+  #map{ height:560px; border-radius:14px; border:1px solid var(--line); }
+
+  .listcard{ margin-top:16px; }
+  .client-item{
+    display:flex; align-items:flex-start; gap:10px; padding:11px 4px; border-bottom:1px solid #eee; cursor:pointer;
+  }
+  .client-item:last-child{ border-bottom:none; }
+  .client-item:hover{ background:var(--cream); border-radius:8px; }
+  .client-item .dot{ width:9px; height:9px; border-radius:50%; background:var(--teal); margin-top:5px; flex:0 0 auto; }
+  .client-item .body{ flex:1; min-width:0; }
+  .client-item .name{ font-size:13.8px; font-weight:700; }
+  .client-item .addr{ font-size:12px; color:var(--muted); margin-top:2px; }
+  .client-item .tel{ font-size:12px; color:var(--teal); margin-top:2px; }
+  .client-item .del{ font-size:11px; color:var(--red); border:none; background:none; cursor:pointer; padding:2px 6px; }
+
+  .empty{ text-align:center; color:var(--muted); font-size:13px; padding:30px 10px; }
+  .empty .big{ font-size:30px; margin-bottom:8px; }
+
+  .leaflet-popup-content{ font-family:"맑은 고딕","Malgun Gothic",sans-serif; font-size:13px; }
+  .popup-name{ font-weight:800; color:var(--navy); margin-bottom:4px; }
+  .popup-addr{ color:var(--muted); margin-bottom:2px; }
+  .popup-tel{ color:var(--teal); }
+  .popup-memo{ margin-top:6px; color:var(--ink); white-space:pre-wrap; }
+  .popup-actions{ margin-top:8px; display:flex; gap:6px; }
+  .popup-actions button{ font-size:11.5px; padding:4px 9px; border-radius:6px; border:none; cursor:pointer; font-family:inherit; font-weight:700; }
+  .popup-edit{ background:var(--teal); color:#fff; }
+  .popup-del{ background:#fbeee9; color:var(--red); }
+
+  footer{ text-align:center; color:var(--muted); font-size:12px; margin-top:20px; line-height:1.7; }
+  a.back{ color:var(--copper); font-weight:700; text-decoration:none; }
+
+  @media (max-width: 860px){
+    .layout{ flex-direction:column; }
+    .panel{ width:100%; flex:none; order:2; }
+    .mapcol{ order:1; width:100%; }
+    #map{ height:380px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📍 거래처·배송지 지도</h1>
+  <p>거래처·배송지 주소를 입력하면 지도에 핀으로 표시됩니다. 핀을 누르면 수정·삭제할 수 있어요. 이 화면에 남긴 내용은 이 컴퓨터의 이 브라우저에만 저장됩니다.</p>
+</header>
+
+<div class="layout">
+
+  <div class="panel">
+    <div class="card" id="formCard">
+      <h3 id="formTitle">➕ 거래처·배송지 추가</h3>
+
+      <label>이름 (거래처명 / 배송지명)</label>
+      <input type="text" id="fName" placeholder="예) 철원 협신농장">
+
+      <label>주소</label>
+      <input type="text" id="fAddr" placeholder="예) 강원도 철원군 ...">
+
+      <div class="row2">
+        <div>
+          <label>연락처</label>
+          <input type="tel" id="fTel" placeholder="010-0000-0000">
+        </div>
+        <div>
+          <label>분류</label>
+          <input type="text" id="fType" placeholder="거래처 / 배송지 등">
+        </div>
+      </div>
+
+      <label>메모</label>
+      <textarea id="fMemo" placeholder="배송 시 참고사항 등"></textarea>
+
+      <div id="geoStatus" class="geo-status"></div>
+
+      <button class="btn btn-copper btn-block" id="saveBtn" onclick="saveClient()">주소로 위치 찾아서 저장</button>
+      <div class="btn-row" id="editExtra" style="display:none;">
+        <button class="btn btn-line" onclick="cancelEdit()">취소</button>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:10px;">
+        주소 검색은 OpenStreetMap(Nominatim)을 사용합니다. 도로명 주소를 정확히 입력할수록 잘 찾습니다. 자동으로 안 찾아지면 지도를 직접 클릭해 위치를 지정해도 됩니다.
+      </div>
+    </div>
+
+    <div class="card listcard">
+      <h3>📋 등록된 거래처·배송지 (<span id="countLabel">0</span>)</h3>
+      <div id="listBody"></div>
+      <div class="empty" id="emptyState">
+        <div class="big">🗺️</div>
+        <div>아직 등록된 위치가 없습니다.</div>
+        <div style="margin-top:4px;">위 양식에서 주소를 입력하고 저장해보세요.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mapcol">
+    <div id="map"></div>
+  </div>
+
+</div>
+
+<footer>
+  erp-clients-map.html · 정본 1장 · 데이터는 이 브라우저(localStorage)에 저장됨 · <a class="back" href="erp-map.html">← 지도로 돌아가기</a><br>
+  [AI 생성 초안 - 검토 전]
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+// ---------------------------------------------------------------
+// 데이터: localStorage에 저장 (key: nongbuErpClients)
+// ---------------------------------------------------------------
+const STORAGE_KEY = "nongbuErpClients";
+
+function loadClients(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  }catch(e){ return []; }
+}
+function persistClients(list){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }catch(e){}
+}
+
+let clients = loadClients();
+let editingId = null;
+let pendingLatLng = null; // 지도 클릭으로 수동 지정한 좌표
+
+// ---------------------------------------------------------------
+// 지도 초기화 (기본 중심: 대한민국)
+// ---------------------------------------------------------------
+const map = L.map('map').setView([36.5, 127.8], 7);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19,
+  attribution: '&copy; OpenStreetMap contributors'
+}).addTo(map);
+
+const markers = {}; // id -> L.marker
+
+map.on('click', function(e){
+  pendingLatLng = e.latlng;
+  showGeoStatus('busy', `📍 지도에서 위치를 지정했습니다 (${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)}). 저장을 누르면 이 위치로 저장됩니다.`);
+});
+
+function showGeoStatus(kind, text){
+  const el = document.getElementById('geoStatus');
+  el.className = 'geo-status ' + kind;
+  el.textContent = text;
+}
+function clearGeoStatus(){
+  const el = document.getElementById('geoStatus');
+  el.className = 'geo-status';
+  el.textContent = '';
+}
+
+// ---------------------------------------------------------------
+// Nominatim(OpenStreetMap) 주소 -> 좌표 검색 (API키 불필요)
+// ---------------------------------------------------------------
+async function geocode(address){
+  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=kr&q=${encodeURIComponent(address)}`;
+  const res = await fetch(url, { headers: { 'Accept-Language': 'ko' } });
+  if(!res.ok) throw new Error('네트워크 오류');
+  const data = await res.json();
+  if(!data.length) return null;
+  return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+}
+
+async function saveClient(){
+  const name = document.getElementById('fName').value.trim();
+  const addr = document.getElementById('fAddr').value.trim();
+  const tel = document.getElementById('fTel').value.trim();
+  const type = document.getElementById('fType').value.trim();
+  const memo = document.getElementById('fMemo').value.trim();
+
+  if(!name){ showGeoStatus('err', '⚠️ 이름을 입력해주세요.'); return; }
+  if(!addr && !pendingLatLng){ showGeoStatus('err', '⚠️ 주소를 입력하거나 지도를 클릭해 위치를 지정해주세요.'); return; }
+
+  let latlng = pendingLatLng;
+
+  if(!latlng){
+    showGeoStatus('busy', '🔎 주소로 위치를 찾는 중...');
+    try{
+      const found = await geocode(addr);
+      if(!found){
+        showGeoStatus('err', '⚠️ 이 주소로 위치를 찾지 못했습니다. 주소를 더 정확히 입력하거나, 지도를 직접 클릭해 위치를 지정한 뒤 다시 저장해주세요.');
+        return;
+      }
+      latlng = found;
+    }catch(e){
+      showGeoStatus('err', '⚠️ 위치 검색 중 오류가 발생했습니다(네트워크 확인). 지도를 직접 클릭해 위치를 지정한 뒤 다시 저장해보세요.');
+      return;
+    }
+  }
+
+  const record = {
+    id: editingId || ('c' + Date.now()),
+    name, addr, tel, type, memo,
+    lat: latlng.lat, lng: latlng.lng
+  };
+
+  if(editingId){
+    clients = clients.map(c => c.id === editingId ? record : c);
+  }else{
+    clients.push(record);
+  }
+  persistClients(clients);
+  showGeoStatus('ok', '✅ 저장되었습니다.');
+  resetForm();
+  renderAll();
+  map.flyTo([record.lat, record.lng], 15);
+}
+
+function resetForm(){
+  editingId = null;
+  pendingLatLng = null;
+  document.getElementById('fName').value = '';
+  document.getElementById('fAddr').value = '';
+  document.getElementById('fTel').value = '';
+  document.getElementById('fType').value = '';
+  document.getElementById('fMemo').value = '';
+  document.getElementById('formTitle').textContent = '➕ 거래처·배송지 추가';
+  document.getElementById('saveBtn').textContent = '주소로 위치 찾아서 저장';
+  document.getElementById('editExtra').style.display = 'none';
+}
+
+function cancelEdit(){
+  resetForm();
+  clearGeoStatus();
+}
+
+function startEdit(id){
+  const c = clients.find(x => x.id === id);
+  if(!c) return;
+  editingId = id;
+  pendingLatLng = { lat: c.lat, lng: c.lng };
+  document.getElementById('fName').value = c.name || '';
+  document.getElementById('fAddr').value = c.addr || '';
+  document.getElementById('fTel').value = c.tel || '';
+  document.getElementById('fType').value = c.type || '';
+  document.getElementById('fMemo').value = c.memo || '';
+  document.getElementById('formTitle').textContent = '✏️ 수정 중: ' + (c.name || '');
+  document.getElementById('saveBtn').textContent = '수정 내용 저장';
+  document.getElementById('editExtra').style.display = 'flex';
+  showGeoStatus('busy', '위치를 그대로 두려면 주소를 바꾸지 마세요. 위치를 바꾸려면 지도를 다시 클릭하거나 주소를 새로 입력하세요.');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function deleteClient(id){
+  if(!window.confirm('이 항목을 삭제할까요?')) return;
+  clients = clients.filter(c => c.id !== id);
+  persistClients(clients);
+  if(editingId === id) resetForm();
+  renderAll();
+}
+
+// ---------------------------------------------------------------
+// 렌더링: 지도 핀 + 왼쪽 목록
+// ---------------------------------------------------------------
+function popupHtml(c){
+  return `
+    <div class="popup-name">${escapeHtml(c.name)}</div>
+    ${c.type ? `<div class="popup-addr">🏷️ ${escapeHtml(c.type)}</div>` : ''}
+    ${c.addr ? `<div class="popup-addr">📫 ${escapeHtml(c.addr)}</div>` : ''}
+    ${c.tel ? `<div class="popup-tel">☎️ ${escapeHtml(c.tel)}</div>` : ''}
+    ${c.memo ? `<div class="popup-memo">${escapeHtml(c.memo)}</div>` : ''}
+    <div class="popup-actions">
+      <button class="popup-edit" onclick="startEdit('${c.id}')">수정</button>
+      <button class="popup-del" onclick="deleteClient('${c.id}')">삭제</button>
+    </div>
+  `;
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+function renderAll(){
+  // 기존 마커 제거
+  Object.values(markers).forEach(m => map.removeLayer(m));
+  for(const k in markers) delete markers[k];
+
+  clients.forEach(c => {
+    const m = L.marker([c.lat, c.lng]).addTo(map).bindPopup(popupHtml(c));
+    markers[c.id] = m;
+  });
+
+  document.getElementById('countLabel').textContent = clients.length;
+  const listBody = document.getElementById('listBody');
+  const empty = document.getElementById('emptyState');
+
+  if(clients.length === 0){
+    listBody.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  listBody.innerHTML = clients.map(c => `
+    <div class="client-item" onclick="focusClient('${c.id}')">
+      <div class="dot"></div>
+      <div class="body">
+        <div class="name">${escapeHtml(c.name)}</div>
+        <div class="addr">${escapeHtml(c.addr || '주소 없음')}</div>
+        ${c.tel ? `<div class="tel">${escapeHtml(c.tel)}</div>` : ''}
+      </div>
+      <button class="del" onclick="event.stopPropagation(); deleteClient('${c.id}')">삭제</button>
+    </div>
+  `).join('');
+}
+
+function focusClient(id){
+  const c = clients.find(x => x.id === id);
+  if(!c) return;
+  map.flyTo([c.lat, c.lng], 16);
+  markers[id] && markers[id].openPopup();
+}
+
+renderAll();
+
+// 예시 데이터가 하나도 없고 처음 여는 경우를 위한 안내(1회성, 저장하지 않음)
+if(clients.length === 0){
+  showGeoStatus('busy', '👋 처음 여셨네요. 왼쪽에서 거래처·배송지 이름과 주소를 넣고 "주소로 위치 찾아서 저장"을 눌러보세요.');
+}
+</script>
+
+</body>
+</html>
