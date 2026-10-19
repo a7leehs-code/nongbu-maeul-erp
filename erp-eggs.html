@@ -49,6 +49,20 @@
   .row2 > div{ flex:1; min-width:0; }
   .help{ font-size:11.5px; color:var(--muted); margin-top:3px; }
 
+  /* 등급별 계란 입력 */
+  .grades{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
+  .grades .g{ background:#faf7f1; border:1px solid var(--line); border-radius:8px; padding:6px 8px; }
+  .grades .g.bad{ background:#fbf3ef; }
+  .grades .g span{ display:block; font-size:12px; font-weight:800; color:var(--navy); }
+  .grades .g.bad span{ color:var(--red); }
+  .grades .g input{ padding:5px 6px; margin-top:2px; background:#fff; }
+  .egg-total{ font-size:13px; margin-top:8px; color:var(--ink); }
+  .egg-total b{ color:var(--copper); font-size:15px; font-variant-numeric:tabular-nums; }
+  .egg-total span{ font-size:11.5px; color:var(--muted); }
+  .tile .grade-line{ font-size:11.5px; color:var(--muted); margin-top:4px; font-variant-numeric:tabular-nums; }
+  th.grade, td.grade{ text-align:right; color:var(--muted); }
+  th.bad, td.bad{ color:var(--red); }
+
   .btn{ border:none; border-radius:8px; padding:9px 14px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; }
   .btn-copper{ background:var(--copper); color:#fff; }
   .btn-line{ background:#fff; color:var(--muted); border:1px solid var(--line); }
@@ -74,7 +88,7 @@
 
   /* 기록 표 */
   .tbl-wrap{ overflow-x:auto; }
-  table{ width:100%; border-collapse:collapse; font-size:13px; min-width:640px; }
+  table{ width:100%; border-collapse:collapse; font-size:13px; min-width:900px; }
   th{ background:#f4efe6; color:var(--navy); font-weight:800; text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); white-space:nowrap; }
   td{ padding:8px 10px; border-bottom:1px solid #eee; font-variant-numeric:tabular-nums; vertical-align:top; }
   td.num, th.num{ text-align:right; }
@@ -99,6 +113,7 @@
     body{ padding:16px; }
     .layout{ flex-direction:column; }
     .panel{ width:100%; flex:none; }
+    .main{ width:100%; }
   }
 </style>
 </head>
@@ -112,7 +127,7 @@
 <details class="overview" open>
   <summary>
     <span class="ov-title">🧠 구조 한눈에 보기 — 이 화면은 어떻게 돌아가나</span>
-    <span class="ov-stats">적는 칸 4개 · 자동 계산 2개 · 서랍 2칸</span>
+    <span class="ov-stats">적는 칸: 날짜·동, 계란 5등급, 폐사 · 자동 계산 2개 · 서랍 2칸</span>
     <span class="ov-toggle"></span>
   </summary>
   <div class="ov-body">
@@ -129,7 +144,7 @@
 
         <rect x="10" y="30" width="160" height="80" rx="12" fill="#eaf3f8" stroke="#3A8FB7" stroke-width="1.5"/>
         <text x="90" y="62" text-anchor="middle" font-size="18" font-weight="800" fill="#2B3A4E">① 직원이 적기</text>
-        <text x="90" y="86" text-anchor="middle" font-size="12.5" fill="#4a6275">날짜·동·계란·폐사</text>
+        <text x="90" y="86" text-anchor="middle" font-size="12.5" fill="#4a6275">날짜·동·계란 5등급·폐사</text>
 
         <rect x="210" y="30" width="170" height="80" rx="12" fill="#faf7f1" stroke="#C67B3C" stroke-width="1.5"/>
         <text x="295" y="62" text-anchor="middle" font-size="18" font-weight="800" fill="#2B3A4E">② 서랍에 넣기</text>
@@ -149,7 +164,7 @@
       </svg>
     </div>
     <div class="formula">
-      <div><b>산란율</b> = 그날 계란 수 ÷ 그날 아침 닭 마릿수 × 100<br><span style="color:var(--muted)">예) 계란 9,000개 ÷ 닭 10,000마리 = 90%</span></div>
+      <div><b>산란율</b> = 그날 계란 합계(중·특·왕·오·파란 모두) ÷ 그날 아침 닭 마릿수 × 100<br><span style="color:var(--muted)">예) 계란 9,000개 ÷ 닭 10,000마리 = 90%</span></div>
       <div><b>폐사율</b> = 그날 죽은 닭 수 ÷ 그날 아침 닭 마릿수 × 100<br><span style="color:var(--muted)">예) 5마리 ÷ 10,000마리 = 0.05%</span></div>
     </div>
     <div class="ov-hint">서랍 2칸: 「계사 목록(동 이름·처음 마릿수)」과 「매일 기록」. 닭 마릿수는 지난 기록에서 죽은 닭을 빼서 자동으로 채워 줍니다 (틀리면 고쳐 적으면 됩니다).</div>
@@ -177,16 +192,12 @@
       <input type="number" id="fBirds" min="0" inputmode="numeric" placeholder="예) 10000">
       <div class="help" id="birdsHelp"></div>
 
-      <div class="row2">
-        <div>
-          <label>계란 수 (개)</label>
-          <input type="number" id="fEggs" min="0" inputmode="numeric" placeholder="예) 9000">
-        </div>
-        <div>
-          <label>폐사 (마리)</label>
-          <input type="number" id="fDead" min="0" inputmode="numeric" placeholder="0">
-        </div>
-      </div>
+      <label>계란 수 — 크기·상태별로 (개)</label>
+      <div class="grades" id="gradeInputs"></div>
+      <div class="egg-total">합계 <b id="eggTotal">0</b>개 <span id="eggTotalNote"></span></div>
+
+      <label>폐사 (마리)</label>
+      <input type="number" id="fDead" min="0" inputmode="numeric" placeholder="0">
 
       <label>특이사항 · 폐사 원인 (선택)</label>
       <textarea id="fMemo" placeholder="예) 2동 환기팬 고장, 더위로 폐사 2마리"></textarea>
@@ -232,7 +243,7 @@
       <div class="tbl-wrap">
         <table>
           <thead>
-            <tr><th>날짜</th><th>동</th><th class="num">마릿수</th><th class="num">계란</th><th class="num">산란율</th><th class="num">폐사</th><th class="num">폐사율</th><th>특이사항</th><th>적은 사람</th><th></th></tr>
+            <tr><th>날짜</th><th>동</th><th class="num">마릿수</th><th class="grade">중란</th><th class="grade">특란</th><th class="grade">왕란</th><th class="grade bad">오란</th><th class="grade bad">파란</th><th class="num">계란 합계</th><th class="num">산란율</th><th class="num">폐사</th><th class="num">폐사율</th><th>특이사항</th><th>적은 사람</th><th></th></tr>
           </thead>
           <tbody id="tbody"></tbody>
         </table>
@@ -275,8 +286,18 @@ let houses  = load(HOUSE_KEY, [
   { id:"h3", name:"3동", startBirds:null },
   { id:"h4", name:"4동", startBirds:null }
 ]);
-// 매일 기록: [{ id, date, houseId, birds, eggs, dead, memo, writer }]
+// 매일 기록: [{ id, date, houseId, birds, grades:{mid,special,king,dirty,broken}, eggs(=합계), dead, memo, writer }]
 let records = load(RECORD_KEY, []);
+
+// 계란 등급 5가지 — 오란·파란은 낳았지만 정상 판매가 어려운 계란 (bad)
+const GRADES = [
+  { key:"mid",     name:"중란" },
+  { key:"special", name:"특란" },
+  { key:"king",    name:"왕란" },
+  { key:"dirty",   name:"오란", bad:true },
+  { key:"broken",  name:"파란", bad:true }
+];
+function gradeSum(g){ return GRADES.reduce((s, x) => s + ((g && g[x.key]) || 0), 0); }
 
 // ───────── 계산 ─────────
 function pct(part, whole, digits){
@@ -321,7 +342,8 @@ function onFormKeyChange(){
   const existing = records.find(r => r.date === date && r.houseId === houseId);
   if(existing){
     $("fBirds").value = existing.birds;
-    $("fEggs").value = existing.eggs;
+    setGradeInputs(existing.grades);
+    $("eggTotalNote").textContent = existing.grades ? "" : "(예전 기록: 등급 없이 합계 " + fmtNum(existing.eggs) + "개만 있음)";
     $("fDead").value = existing.dead;
     $("fMemo").value = existing.memo || "";
     $("fWriter").value = existing.writer || $("fWriter").value;
@@ -330,10 +352,28 @@ function onFormKeyChange(){
     return;
   }
   $("formTitle").textContent = "✏️ 오늘 기록 적기";
-  $("fEggs").value = ""; $("fDead").value = ""; $("fMemo").value = "";
+  setGradeInputs(null); $("eggTotalNote").textContent = "";
+  $("fDead").value = ""; $("fMemo").value = "";
   const s = suggestBirds(houseId, date);
   $("fBirds").value = s ? s.birds : "";
   $("birdsHelp").textContent = s ? "자동으로 채움: " + s.from : "처음 적는 동이에요. 지금 마릿수를 적어 주세요.";
+}
+
+// 등급 입력 칸 5개 그리기 + 적을 때마다 합계 다시 세기
+function renderGradeInputs(){
+  $("gradeInputs").innerHTML = GRADES.map(g => `<label class="g${g.bad ? " bad" : ""}" style="margin:0">
+      <span>${g.name}</span>
+      <input type="number" id="g_${g.key}" min="0" inputmode="numeric" placeholder="0">
+    </label>`).join("");
+  $("gradeInputs").addEventListener("input", updateEggTotal);
+}
+function setGradeInputs(g){
+  GRADES.forEach(x => { $("g_" + x.key).value = g && g[x.key] ? g[x.key] : ""; });
+  updateEggTotal();
+}
+function updateEggTotal(){
+  const t = GRADES.reduce((s, x) => s + (Number($("g_" + x.key).value) || 0), 0);
+  $("eggTotal").textContent = fmtNum(t);
 }
 
 function showMsg(el, text, ok){
@@ -352,19 +392,22 @@ function readInt(id){
 
 function saveRecord(){
   const date = $("fDate").value, houseId = $("fHouse").value;
-  const birds = readInt("fBirds"), eggs = readInt("fEggs");
+  const birds = readInt("fBirds");
   const dead = readInt("fDead") ?? 0;
+  const grades = {};
+  GRADES.forEach(g => { grades[g.key] = readInt("g_" + g.key) ?? 0; });
+  const eggs = gradeSum(grades);
   const msg = $("formMsg");
 
   // 규칙: 꼭 적어야 하는 칸 / 말이 안 되는 숫자 막기
   if(!date || !houseId)            return showMsg(msg, "날짜와 동을 골라 주세요.", false);
   if(birds === null || !birds)     return showMsg(msg, "닭 마릿수를 적어 주세요.", false);
-  if(eggs === null)                return showMsg(msg, "계란 수를 적어 주세요.", false);
-  if([birds, eggs, dead].some(Number.isNaN)) return showMsg(msg, "숫자는 0 이상의 정수로 적어 주세요.", false);
+  if([birds, dead, ...Object.values(grades)].some(Number.isNaN)) return showMsg(msg, "숫자는 0 이상의 정수로 적어 주세요.", false);
+  if(!eggs && !confirm("계란이 0개예요. 그대로 저장할까요?")) return;
   if(dead > birds)                 return showMsg(msg, "폐사 수가 마릿수보다 많아요. 다시 확인해 주세요.", false);
   if(eggs > birds * 1.2 && !confirm("계란 수가 마릿수보다 훨씬 많아요 (산란율 " + Math.round(eggs/birds*100) + "%). 그대로 저장할까요?")) return;
 
-  const rec = { date, houseId, birds, eggs, dead, memo: $("fMemo").value.trim(), writer: $("fWriter").value.trim() };
+  const rec = { date, houseId, birds, grades, eggs, dead, memo: $("fMemo").value.trim(), writer: $("fWriter").value.trim() };
   const i = records.findIndex(r => r.date === date && r.houseId === houseId);
   if(i >= 0) records[i] = { ...records[i], ...rec };
   else records.push({ id: "r" + Date.now(), ...rec });
@@ -418,6 +461,7 @@ function renderSummary(){
       <div class="big">${fmtPct(lay,1)}<small>산란율</small></div>
       <div class="line">계란 ${fmtNum(eggs)}개 / 닭 ${fmtNum(birds)}마리</div>
       <div class="line dead">폐사 <b>${fmtNum(dead)}</b>마리 · 폐사율 ${fmtPct(mort,2)}</div>
+      <div class="grade-line">${GRADES.map(g => g.name + " " + fmtNum(list.reduce((s,r) => s + ((r.grades && r.grades[g.key]) || 0), 0))).join(" · ")}</div>
       ${diff}
     </div>`;
   }
@@ -452,6 +496,7 @@ function renderTable(){
       <td>${r.date}</td>
       <td>${esc(houseName(r.houseId))}</td>
       <td class="num">${fmtNum(r.birds)}</td>
+      ${GRADES.map(g => `<td class="grade${g.bad ? " bad" : ""}">${r.grades ? fmtNum(r.grades[g.key]) : "-"}</td>`).join("")}
       <td class="num">${fmtNum(r.eggs)}</td>
       <td class="num"><b>${fmtPct(pct(r.eggs, r.birds),1)}</b></td>
       <td class="num">${fmtNum(r.dead)}</td>
@@ -514,6 +559,7 @@ $("sumDate").value = today();
 try{ $("fWriter").value = localStorage.getItem("nongbuErpEggWriter") || ""; }catch(e){}
 $("fDate").addEventListener("change", onFormKeyChange);
 $("fHouse").addEventListener("change", onFormKeyChange);
+renderGradeInputs();
 renderHouses();
 renderAll();
 onFormKeyChange();
