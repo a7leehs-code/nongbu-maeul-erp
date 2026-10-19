@@ -933,6 +933,8 @@ document.addEventListener("visibilitychange", backgroundRefresh);
 setInterval(backgroundRefresh, 60 * 1000);
 
 // ───────── 처음 열 때 ─────────
+// 휴대폰에서는 구조 그림을 접어 두고 바로 입력 칸이 보이게 (눌러서 펼칠 수 있음)
+if(window.innerWidth < 700) document.querySelectorAll("details.overview").forEach(d => d.open = false);
 $("fDate").value = today();
 $("sumDate").value = today();
 $("fDate").addEventListener("change", onFormKeyChange);
