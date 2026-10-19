@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>전자결재 연습 ③</title>
+
+  <!-- ▼ CSS = 옷: 상태마다 색 규칙을 하나씩 (①의 「스티커 + 규칙표」) -->
+  <style>
+    body    { font-family: "맑은 고딕"; background: #F7F3EE; padding: 30px; }
+    .doc    { background: white; border: 1px solid #e3dccf; border-radius: 12px; padding: 16px; max-width: 420px; margin-bottom: 10px; }
+    .doc h2 { color: #2B3A4E; font-size: 18px; margin: 0 0 8px; }
+    .status { display: inline-block; font-weight: bold; padding: 3px 10px; border-radius: 10px; }
+
+    .진행중 { background: #fff2d6; color: #b7791f; }
+    .승인   { background: #e3f2e6; color: #3f7a52; }
+    .반려   { background: #fbeee9; color: #b3503a; }
+    .회수   { background: #eef0f2; color: #6b7785; }
+
+    .사유   { color: #b3503a; font-size: 14px; }
+  </style>
+</head>
+
+<body>
+  <h1>📝 전자결재</h1>
+  <div id="목록"></div>
+
+  <script>
+    // ① 장부 — 이번엔 「상태」 칸에 네 단어 중 하나: 진행중 · 승인 · 반려 · 회수
+    //          반려일 때만 「사유」 칸을 씁니다.
+    const 장부 = [
+      { 종류: "연차",     기안자: "박민수", 날짜: "2026-10-20", 상태: "진행중" },
+      { 종류: "구매품의", 기안자: "정우진", 날짜: "2026-10-21", 상태: "승인" },
+      { 종류: "초과근무", 기안자: "최지은", 날짜: "2026-10-22", 상태: "반려", 사유: "출하일이라 사람이 부족해요" },
+      { 종류: "외출",     기안자: "박민수", 날짜: "2026-10-23", 상태: "회수" }
+    ];
+
+    // ② 일꾼 — 줄마다 카드 한 장. 상태 단어를 그대로 「스티커」로 붙여서 색이 정해짐
+    const 빈자리 = document.getElementById("목록");
+    for (const 문서 of 장부) {
+      빈자리.innerHTML += `
+        <div class="doc">
+          <h2>${문서.종류} 신청</h2>
+          <p>기안자: ${문서.기안자} · ${문서.날짜}</p>
+          <span class="status ${문서.상태}">${문서.상태}</span>
+          ${문서.사유 ? `<p class="사유">반려 사유: ${문서.사유}</p>` : ""}
+        </div>`;
+    }
+  </script>
+</body>
+</html>

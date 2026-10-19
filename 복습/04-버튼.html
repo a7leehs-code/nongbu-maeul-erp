@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>전자결재 연습 ④</title>
+
+  <!-- ▼ CSS = 옷 (③과 같고, 버튼 모양만 추가) -->
+  <style>
+    body    { font-family: "맑은 고딕"; background: #F7F3EE; padding: 30px; }
+    .doc    { background: white; border: 1px solid #e3dccf; border-radius: 12px; padding: 16px; max-width: 420px; margin-bottom: 10px; }
+    .doc h2 { color: #2B3A4E; font-size: 18px; margin: 0 0 8px; }
+    .status { display: inline-block; font-weight: bold; padding: 3px 10px; border-radius: 10px; }
+    .진행중 { background: #fff2d6; color: #b7791f; }
+    .승인   { background: #e3f2e6; color: #3f7a52; }
+    .반려   { background: #fbeee9; color: #b3503a; }
+    .회수   { background: #eef0f2; color: #6b7785; }
+    .사유   { color: #b3503a; font-size: 14px; }
+    button  { font-family: inherit; font-size: 14px; padding: 6px 14px; margin: 10px 6px 0 0; border-radius: 8px; border: 1px solid #ccc; background: white; cursor: pointer; }
+    .보는사람 { margin-bottom: 16px; font-size: 15px; }
+    .보는사람 select { font-size: 15px; padding: 4px 8px; }
+  </style>
+</head>
+
+<body>
+  <h1>📝 전자결재</h1>
+
+  <!-- ▼ 새로 생긴 것 ①: 지금 누가 보고 있나 (로그인은 ⑥단계에서) -->
+  <div class="보는사람">
+    지금 보는 사람:
+    <select onchange="보는사람 = this.value; 그리기();">
+      <option>이한결</option>
+      <option>박민수</option>
+      <option>정우진</option>
+      <option>최지은</option>
+    </select>
+    (이한결 = 대표)
+  </div>
+
+  <div id="목록"></div>
+
+  <script>
+    const 대표 = "이한결";
+    let 보는사람 = "이한결";
+
+    // 장부 — 이번엔 문서마다 「번호」를 붙여서, 어느 문서의 버튼을 눌렀는지 알 수 있게 함
+    const 장부 = [
+      { 번호: 1, 종류: "연차",     기안자: "박민수", 날짜: "2026-10-20", 상태: "진행중" },
+      { 번호: 2, 종류: "구매품의", 기안자: "정우진", 날짜: "2026-10-21", 상태: "진행중" },
+      { 번호: 3, 종류: "초과근무", 기안자: "최지은", 날짜: "2026-10-22", 상태: "진행중" },
+      { 번호: 4, 종류: "외출",     기안자: "박민수", 날짜: "2026-10-23", 상태: "승인" }
+    ];
+
+    // ▼ 새로 생긴 것 ②: 규칙표 — 「이 사람이 이 문서에서 누를 수 있는 버튼」은 오직 여기서만 정함
+    function 누를수있는버튼(문서) {
+      if (문서.상태 !== "진행중") return [];                              // 끝난 문서 → 버튼 없음
+      if (보는사람 === 대표 && 문서.기안자 !== 대표) return ["승인", "반려"]; // 대표 → 승인·반려
+      if (보는사람 === 문서.기안자) return ["회수"];                       // 올린 사람 본인 → 회수
+      return [];                                                         // 그 밖의 사람 → 버튼 없음
+    }
+
+    // 사유처럼 사람이 직접 적은 글자는, 화면에 「글자로만」 넣음 (이상한 기호가 섞여도 화면이 안 깨지게)
+    function 글자만(s) {
+      return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    }
+
+    // 일꾼 — 장부를 읽어 카드를 그림. 이번엔 버튼을 누를 때마다 「다시」 부름
+    function 그리기() {
+      const 빈자리 = document.getElementById("목록");
+      빈자리.innerHTML = "";
+      for (const 문서 of 장부) {
+        const 버튼들 = 누를수있는버튼(문서)
+          .map(이름 => `<button onclick="누르기(${문서.번호}, '${이름}')">${이름}</button>`)
+          .join("");
+        빈자리.innerHTML += `
+          <div class="doc">
+            <h2>${문서.종류} 신청</h2>
+            <p>기안자: ${문서.기안자} · ${문서.날짜}</p>
+            <span class="status ${문서.상태}">${문서.상태}</span>
+            ${문서.사유 ? `<p class="사유">반려 사유: ${글자만(문서.사유)}</p>` : ""}
+            <div>${버튼들}</div>
+          </div>`;
+      }
+    }
+
+    // ▼ 새로 생긴 것 ③: 버튼을 누르면 → 장부의 상태 칸을 바꾸고 → 다시 그림
+    function 누르기(번호, 버튼이름) {
+      const 문서 = 장부.find(d => d.번호 === 번호);
+      if (!누를수있는버튼(문서).includes(버튼이름)) return;   // 규칙표를 한 번 더 확인
+
+      if (버튼이름 === "반려") {
+        const 사유 = prompt("반려 사유를 적어주세요");
+        if (!사유 || !사유.trim()) { alert("사유를 적어야 반려할 수 있습니다."); return; }
+        문서.사유 = 사유.trim();
+      }
+      문서.상태 = 버튼이름;   // 버튼 이름이 곧 새 상태: 승인 · 반려 · 회수
+      그리기();
+    }
+
+    그리기();
+  </script>
+</body>
+</html>

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>전자결재 연습 ⑤-1 서랍</title>
+
+  <!-- ▼ CSS = 옷 (④와 같음) -->
+  <style>
+    body    { font-family: "맑은 고딕"; background: #F7F3EE; padding: 30px; }
+    .doc    { background: white; border: 1px solid #e3dccf; border-radius: 12px; padding: 16px; max-width: 420px; margin-bottom: 10px; }
+    .doc h2 { color: #2B3A4E; font-size: 18px; margin: 0 0 8px; }
+    .status { display: inline-block; font-weight: bold; padding: 3px 10px; border-radius: 10px; }
+    .진행중 { background: #fff2d6; color: #b7791f; }
+    .승인   { background: #e3f2e6; color: #3f7a52; }
+    .반려   { background: #fbeee9; color: #b3503a; }
+    .회수   { background: #eef0f2; color: #6b7785; }
+    .사유   { color: #b3503a; font-size: 14px; }
+    button  { font-family: inherit; font-size: 14px; padding: 6px 14px; margin: 10px 6px 0 0; border-radius: 8px; border: 1px solid #ccc; background: white; cursor: pointer; }
+    .보는사람 { margin-bottom: 16px; font-size: 15px; }
+    .보는사람 select { font-size: 15px; padding: 4px 8px; }
+    .서랍안내 { font-size: 13px; color: #6b7785; margin-bottom: 16px; }
+  </style>
+</head>
+
+<body>
+  <h1>📝 전자결재</h1>
+
+  <div class="보는사람">
+    지금 보는 사람:
+    <select onchange="보는사람 = this.value; 그리기();">
+      <option>이한결</option>
+      <option>박민수</option>
+      <option>정우진</option>
+      <option>최지은</option>
+    </select>
+    (이한결 = 대표)
+  </div>
+
+  <!-- ▼ 새로 생긴 것 ③: 연습을 처음부터 다시 하고 싶을 때 -->
+  <div class="서랍안내">
+    🗄️ 결재한 내용은 <b>이 컴퓨터의 이 브라우저 서랍</b>에 저장됩니다. 새로고침해도 남습니다.
+    <button onclick="서랍비우기()">서랍 비우고 처음으로</button>
+  </div>
+
+  <div id="목록"></div>
+
+  <script>
+    const 대표 = "이한결";
+    let 보는사람 = "이한결";
+
+    // 처음 장부 — 서랍이 비어 있을 때만 씀
+    const 처음장부 = [
+      { 번호: 1, 종류: "연차",     기안자: "박민수", 날짜: "2026-10-20", 상태: "진행중" },
+      { 번호: 2, 종류: "구매품의", 기안자: "정우진", 날짜: "2026-10-21", 상태: "진행중" },
+      { 번호: 3, 종류: "초과근무", 기안자: "최지은", 날짜: "2026-10-22", 상태: "진행중" },
+      { 번호: 4, 종류: "외출",     기안자: "박민수", 날짜: "2026-10-23", 상태: "승인" }
+    ];
+
+    // ▼ 새로 생긴 것 ①·②: 서랍 — 브라우저 안의 작은 저장 칸 (이름표: "전자결재-장부")
+    //    서랍에는 글자만 넣을 수 있어서, 장부를 글자로 「접어서」 넣고 꺼낼 때 다시 「펼칩니다」.
+    const 서랍이름표 = "전자결재-장부";
+
+    function 서랍에넣기() {
+      localStorage.setItem(서랍이름표, JSON.stringify(장부));      // 접어서 넣기
+    }
+    function 서랍에서꺼내기() {
+      const 글자 = localStorage.getItem(서랍이름표);
+      return 글자 ? JSON.parse(글자) : null;                        // 꺼내서 펼치기 (없으면 null)
+    }
+    function 서랍비우기() {
+      localStorage.removeItem(서랍이름표);
+      장부 = structuredClone(처음장부);
+      그리기();
+    }
+
+    // 화면을 열 때: 서랍에 장부가 있으면 그걸 쓰고, 없으면 처음 장부를 씀
+    let 장부 = 서랍에서꺼내기() || structuredClone(처음장부);
+
+    // 규칙표 — ④와 같음
+    function 누를수있는버튼(문서) {
+      if (문서.상태 !== "진행중") return [];
+      if (보는사람 === 대표 && 문서.기안자 !== 대표) return ["승인", "반려"];
+      if (보는사람 === 문서.기안자) return ["회수"];
+      return [];
+    }
+
+    function 글자만(s) {
+      return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    }
+
+    // 일꾼 — ④와 같음
+    function 그리기() {
+      const 빈자리 = document.getElementById("목록");
+      빈자리.innerHTML = "";
+      for (const 문서 of 장부) {
+        const 버튼들 = 누를수있는버튼(문서)
+          .map(이름 => `<button onclick="누르기(${문서.번호}, '${이름}')">${이름}</button>`)
+          .join("");
+        빈자리.innerHTML += `
+          <div class="doc">
+            <h2>${문서.종류} 신청</h2>
+            <p>기안자: ${문서.기안자} · ${문서.날짜}</p>
+            <span class="status ${문서.상태}">${문서.상태}</span>
+            ${문서.사유 ? `<p class="사유">반려 사유: ${글자만(문서.사유)}</p>` : ""}
+            <div>${버튼들}</div>
+          </div>`;
+      }
+    }
+
+    function 누르기(번호, 버튼이름) {
+      const 문서 = 장부.find(d => d.번호 === 번호);
+      if (!누를수있는버튼(문서).includes(버튼이름)) return;
+      if (버튼이름 === "반려") {
+        const 사유 = prompt("반려 사유를 적어주세요");
+        if (!사유 || !사유.trim()) { alert("사유를 적어야 반려할 수 있습니다."); return; }
+        문서.사유 = 사유.trim();
+      }
+      문서.상태 = 버튼이름;
+      서랍에넣기();          // ▼ 새로 생긴 것 ①: 바뀐 장부를 서랍에 넣음
+      그리기();
+    }
+
+    그리기();
+  </script>
+</body>
+</html>
