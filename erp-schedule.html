@@ -55,6 +55,26 @@
     color: var(--muted);
   }
   .empty .big { font-size: 32px; margin-bottom: 8px; }
+  /* 진행 중 프로젝트 */
+  .section-title { font-size: 15px; color: var(--navy); margin: 28px 0 10px; }
+  .project { background: white; border-radius: 10px; border: 1px solid var(--gray-border); padding: 20px 22px; }
+  .project-head { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; }
+  .project-head h2 { margin: 0; font-size: 17px; color: var(--navy); }
+  .progress-text { font-size: 13px; color: var(--muted); }
+  .bar { height: 8px; background: #eee; border-radius: 4px; margin: 10px 0 16px; overflow: hidden; }
+  .bar > div { height: 100%; background: var(--orange); width: 0; transition: width .2s; }
+  .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-bottom: 18px; }
+  .fact { background: var(--gray-bg); border-radius: 8px; padding: 10px 12px; font-size: 12px; color: var(--muted); }
+  .fact strong { display: block; font-size: 15px; color: var(--text); margin-top: 2px; }
+  .steps { list-style: none; margin: 0; padding: 0; }
+  .steps li { border-top: 1px solid #eee; padding: 10px 0; }
+  .steps label { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; font-size: 14px; }
+  .steps input { margin-top: 3px; width: 16px; height: 16px; accent-color: var(--orange); flex-shrink: 0; }
+  .steps .done-text { color: var(--muted); text-decoration: line-through; }
+  .steps .note { display: block; font-size: 12px; color: var(--muted); margin-top: 3px; }
+  .steps ul { margin: 6px 0 0 26px; padding: 0; font-size: 13px; color: #555; }
+  .steps ul li { border: none; padding: 2px 0; }
+  .warn { background: #fff4e5; border-left: 3px solid var(--orange); padding: 10px 12px; font-size: 12px; color: #6b4a1a; border-radius: 4px; margin-top: 14px; }
   footer { text-align: center; color: var(--muted); font-size: 12px; margin-top: 16px; }
   a.back { color: var(--orange); text-decoration: none; font-size: 13px; }
 </style>
@@ -90,6 +110,32 @@
   </div>
 </div>
 
+<h3 class="section-title">📌 진행 중 프로젝트</h3>
+
+<div class="project" id="project-pasture">
+  <div class="project-head">
+    <h2>🐔 방목장 허가 프로젝트</h2>
+    <span class="progress-text" id="pastureProgress">0 / 0 완료</span>
+  </div>
+  <div class="bar"><div id="pastureBar"></div></div>
+
+  <div class="facts">
+    <div class="fact">추가 방목 부지 (보전관리지역)<strong>25,000㎡</strong></div>
+    <div class="fact">기존 부지 남은 땅<strong>3,000㎡</strong></div>
+    <div class="fact">평사 계사 (허가 3,000㎡)<strong>2,850㎡</strong></div>
+    <div class="fact">허가 마릿수<strong>25,670수</strong></div>
+    <div class="fact">방사 기준 최대<strong>약 25,450수</strong></div>
+    <div class="fact">권장 운영 마릿수<strong>24,000수</strong></div>
+  </div>
+
+  <ol class="steps" id="pastureSteps"></ol>
+
+  <div class="warn">
+    ※ 면적·거리 기준은 계획용 참고치입니다. 최종 판단은 군청 상담과 환경영향평가 대행업체 검토를 따릅니다.<br>
+    ※ 체크 표시는 이 컴퓨터 브라우저에만 저장됩니다.
+  </div>
+</div>
+
 <footer>
   erp-schedule.html · 조회 범위 2026-09-12 ~ 2026-09-26 · 최근 갱신 2026-09-12<br>
   <a class="back" href="erp-map.html">← 지도로 돌아가기</a>
@@ -120,6 +166,64 @@ function render() {
   `).join("");
 }
 render();
+
+// ── 방목장 허가 프로젝트: 단계 목록 ──
+const pastureSteps = [
+  { title: "군청 사전 상담 (축산과·환경과·건축과)", note: "기존 허가증, 옆 땅 지번·면적·소유 관계, 확장 계획을 챙겨 가기",
+    sub: [
+      "① 새 땅 25,000㎡가 가축사육 제한구역에 해당하나요?",
+      "② 보전관리지역에 방목장을 설치할 수 있나요? 개발행위허가가 필요한가요?",
+      "③ 소규모 환경영향평가에서 기존 부지와 합산하나요?",
+      "④ 방목장이 가축분뇨 배출시설 면적에 들어가나요? (변경허가 여부)",
+      "⑤ 축산업 허가 변경은 허가인가요, 신고인가요?",
+      "⑥ 허가 면적 3,000㎡ 중 남은 150㎡를 증축할 수 있나요?"
+    ] },
+  { title: "환경영향평가 대행업체 견적 2~3곳", note: "기간·비용·보전관리지역 사업 경험 비교" },
+  { title: "측량 · 실제 방목 가능 면적 산정", note: "소독시설·배수로·진입로·급경사 제외 후 26,400㎡(24,000수 기준) 이상인지 확인" },
+  { title: "소규모 환경영향평가 협의 완료", note: "보전관리지역이라 6개월~1년 예상 (동식물 조사·분뇨 유출 대책)" },
+  { title: "가축분뇨 배출시설 변경허가/신고", note: "군청 답변상 해당할 때만" },
+  { title: "축산업 허가 변경", note: "허가 마릿수 25,670수는 유지 — 면적 변경분만" },
+  { title: "방목장 시설 공사", note: "울타리·그물, 계사 출입구(팝홀), 소독시설, 배수" },
+  { title: "실제 사육 마릿수 조정 (약 24,000수)", note: "방사 기준 25,450수를 넘지 않게" },
+  { title: "동물복지 인증 신청 (선택)", note: "농림축산검역본부 · 횃대·산란상·깔짚·조명 기준 점검" },
+  { title: "계란 표시 변경: 사육환경번호 2번 → 1번", note: "직거래 포장·홈페이지 문구도 함께 수정" }
+];
+
+const PASTURE_KEY = "nongbu-pasture-project";
+function loadPasture() {
+  try { return JSON.parse(localStorage.getItem(PASTURE_KEY)) || []; } catch (e) { return []; }
+}
+function savePasture(done) {
+  try { localStorage.setItem(PASTURE_KEY, JSON.stringify(done)); } catch (e) {}
+}
+
+function renderPasture() {
+  const done = loadPasture();
+  document.getElementById("pastureSteps").innerHTML = pastureSteps.map((s, i) => `
+    <li>
+      <label>
+        <input type="checkbox" data-i="${i}" ${done[i] ? "checked" : ""}>
+        <span>
+          <span class="${done[i] ? "done-text" : ""}"><strong>${i + 1}.</strong> ${s.title}</span>
+          <span class="note">${s.note}</span>
+        </span>
+      </label>
+      ${s.sub ? `<ul>${s.sub.map(q => `<li>${q}</li>`).join("")}</ul>` : ""}
+    </li>
+  `).join("");
+  const count = pastureSteps.filter((_, i) => done[i]).length;
+  document.getElementById("pastureProgress").textContent = `${count} / ${pastureSteps.length} 완료`;
+  document.getElementById("pastureBar").style.width = `${count / pastureSteps.length * 100}%`;
+}
+
+document.getElementById("pastureSteps").addEventListener("change", e => {
+  if (!e.target.matches("input[type=checkbox]")) return;
+  const done = loadPasture();
+  done[e.target.dataset.i] = e.target.checked;
+  savePasture(done);
+  renderPasture();
+});
+renderPasture();
 </script>
 
 </body>
