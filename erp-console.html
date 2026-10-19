@@ -1,213 +1,445 @@
-<!-- [AI 생성 초안 - 검토 전] 농부마을 ERP 콘솔 -->
+<!-- [AI 생성 초안 - 검토 전] 농부마을 ERP 작업대 -->
 <!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>농부마을 ERP</title>
+<title>농부마을 작업대</title>
 <style>
-  :root{ --navy:#2B3A4E; --copper:#C67B3C; --cream:#F7F3EE; --teal:#3A8FB7; --ink:#243140; --muted:#6b7785; --line:#e3dccf; --green:#3f7a52; }
-  *{box-sizing:border-box;margin:0;padding:0;}
-  html, body{ height:100%; }
-  body{
-    font-family:"맑은 고딕","Malgun Gothic",sans-serif; background:var(--cream); color:var(--ink);
-    overflow:hidden;
+  :root{
+    --navy:#2B3A4E; --copper:#C67B3C; --cream:#F7F3EE; --teal:#3A8FB7; --ink:#243140;
+    --muted:#6b7785; --line:#e3dccf; --green:#3f7a52; --amber:#b7791f; --amber-bg:#fff2d6; --red:#c0392b;
   }
-
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{ font-family:"맑은 고딕","Malgun Gothic",sans-serif; background:var(--cream); color:var(--ink); overflow:hidden; font-size:14px; line-height:1.5; }
+  button{ font-family:inherit; }
   .shell{ display:flex; height:100vh; }
 
   /* ---------- 사이드바 ---------- */
-  aside.sidebar{
-    width:250px; flex:0 0 250px; background:#fff; border-right:1px solid var(--line);
-    display:flex; flex-direction:column; height:100vh;
-  }
-  .brand{
-    display:flex; align-items:center; gap:10px; padding:18px 16px;
-    border-bottom:1px solid var(--line);
-  }
-  .brand img{ width:34px; height:34px; border-radius:9px; flex:0 0 auto; }
-  .brand .t{ font-size:15px; font-weight:800; color:var(--navy); }
+  aside.sidebar{ width:264px; flex:0 0 264px; background:#fff; border-right:1px solid var(--line); display:flex; flex-direction:column; height:100vh; }
+  .brand{ display:flex; align-items:center; gap:10px; padding:16px 16px 12px; }
+  .brand img,.brand .emo{ width:34px; height:34px; border-radius:9px; flex:0 0 auto; }
+  .brand .emo{ display:flex; align-items:center; justify-content:center; background:var(--cream); font-size:20px; }
+  .brand .t{ font-size:16px; font-weight:800; color:var(--navy); line-height:1.25; }
   .brand .t small{ display:block; font-weight:normal; color:var(--muted); font-size:11px; margin-top:1px; }
+  .side-scroll{ flex:1; overflow-y:auto; padding:0 12px 12px; }
 
-  .menu-hint{ font-size:11px; color:var(--muted); padding:12px 16px 4px; }
+  .map-card{ display:block; width:100%; text-align:left; cursor:pointer; background:#fff7ec; border:1px solid #f0d9b8; border-radius:14px; padding:12px 14px; margin-bottom:10px; }
+  .map-card:hover{ background:#fff1de; }
+  .map-card.active{ box-shadow:0 0 0 2px var(--copper) inset; }
+  .map-card .ttl{ font-size:14.5px; font-weight:800; color:var(--navy); }
+  .map-card .cnt{ font-size:12px; color:var(--muted); margin-top:4px; }
+  .bar-wrap{ background:#eadfce; border-radius:6px; height:5px; margin-top:8px; overflow:hidden; }
+  .bar{ background:var(--copper); height:100%; }
 
-  nav#menuList{ flex:1; overflow-y:auto; padding:6px 10px; }
-  .menu-item{
-    display:flex; align-items:center; gap:10px; padding:11px 10px; border-radius:10px;
-    cursor:grab; user-select:none; font-size:13.8px; font-weight:700; color:var(--ink);
-    margin-bottom:4px; border:1px solid transparent;
-  }
-  .menu-item:hover{ background:var(--cream); }
-  .menu-item.active{ background:var(--navy); color:#fff; }
-  .menu-item.active .handle{ color:rgba(255,255,255,.55); }
-  .menu-item .ic{ font-size:16px; flex:0 0 auto; }
-  .menu-item .lbl{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .menu-item .handle{ color:#c9c2b4; font-size:13px; cursor:grab; padding:2px 4px; flex:0 0 auto; }
-  .menu-item.dragging{ opacity:.4; }
-  .menu-item.drag-over{ border-top:2px solid var(--copper); }
+  .legend{ display:flex; gap:8px; align-items:center; font-size:11px; color:var(--muted); padding:2px 4px 10px; flex-wrap:wrap; }
+  .dot{ width:8px; height:8px; border-radius:50%; display:inline-block; flex:0 0 auto; }
+  .dot.done{ background:var(--green); }
+  .dot.todo{ border:1.5px solid #c9c2b4; }
+  .chip{ font-size:10.5px; font-weight:800; padding:1px 7px; border-radius:8px; white-space:nowrap; flex:0 0 auto; }
+  .chip.inprogress{ background:var(--amber-bg); color:var(--amber); }
+  .chip.order{ background:#f7e6d6; color:var(--copper); }
+  .chip.todo{ background:#f1ece2; color:var(--muted); }
+  .warn{ color:var(--red); font-size:12px; flex:0 0 auto; }
 
-  .sidebar-foot{ padding:12px 16px; border-top:1px solid var(--line); font-size:11px; color:var(--muted); line-height:1.6; }
+  .sec{ margin-top:6px; }
+  .sec-head{ display:flex; align-items:center; justify-content:space-between; width:100%; background:none; border:none; cursor:pointer; padding:8px 6px; border-radius:8px; font-size:13px; font-weight:800; color:var(--navy); text-align:left; }
+  .sec-head:hover{ background:var(--cream); }
+  .sec-head .frac{ font-weight:normal; color:var(--muted); font-size:11.5px; margin-left:6px; }
+  .sec-head .car{ color:var(--muted); font-size:9px; transition:transform .15s; }
+  .sec.closed .car{ transform:rotate(-90deg); }
+  .sec.closed .sec-body{ display:none; }
+
+  .row{ display:flex; align-items:center; gap:8px; padding:7px 8px; border-radius:9px; cursor:pointer; user-select:none; border:1px solid transparent; font-size:13.3px; }
+  .row:hover{ background:var(--cream); }
+  .row.active{ background:var(--navy); color:#fff; }
+  .row .ic{ flex:0 0 auto; font-size:15px; width:20px; text-align:center; }
+  .row .lbl{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .row.dim .lbl{ color:#9aa3ad; }
+  .row.active.dim .lbl{ color:#dfe4ea; }
+  .row .star{ border:none; background:none; cursor:pointer; color:#d5cdbd; font-size:14px; padding:0 2px; line-height:1; flex:0 0 auto; }
+  .row .star.on{ color:var(--copper); }
+  .row.active .star{ color:#e9c9a8; }
+  .row.active .star.on{ color:#ffd9b0; }
+  .row.dragging{ opacity:.4; }
+  .row.drag-over{ border-top:2px solid var(--copper); }
+  .empty-fav{ font-size:12px; color:var(--muted); padding:4px 8px 8px; }
+
+  .sidebar-foot{ padding:10px 16px; border-top:1px solid var(--line); font-size:11px; color:var(--muted); display:flex; flex-direction:column; gap:3px; }
+  .sidebar-foot a{ color:var(--teal); font-weight:700; text-decoration:none; }
 
   /* ---------- 메인 ---------- */
   main{ flex:1; min-width:0; height:100vh; display:flex; flex-direction:column; }
-  .topbar{
-    display:flex; align-items:center; justify-content:space-between; gap:12px;
-    padding:10px 18px; background:#fff; border-bottom:1px solid var(--line); font-size:12.5px; color:var(--muted);
-  }
-  .topbar .cur{ font-weight:800; color:var(--navy); font-size:14px; }
+  .topbar{ display:flex; align-items:center; gap:12px; padding:10px 20px; background:#fff; border-bottom:1px solid var(--line); }
+  .topbar .cur{ font-weight:800; color:var(--navy); font-size:15px; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .topbar .who{ font-size:12px; color:var(--muted); white-space:nowrap; }
   .topbar .actions{ display:flex; gap:8px; }
-  .topbar button{
-    border:1px solid var(--line); background:#fff; color:var(--muted); border-radius:8px;
-    padding:6px 12px; font-size:12px; cursor:pointer; font-family:inherit;
-  }
-  .topbar button:hover{ background:var(--cream); }
-  .frame-wrap{ flex:1; min-height:0; }
-  iframe{ width:100%; height:100%; border:none; display:block; background:#fff; }
+  .topbar .actions button{ border:1px solid var(--line); background:#fff; color:var(--muted); border-radius:8px; padding:6px 12px; font-size:12px; cursor:pointer; }
+  .topbar .actions button:hover{ background:var(--cream); }
+  .views{ flex:1; min-height:0; position:relative; }
+  .view{ position:absolute; top:0; right:0; bottom:0; left:0; display:none; }
+  .view.show{ display:block; }
+  #homeView,#noteView{ overflow-y:auto; padding:20px 24px 60px; }
+  iframe{ width:100%; height:100%; border:none; background:#fff; display:block; }
 
-  @media (max-width: 760px){
-    .shell{ flex-direction:column; height:auto; overflow:auto; }
-    aside.sidebar{ width:100%; flex:none; height:auto; max-height:40vh; }
+  /* 포털 홈 */
+  .banner{ background:#fff7ec; border:1px solid #f0d9b8; border-radius:12px; padding:11px 16px; font-size:13px; color:#7a5a30; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+  .banner button{ background:var(--copper); color:#fff; border:none; border-radius:8px; padding:7px 14px; font-size:12.5px; font-weight:700; cursor:pointer; }
+  .fb-list{ margin-bottom:14px; }
+  .fb-item{ background:#fff; border:1px solid var(--line); border-left:4px solid var(--copper); border-radius:8px; padding:8px 12px; font-size:12.8px; margin-bottom:6px; display:flex; gap:8px; align-items:flex-start; }
+  .fb-item .t{ color:var(--muted); font-size:11px; white-space:nowrap; margin-top:1px; }
+  .fb-item .x{ margin-left:auto; border:none; background:none; color:var(--muted); cursor:pointer; font-size:14px; }
+  .page-ttl{ font-size:22px; font-weight:800; color:var(--navy); margin:2px 0 14px; }
+
+  .hero{ background:linear-gradient(135deg,#2B3A4E,#1a2636 58%,#C67B3C 210%); color:#fff; border-radius:16px; padding:20px 24px; margin-bottom:18px; display:flex; gap:20px; justify-content:space-between; flex-wrap:wrap; }
+  .hero .l{ flex:1 1 320px; min-width:0; }
+  .hero h2{ font-size:18px; margin-bottom:4px; display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+  .hero h2 a{ font-size:12px; font-weight:normal; color:#f0c89a; cursor:pointer; }
+  .hero .sub{ font-size:13px; color:#d7dee6; }
+  .hero .bar-wrap{ background:rgba(255,255,255,.18); height:8px; margin-top:14px; border-radius:8px; }
+  .hero .next{ flex:0 1 290px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.2); border-radius:10px; padding:10px 14px; font-size:12.5px; }
+  .hero .next .lbl{ color:#f0c89a; font-weight:800; font-size:11.5px; margin-bottom:6px; }
+  .hero .next .n{ color:#f0b886; font-weight:800; margin-right:8px; }
+  .hero .next .r{ padding:2px 0; cursor:pointer; }
+  .hero .next .r:hover{ text-decoration:underline; }
+
+  .grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr)); gap:14px; }
+  .gcard{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:16px 16px 12px; }
+  .gcard .gh{ display:flex; justify-content:space-between; align-items:baseline; }
+  .gcard h3{ font-size:16px; color:var(--navy); }
+  .gcard .frac{ font-size:12px; color:var(--muted); }
+  .gcard .gs{ font-size:12px; color:var(--muted); margin:3px 0 10px; }
+  .gcard .items{ display:grid; grid-template-columns:1fr; gap:6px; }
+  .tile{ display:flex; align-items:center; gap:9px; padding:9px 11px; border-radius:10px; background:#faf8f4; cursor:pointer; font-size:13.3px; border:1px solid transparent; }
+  .tile:hover{ border-color:var(--line); background:#fff; }
+  .tile.dim .nm{ color:#8e98a3; }
+  .tile .nm{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .tile .ic{ flex:0 0 auto; }
+
+  /* 아직 안 만든 칸 */
+  .notecard{ max-width:560px; background:#fff; border:1px solid var(--line); border-radius:14px; padding:22px; }
+  .notecard h3{ font-size:18px; color:var(--navy); display:flex; gap:8px; align-items:center; }
+  .notecard dl{ display:grid; grid-template-columns:100px 1fr; gap:8px 12px; font-size:13.5px; margin:14px 0; }
+  .notecard dt{ color:var(--muted); }
+  .notecard .hint{ background:#eef4f7; border-left:4px solid var(--teal); border-radius:8px; padding:11px 14px; font-size:13px; }
+  .notecard .btns{ margin-top:16px; display:flex; gap:8px; flex-wrap:wrap; }
+  .btn{ border:1px solid var(--line); background:#fff; border-radius:8px; padding:8px 14px; font-size:12.5px; cursor:pointer; font-weight:700; color:var(--navy); }
+  .btn.primary{ background:var(--copper); border-color:var(--copper); color:#fff; }
+
+  @media (max-width:760px){
+    body{ overflow:auto; }
+    .shell{ flex-direction:column; height:auto; }
+    aside.sidebar{ width:100%; flex:none; height:auto; max-height:46vh; }
     main{ height:auto; }
-    .frame-wrap{ height:70vh; }
+    .views{ flex:none; height:74vh; }
+    .topbar .who{ display:none; }
+    #homeView,#noteView{ padding:16px 14px 50px; }
   }
 </style>
 </head>
 <body>
 
 <div class="shell">
-
   <aside class="sidebar">
     <div class="brand">
-      <img src="nongbu-chicken.ico" alt="농부마을">
-      <div class="t">농부마을 ERP<small>내부 콘솔</small></div>
+      <img src="nongbu-chicken.ico" alt="" onerror="this.outerHTML='<div class=&quot;emo&quot;>🐣</div>'">
+      <div class="t">농부마을 작업대<small>양계업 · 내부 콘솔</small></div>
     </div>
-    <div class="menu-hint">≡ 을 끌어서 메뉴 순서를 바꿀 수 있어요</div>
-    <nav id="menuList"></nav>
+    <div class="side-scroll" id="sideScroll"></div>
     <div class="sidebar-foot">
-      erp-console.html · [AI 생성 초안 - 검토 전]
+      <a href="https://a7leehs-code.github.io/nongbu-maeul-erp/" target="_blank" rel="noopener">🌐 홈페이지 보기</a>
+      <span>erp-console.html · [AI 생성 초안 - 검토 전]</span>
     </div>
   </aside>
 
   <main>
     <div class="topbar">
-      <span class="cur">📄 <span id="curLabel">불러오는 중...</span></span>
-      <div class="actions">
-        <button onclick="reloadFrame()">새로고침</button>
-        <button onclick="openInNewTab()">새 탭에서 열기</button>
+      <span class="cur" id="curLabel">포털 홈</span>
+      <div class="actions" id="topActions" style="display:none;">
+        <button data-act="reload">새로고침</button>
+        <button data-act="newtab">새 탭에서 열기</button>
       </div>
+      <span class="who">농부마을 · 대표</span>
     </div>
-    <div class="frame-wrap">
-      <iframe id="mainFrame" src=""></iframe>
+    <div class="views">
+      <div class="view show" id="homeView"></div>
+      <div class="view" id="frameView"><iframe id="mainFrame" title="ERP 화면"></iframe></div>
+      <div class="view" id="noteView"></div>
     </div>
   </main>
-
 </div>
 
+<script src="erp-data.js"></script>
 <script>
 // ---------------------------------------------------------------
-// 메뉴 정의 (고정 목록) + 순서는 localStorage에 저장
+// 데이터: erp-data.js (지도와 같은 데이터를 함께 씁니다)
 // ---------------------------------------------------------------
-const MENU_DEFS = {
-  "erp-map":     { icon: "🗺️", label: "ERP 지도",        file: "erp-map.html" },
-  "schedule":    { icon: "📅", label: "회사 일정판",      file: "erp-schedule.html" },
-  "approvals":   { icon: "📝", label: "전자결재",          file: "erp-approvals.html" },
-  "talk":        { icon: "💬", label: "마을톡 (사내메신저)", file: "erp-talk.html" },
-  "inquiries":   { icon: "✉️", label: "고객 문의 관리",    file: "erp-inquiries.html" },
-  "clients-map": { icon: "📍", label: "거래처·배송지 지도", file: "erp-clients-map.html" },
-  "homepage":    { icon: "🌐", label: "홈페이지 보기",     file: "index.html" }
-};
-const DEFAULT_ORDER = ["erp-map", "schedule", "approvals", "talk", "inquiries", "clients-map", "homepage"];
-const ORDER_KEY = "nongbuErpMenuOrder";
-const ACTIVE_KEY = "nongbuErpActiveMenu";
+const CATS = window.ERP_CATEGORIES || [];
+const HOME_URL = "https://a7leehs-code.github.io/nongbu-maeul-erp/";
+const FAV_KEY = "nongbuErpFavs";
+const OPEN_KEY = "nongbuErpGroupsOpen";
+const FB_KEY = "nongbuErpFeedback";
+const DEFAULT_FAVS = ["erp-approvals.html", "erp-talk.html", "erp-customers.html", "erp-schedule.html"];
+const DEFAULT_OPEN = ["__favs", "전사"];
 
-function loadOrder(){
-  try{
-    const raw = localStorage.getItem(ORDER_KEY);
-    if(!raw) return DEFAULT_ORDER.slice();
-    const saved = JSON.parse(raw);
-    // 저장된 목록에 없는 새 항목은 뒤에 자동 추가, 삭제된 항목은 제외
-    const known = Object.keys(MENU_DEFS);
-    const cleaned = saved.filter(id => known.includes(id));
-    known.forEach(id => { if(!cleaned.includes(id)) cleaned.push(id); });
-    return cleaned;
-  }catch(e){ return DEFAULT_ORDER.slice(); }
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function load(k, d){ try{ const r = localStorage.getItem(k); return r ? JSON.parse(r) : d; }catch(e){ return d; } }
+function save(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+
+const ITEMS = [];
+CATS.forEach(c => c.items.forEach(i => ITEMS.push(Object.assign({}, i, { cat: c, key: i.file || (c.code + ":" + i.name) }))));
+const BY_KEY = {};
+ITEMS.forEach(i => { BY_KEY[i.key] = i; });
+
+function stats(){
+  let done = 0, prog = 0;
+  ITEMS.forEach(i => { if(i.status === "done") done++; else if(i.status === "inprogress") prog++; });
+  return { total: ITEMS.length, done, prog, todo: ITEMS.length - done - prog };
 }
-function saveOrder(order){
-  try{ localStorage.setItem(ORDER_KEY, JSON.stringify(order)); }catch(e){}
+function catDone(c){ return c.items.filter(i => i.status === "done").length; }
+function isExternal(i){ return !!i.file && /^https?:/i.test(i.file); }
+
+let view = { type: "home", key: "__home" };
+let openSet = new Set(load(OPEN_KEY, DEFAULT_OPEN));
+
+function getFavs(){
+  const f = load(FAV_KEY, DEFAULT_FAVS);
+  return f.filter(k => BY_KEY[k] && BY_KEY[k].file);
 }
-
-let order = loadOrder();
-let activeId = order[0];
-try{ activeId = localStorage.getItem(ACTIVE_KEY) || order[0]; }catch(e){}
-if(!MENU_DEFS[activeId]) activeId = order[0];
-
-let dragId = null;
-
-function renderMenu(){
-  const nav = document.getElementById("menuList");
-  nav.innerHTML = order.map(id => {
-    const def = MENU_DEFS[id];
-    return `
-      <div class="menu-item ${id===activeId?'active':''}" draggable="true" data-id="${id}"
-           ondragstart="onDragStart(event,'${id}')" ondragover="onDragOver(event,'${id}')"
-           ondrop="onDrop(event,'${id}')" ondragend="onDragEnd(event)" onclick="selectMenu('${id}')">
-        <span class="ic">${def.icon}</span>
-        <span class="lbl">${def.label}</span>
-        <span class="handle">≡</span>
-      </div>`;
-  }).join("");
+function isFav(k){ return getFavs().includes(k); }
+function toggleFav(k){
+  const f = getFavs();
+  const at = f.indexOf(k);
+  if(at >= 0) f.splice(at, 1); else f.push(k);
+  save(FAV_KEY, f);
+  renderSidebar();
 }
-
-function selectMenu(id){
-  activeId = id;
-  try{ localStorage.setItem(ACTIVE_KEY, id); }catch(e){}
-  renderMenu();
-  loadFrame();
+function toggleSec(id){
+  if(openSet.has(id)) openSet.delete(id); else openSet.add(id);
+  save(OPEN_KEY, Array.from(openSet));
+  renderSidebar();
 }
-
-function loadFrame(){
-  const def = MENU_DEFS[activeId];
-  document.getElementById("curLabel").textContent = def.label;
-  document.getElementById("mainFrame").src = def.file;
-}
-function reloadFrame(){ document.getElementById("mainFrame").src = MENU_DEFS[activeId].file; }
-function openInNewTab(){ window.open(MENU_DEFS[activeId].file, "_blank"); }
 
 // ---------------------------------------------------------------
-// 드래그로 순서 바꾸기
+// 표시 조각
 // ---------------------------------------------------------------
-function onDragStart(e, id){
-  dragId = id;
-  e.currentTarget.classList.add("dragging");
+function mark(i){
+  if(i.status === "done") return '<span class="dot done" title="완성"></span>';
+  if(i.status === "inprogress") return '<span class="chip inprogress">진행중</span>';
+  if(typeof i.order === "number") return '<span class="chip order" title="붙일 순서">' + i.order + '차</span>';
+  return '<span class="dot todo" title="미완성"></span>';
+}
+function warn(i){
+  return (i.urgency === "상" && i.status !== "done") ? '<span class="warn" title="급한데 아직 미완성">⚠</span>' : "";
+}
+
+function rowHtml(i, fav){
+  const dim = i.file ? "" : " dim";
+  const active = (view.key === i.key) ? " active" : "";
+  const star = i.file
+    ? '<button class="star ' + (isFav(i.key) ? "on" : "") + '" data-key="' + esc(i.key) + '" title="즐겨찾기">' + (isFav(i.key) ? "★" : "☆") + '</button>'
+    : "";
+  const drag = fav ? ' data-fav="1" draggable="true"' : "";
+  return '<div class="row' + dim + active + '" data-open="' + esc(i.key) + '" data-key="' + esc(i.key) + '"' + drag + '>' +
+    '<span class="ic">' + i.icon + '</span><span class="lbl">' + esc(i.name) + (isExternal(i) ? " ↗" : "") + '</span>' +
+    warn(i) + mark(i) + star + '</div>';
+}
+
+function secHtml(id, title, frac, body){
+  const closed = openSet.has(id) ? "" : " closed";
+  return '<div class="sec' + closed + '"><button class="sec-head" data-sec="' + esc(id) + '"><span>' + title +
+    '<span class="frac">' + frac + '</span></span><span class="car">▼</span></button><div class="sec-body">' + body + '</div></div>';
+}
+
+function renderSidebar(){
+  const s = stats();
+  const pct = s.total ? s.done / s.total * 100 : 0;
+  const favs = getFavs().map(k => BY_KEY[k]);
+  const favDone = favs.filter(i => i.status === "done").length;
+
+  let h = '<button class="map-card' + (view.key === "__map" ? " active" : "") + '" data-open="__map">' +
+    '<div class="ttl">🗺️ ERP 지도</div>' +
+    '<div class="cnt">완성 ' + s.done + ' · 진행중 ' + s.prog + ' · 미완성 ' + s.todo + '</div>' +
+    '<div class="bar-wrap"><div class="bar" style="width:' + pct + '%"></div></div></button>';
+
+  h += '<div class="legend"><span class="dot done"></span>완성 <span class="chip inprogress">진행중</span> <span class="chip order">N차</span>순서 <span class="warn">⚠</span>급함</div>';
+
+  h += secHtml("__favs", "즐겨찾기", favDone + "/" + favs.length,
+    favs.length ? favs.map(i => rowHtml(i, true)).join("") : '<div class="empty-fav">☆를 눌러 자주 쓰는 화면을 여기에 모아두세요</div>');
+
+  CATS.forEach(c => {
+    h += secHtml(c.code, esc(c.name), catDone(c) + "/" + c.items.length,
+      c.items.map(i => rowHtml(ITEMS.find(x => x.cat === c && x.name === i.name), false)).join(""));
+  });
+
+  document.getElementById("sideScroll").innerHTML = h;
+}
+
+// ---------------------------------------------------------------
+// 화면 전환
+// ---------------------------------------------------------------
+function showPane(id){
+  ["homeView", "frameView", "noteView"].forEach(p => document.getElementById(p).classList.toggle("show", p === id));
+}
+function setTop(label, withActions){
+  document.getElementById("curLabel").textContent = label;
+  document.getElementById("topActions").style.display = withActions ? "flex" : "none";
+}
+
+function goHome(){
+  view = { type: "home", key: "__home" };
+  setTop("포털 홈", false);
+  renderHome();
+  showPane("homeView");
+  renderSidebar();
+}
+function goTool(file, label, key){
+  view = { type: "tool", key: key, file: file, label: label };
+  setTop(label, true);
+  document.getElementById("mainFrame").src = file;
+  showPane("frameView");
+  renderSidebar();
+}
+function goNote(i){
+  view = { type: "note", key: i.key };
+  setTop(i.name + " (아직 안 만든 칸)", false);
+  renderNote(i);
+  showPane("noteView");
+  renderSidebar();
+}
+function openItem(key){
+  if(key === "__home") return goHome();
+  if(key === "__map") return goTool("erp-map.html", "ERP 지도", "__map");
+  const i = BY_KEY[key];
+  if(!i) return;
+  if(isExternal(i)){ window.open(i.file, "_blank", "noopener"); return; }
+  if(i.file) return goTool(i.file, i.name, i.key);
+  goNote(i);
+}
+
+// ---------------------------------------------------------------
+// 포털 홈
+// ---------------------------------------------------------------
+function renderHome(){
+  const s = stats();
+  const pct = s.total ? s.done / s.total * 100 : 0;
+  const next = ITEMS.filter(i => typeof i.order === "number" && i.status !== "done").sort((a, b) => a.order - b.order).slice(0, 3);
+  const fb = load(FB_KEY, []);
+
+  let h = '<div class="page-ttl">포털 홈</div>';
+  h += '<div class="banner"><span>안 되는 것·불편한 것이 있으면 바로 적어두세요 — 다음 수업 때 고칩니다.</span><button data-act="fb-add">이 화면 불편해요</button></div>';
+  if(fb.length){
+    h += '<div class="fb-list">' + fb.map((n, idx) =>
+      '<div class="fb-item"><span class="t">' + esc(n.time) + '</span><span>' + esc(n.text) + '</span><button class="x" data-act="fb-del" data-i="' + idx + '" title="지우기">×</button></div>'
+    ).join("") + '</div>';
+  }
+
+  h += '<div class="hero"><div class="l"><h2>🗺️ ERP 지도 <a data-open="__map">전체 보기 →</a></h2>' +
+    '<div class="sub">완성 ' + s.done + ' · 진행중 ' + s.prog + ' · 미완성 ' + s.todo + ' — 일주일에 한 칸씩 채운다. 칸이 비어 있는 것은 실패가 아니라 순서다.</div>' +
+    '<div class="bar-wrap"><div class="bar" style="width:' + pct + '%"></div></div></div>' +
+    '<div class="next"><div class="lbl">다음에 붙일 칸</div>' +
+    (next.length ? next.map(i => '<div class="r" data-open="' + esc(i.key) + '"><span class="n">' + i.order + '차</span>' + i.icon + ' ' + esc(i.name) + '</div>').join("") : '<div class="r">순서를 정한 칸이 없습니다</div>') +
+    '</div></div>';
+
+  h += '<div class="grid">' + CATS.map(c => {
+    const tiles = c.items.map(raw => {
+      const i = ITEMS.find(x => x.cat === c && x.name === raw.name);
+      return '<div class="tile' + (i.file ? "" : " dim") + '" data-open="' + esc(i.key) + '"><span class="ic">' + i.icon + '</span>' +
+        '<span class="nm">' + esc(i.name) + (isExternal(i) ? " ↗" : "") + '</span>' + warn(i) + mark(i) + '</div>';
+    }).join("");
+    return '<div class="gcard"><div class="gh"><h3>' + esc(c.name) + '</h3><span class="frac">' + catDone(c) + '/' + c.items.length + ' 완성</span></div>' +
+      '<div class="gs">' + esc(c.sub || "") + '</div><div class="items">' + tiles + '</div></div>';
+  }).join("") + '</div>';
+
+  document.getElementById("homeView").innerHTML = h;
+}
+
+// ---------------------------------------------------------------
+// 아직 안 만든 칸
+// ---------------------------------------------------------------
+function renderNote(i){
+  document.getElementById("noteView").innerHTML =
+    '<div class="notecard"><h3>' + i.icon + ' ' + esc(i.name) + ' ' + mark(i) + '</h3>' +
+    '<dl><dt>분류</dt><dd>' + esc(i.cat.name) + '</dd>' +
+    '<dt>지금은 어디에</dt><dd>' + esc(i.where || "-") + '</dd>' +
+    '<dt>얼마나 자주</dt><dd>' + esc(i.often || "-") + '</dd>' +
+    '<dt>급한가</dt><dd>' + esc(i.urgency || "-") + '</dd>' +
+    '<dt>붙일 순서</dt><dd>' + (typeof i.order === "number" ? i.order + "차" : "아직 정하지 않음") + '</dd></dl>' +
+    '<div class="hint">아직 만들지 않은 칸입니다. 비어 있는 건 실패가 아니라 순서예요 — 지도에서 다음에 붙일 칸을 정하고 하나씩 채워 나갑니다.</div>' +
+    '<div class="btns"><button class="btn primary" data-open="__map">ERP 지도에서 보기</button><button class="btn" data-open="__home">포털 홈으로</button></div></div>';
+}
+
+// ---------------------------------------------------------------
+// 이벤트 (한 곳에서 처리)
+// ---------------------------------------------------------------
+document.addEventListener("click", e => {
+  const star = e.target.closest(".star");
+  if(star){ e.stopPropagation(); toggleFav(star.dataset.key); return; }
+  const sec = e.target.closest("[data-sec]");
+  if(sec){ toggleSec(sec.dataset.sec); return; }
+  const act = e.target.closest("[data-act]");
+  if(act){ doAct(act); return; }
+  const open = e.target.closest("[data-open]");
+  if(open){ openItem(open.dataset.open); }
+});
+
+function doAct(el){
+  const a = el.dataset.act;
+  if(a === "reload" && view.type === "tool"){ document.getElementById("mainFrame").src = view.file; }
+  else if(a === "newtab" && view.type === "tool"){ window.open(view.file, "_blank", "noopener"); }
+  else if(a === "fb-add"){
+    const text = window.prompt("무엇이 불편한가요? (막힌 곳을 적어두면 다음 수업 때 고칩니다)");
+    if(text && text.trim()){
+      const list = load(FB_KEY, []);
+      const time = new Date().toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
+      list.unshift({ time: time, text: text.trim() });
+      save(FB_KEY, list);
+      renderHome();
+    }
+  }
+  else if(a === "fb-del"){
+    const list = load(FB_KEY, []);
+    list.splice(Number(el.dataset.i), 1);
+    save(FB_KEY, list);
+    renderHome();
+  }
+}
+
+// 즐겨찾기 끌어서 순서 바꾸기
+let dragKey = null;
+const side = document.getElementById("sideScroll");
+side.addEventListener("dragstart", e => {
+  const r = e.target.closest(".row[data-fav]");
+  if(!r) return;
+  dragKey = r.dataset.key;
+  r.classList.add("dragging");
   e.dataTransfer.effectAllowed = "move";
-}
-function onDragOver(e, id){
+  e.dataTransfer.setData("text/plain", dragKey);
+});
+side.addEventListener("dragover", e => {
+  const r = e.target.closest(".row[data-fav]");
+  if(!r || !dragKey) return;
   e.preventDefault();
-  if(id === dragId) return;
-  document.querySelectorAll(".menu-item").forEach(el => el.classList.remove("drag-over"));
-  e.currentTarget.classList.add("drag-over");
-}
-function onDrop(e, targetId){
+  side.querySelectorAll(".drag-over").forEach(x => x.classList.remove("drag-over"));
+  if(r.dataset.key !== dragKey) r.classList.add("drag-over");
+});
+side.addEventListener("drop", e => {
+  const r = e.target.closest(".row[data-fav]");
+  if(!r || !dragKey) return;
   e.preventDefault();
-  document.querySelectorAll(".menu-item").forEach(el => el.classList.remove("drag-over"));
-  if(!dragId || dragId === targetId) return;
-  const from = order.indexOf(dragId);
-  const to = order.indexOf(targetId);
-  if(from === -1 || to === -1) return;
-  order.splice(from, 1);
-  order.splice(to, 0, dragId);
-  saveOrder(order);
-  dragId = null;
-  renderMenu();
-}
-function onDragEnd(e){
-  e.currentTarget.classList.remove("dragging");
-  document.querySelectorAll(".menu-item").forEach(el => el.classList.remove("drag-over"));
-  dragId = null;
-}
+  const to = r.dataset.key;
+  if(to !== dragKey){
+    const f = getFavs();
+    const a = f.indexOf(dragKey), b = f.indexOf(to);
+    if(a > -1 && b > -1){ f.splice(a, 1); f.splice(b, 0, dragKey); save(FAV_KEY, f); }
+  }
+  dragKey = null;
+  renderSidebar();
+});
+side.addEventListener("dragend", () => { dragKey = null; renderSidebar(); });
 
-renderMenu();
-loadFrame();
+goHome();
 </script>
 
 </body>
