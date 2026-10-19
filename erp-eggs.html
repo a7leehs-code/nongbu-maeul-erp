@@ -1,0 +1,522 @@
+<!-- [AI 생성 초안 - 검토 전] 농부마을 산란율·폐사율 기록 -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>산란·폐사 기록</title>
+<style>
+  :root{ --navy:#2B3A4E; --copper:#C67B3C; --cream:#F7F3EE; --teal:#3A8FB7; --ink:#243140; --muted:#6b7785; --line:#e3dccf; --green:#3f7a52; --red:#b3503a; }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{ font-family:"맑은 고딕","Malgun Gothic",sans-serif; background:var(--cream); color:var(--ink); padding:24px; line-height:1.6; }
+  header{ background:linear-gradient(135deg,#2B3A4E,#1a2636 58%,#C67B3C 210%); color:#fff; border-radius:14px; padding:22px 26px; margin-bottom:20px; }
+  header h1{ font-size:20px; margin-bottom:6px; }
+  header p{ font-size:13.5px; color:#d7dee6; }
+
+  /* 구조 그림 (접이식) — 다른 ERP 화면과 같은 모양 */
+  details.overview{ background:#fff; border:1px solid var(--line); border-radius:12px; margin-bottom:16px; }
+  details.overview > summary{ list-style:none; cursor:pointer; padding:14px 18px; display:flex; flex-wrap:wrap; align-items:baseline; gap:8px; border-bottom:1px solid var(--line); }
+  details.overview > summary::-webkit-details-marker{ display:none; }
+  details.overview:not([open]) > summary{ border-bottom:none; }
+  .ov-title{ font-size:14.5px; font-weight:800; color:var(--navy); }
+  .ov-stats{ font-size:12.5px; color:var(--muted); }
+  .ov-toggle{ margin-left:auto; font-size:12px; color:var(--teal); font-weight:700; }
+  details.overview:not([open]) .ov-toggle::after{ content:"펼쳐 보기 ▾"; }
+  details.overview[open] .ov-toggle::after{ content:"접기 ▴"; }
+  .ov-body{ padding:16px 18px 20px; }
+  .ov-flow{ overflow-x:auto; }
+  .ov-flow svg{ width:100%; min-width:640px; height:auto; display:block; }
+  .ov-hint{ font-size:12px; color:var(--muted); margin-top:10px; }
+  .formula{ display:flex; flex-wrap:wrap; gap:10px; margin-top:14px; }
+  .formula div{ flex:1; min-width:240px; background:#faf7f1; border:1.5px solid var(--line); border-radius:10px; padding:10px 14px; font-size:13px; }
+  .formula b{ color:var(--navy); }
+
+  .layout{ display:flex; gap:18px; align-items:flex-start; }
+  .panel{ width:340px; flex:0 0 340px; }
+  .main{ flex:1; min-width:0; }
+
+  .card{ background:#fff; border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin-bottom:16px; }
+  .card h3{ font-size:14.5px; color:var(--navy); margin-bottom:12px; }
+
+  label{ display:block; font-size:12px; color:var(--muted); font-weight:700; margin:10px 0 4px; }
+  input, select, textarea{
+    width:100%; border:1px solid var(--line); border-radius:8px; padding:8px 10px;
+    font-size:14px; font-family:inherit; background:#fdfbf8;
+  }
+  input[type=number]{ font-variant-numeric:tabular-nums; }
+  textarea{ resize:vertical; min-height:44px; }
+  .row2{ display:flex; gap:8px; }
+  .row2 > div{ flex:1; min-width:0; }
+  .help{ font-size:11.5px; color:var(--muted); margin-top:3px; }
+
+  .btn{ border:none; border-radius:8px; padding:9px 14px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; }
+  .btn-copper{ background:var(--copper); color:#fff; }
+  .btn-line{ background:#fff; color:var(--muted); border:1px solid var(--line); }
+  .btn-block{ width:100%; margin-top:14px; }
+  .msg{ font-size:12.5px; margin-top:8px; padding:8px 10px; border-radius:8px; display:none; }
+  .msg.ok{ background:#e3f2e6; color:var(--green); display:block; }
+  .msg.err{ background:#fbeee9; color:var(--red); display:block; }
+
+  /* 오늘 요약 카드 */
+  .sum-head{ display:flex; flex-wrap:wrap; align-items:baseline; gap:8px; margin-bottom:12px; }
+  .sum-head h3{ margin-bottom:0; }
+  .sum-head input{ width:auto; padding:4px 8px; font-size:13px; }
+  .tiles{ display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:10px; }
+  .tile{ border:1.5px solid var(--line); border-radius:10px; padding:12px 14px; background:#faf7f1; }
+  .tile.total{ background:#eef4f8; border-color:#c9dde9; }
+  .tile.missing{ background:#fff; border-style:dashed; color:var(--muted); }
+  .tile .name{ font-size:13px; font-weight:800; color:var(--navy); }
+  .tile .big{ font-size:24px; font-weight:800; color:var(--green); font-variant-numeric:tabular-nums; line-height:1.3; }
+  .tile .big small{ font-size:12px; color:var(--muted); font-weight:700; margin-left:4px; }
+  .tile .line{ font-size:12.5px; color:var(--ink); font-variant-numeric:tabular-nums; }
+  .tile .line.dead b{ color:var(--red); }
+  .tile .diff{ font-size:11.5px; color:var(--muted); }
+
+  /* 기록 표 */
+  .tbl-wrap{ overflow-x:auto; }
+  table{ width:100%; border-collapse:collapse; font-size:13px; min-width:640px; }
+  th{ background:#f4efe6; color:var(--navy); font-weight:800; text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  td{ padding:8px 10px; border-bottom:1px solid #eee; font-variant-numeric:tabular-nums; vertical-align:top; }
+  td.num, th.num{ text-align:right; }
+  td.memo{ color:var(--muted); font-size:12px; max-width:200px; }
+  td .del{ font-size:11px; color:var(--red); border:none; background:none; cursor:pointer; font-family:inherit; }
+  td .edit{ font-size:11px; color:var(--teal); border:none; background:none; cursor:pointer; font-family:inherit; }
+  .filters{ display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
+  .filters select{ width:auto; padding:5px 8px; font-size:13px; }
+
+  .empty{ text-align:center; color:var(--muted); font-size:13px; padding:26px 10px; }
+  .empty .big{ font-size:30px; margin-bottom:8px; }
+
+  /* 계사 설정 */
+  .house-row{ display:flex; gap:6px; align-items:center; margin-bottom:6px; }
+  .house-row input{ padding:6px 8px; font-size:13px; }
+  .house-row .x{ border:none; background:none; color:var(--red); cursor:pointer; font-size:14px; }
+
+  footer{ text-align:center; color:var(--muted); font-size:12px; margin-top:20px; line-height:1.7; }
+  a.back{ color:var(--copper); font-weight:700; text-decoration:none; }
+
+  @media (max-width: 860px){
+    body{ padding:16px; }
+    .layout{ flex-direction:column; }
+    .panel{ width:100%; flex:none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🐔 산란·폐사 기록</h1>
+  <p>매일 계사(동)마다 「계란 몇 개 · 닭 몇 마리 죽었나」만 적으면 산란율과 폐사율은 자동으로 계산됩니다. 이 화면에 남긴 내용은 이 컴퓨터의 이 브라우저에만 저장됩니다 (실습판).</p>
+</header>
+
+<details class="overview" open>
+  <summary>
+    <span class="ov-title">🧠 구조 한눈에 보기 — 이 화면은 어떻게 돌아가나</span>
+    <span class="ov-stats">적는 칸 4개 · 자동 계산 2개 · 서랍 2칸</span>
+    <span class="ov-toggle"></span>
+  </summary>
+  <div class="ov-body">
+    <div class="ov-flow">
+      <svg viewBox="0 0 760 200" role="img" aria-label="직원이 동별로 계란 수와 폐사 수를 적으면 서랍에 저장되고, 화면이 산란율과 폐사율을 계산해 대표가 오늘 요약과 기록 표로 확인한다.">
+        <defs>
+          <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+        <line x1="170" y1="70" x2="206" y2="70" stroke="#3A8FB7" stroke-width="2" marker-end="url(#ah)"/>
+        <line x1="380" y1="70" x2="416" y2="70" stroke="#3A8FB7" stroke-width="2" marker-end="url(#ah)"/>
+        <line x1="590" y1="70" x2="626" y2="70" stroke="#3A8FB7" stroke-width="2" marker-end="url(#ah)"/>
+
+        <rect x="10" y="30" width="160" height="80" rx="12" fill="#eaf3f8" stroke="#3A8FB7" stroke-width="1.5"/>
+        <text x="90" y="62" text-anchor="middle" font-size="18" font-weight="800" fill="#2B3A4E">① 직원이 적기</text>
+        <text x="90" y="86" text-anchor="middle" font-size="12.5" fill="#4a6275">날짜·동·계란·폐사</text>
+
+        <rect x="210" y="30" width="170" height="80" rx="12" fill="#faf7f1" stroke="#C67B3C" stroke-width="1.5"/>
+        <text x="295" y="62" text-anchor="middle" font-size="18" font-weight="800" fill="#2B3A4E">② 서랍에 넣기</text>
+        <text x="295" y="86" text-anchor="middle" font-size="12.5" fill="#7a6a58">이 브라우저에 저장</text>
+
+        <rect x="420" y="30" width="170" height="80" rx="12" fill="#faf7f1" stroke="#C67B3C" stroke-width="1.5"/>
+        <text x="505" y="62" text-anchor="middle" font-size="18" font-weight="800" fill="#2B3A4E">③ 자동 계산</text>
+        <text x="505" y="86" text-anchor="middle" font-size="12.5" fill="#7a6a58">산란율 · 폐사율</text>
+
+        <rect x="630" y="30" width="120" height="80" rx="12" fill="#eef7f0" stroke="#3f7a52" stroke-width="1.5"/>
+        <text x="690" y="62" text-anchor="middle" font-size="18" font-weight="800" fill="#2B3A4E">④ 대표 확인</text>
+        <text x="690" y="86" text-anchor="middle" font-size="12.5" fill="#4a6a52">요약 · 표</text>
+
+        <rect x="110" y="140" width="580" height="44" rx="10" fill="#ffffff" stroke="#b9b2a4" stroke-width="1.5" stroke-dasharray="6 4"/>
+        <text x="400" y="167" text-anchor="middle" font-size="13" fill="#9a9384">나중에: 서랍 → 창고(Supabase)로 옮기면 직원 폰에서 적고 대표 PC에서 봄</text>
+        <line x1="295" y1="110" x2="295" y2="136" stroke="#9a9384" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#ah)"/>
+      </svg>
+    </div>
+    <div class="formula">
+      <div><b>산란율</b> = 그날 계란 수 ÷ 그날 아침 닭 마릿수 × 100<br><span style="color:var(--muted)">예) 계란 9,000개 ÷ 닭 10,000마리 = 90%</span></div>
+      <div><b>폐사율</b> = 그날 죽은 닭 수 ÷ 그날 아침 닭 마릿수 × 100<br><span style="color:var(--muted)">예) 5마리 ÷ 10,000마리 = 0.05%</span></div>
+    </div>
+    <div class="ov-hint">서랍 2칸: 「계사 목록(동 이름·처음 마릿수)」과 「매일 기록」. 닭 마릿수는 지난 기록에서 죽은 닭을 빼서 자동으로 채워 줍니다 (틀리면 고쳐 적으면 됩니다).</div>
+  </div>
+</details>
+
+<div class="layout">
+
+  <div class="panel">
+    <div class="card">
+      <h3 id="formTitle">✏️ 오늘 기록 적기</h3>
+
+      <div class="row2">
+        <div>
+          <label>날짜</label>
+          <input type="date" id="fDate">
+        </div>
+        <div>
+          <label>계사(동)</label>
+          <select id="fHouse"></select>
+        </div>
+      </div>
+
+      <label>오늘 아침 닭 마릿수</label>
+      <input type="number" id="fBirds" min="0" inputmode="numeric" placeholder="예) 10000">
+      <div class="help" id="birdsHelp"></div>
+
+      <div class="row2">
+        <div>
+          <label>계란 수 (개)</label>
+          <input type="number" id="fEggs" min="0" inputmode="numeric" placeholder="예) 9000">
+        </div>
+        <div>
+          <label>폐사 (마리)</label>
+          <input type="number" id="fDead" min="0" inputmode="numeric" placeholder="0">
+        </div>
+      </div>
+
+      <label>특이사항 · 폐사 원인 (선택)</label>
+      <textarea id="fMemo" placeholder="예) 2동 환기팬 고장, 더위로 폐사 2마리"></textarea>
+
+      <label>적은 사람</label>
+      <input type="text" id="fWriter" placeholder="이름">
+
+      <div class="msg" id="formMsg"></div>
+      <button class="btn btn-copper btn-block" onclick="saveRecord()">저장</button>
+    </div>
+
+    <div class="card">
+      <h3>🏚️ 계사(동) 목록</h3>
+      <div class="help" style="margin-bottom:10px;">동 이름과 처음 들어온(입추) 마릿수를 적어 두면, 첫 기록 때 마릿수를 자동으로 채워 줍니다.</div>
+      <div id="houseList"></div>
+      <div class="row2" style="margin-top:8px;">
+        <button class="btn btn-line" style="flex:1" onclick="addHouse()">+ 동 추가</button>
+        <button class="btn btn-copper" style="flex:1" onclick="saveHouses()">목록 저장</button>
+      </div>
+      <div class="msg" id="houseMsg"></div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="card">
+      <div class="sum-head">
+        <h3>📊 하루 요약</h3>
+        <input type="date" id="sumDate" onchange="renderSummary()">
+      </div>
+      <div class="tiles" id="tiles"></div>
+    </div>
+
+    <div class="card">
+      <h3>📋 기록 표 (<span id="countLabel">0</span>건)</h3>
+      <div class="filters">
+        <select id="filterHouse" onchange="renderTable()"></select>
+        <select id="filterDays" onchange="renderTable()">
+          <option value="7">최근 7일</option>
+          <option value="30" selected>최근 30일</option>
+          <option value="0">전체</option>
+        </select>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr><th>날짜</th><th>동</th><th class="num">마릿수</th><th class="num">계란</th><th class="num">산란율</th><th class="num">폐사</th><th class="num">폐사율</th><th>특이사항</th><th>적은 사람</th><th></th></tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div class="empty" id="emptyState">
+        <div class="big">🥚</div>
+        <div>아직 기록이 없습니다.</div>
+        <div style="margin-top:4px;">왼쪽에서 오늘 기록을 적어 보세요.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  erp-eggs.html · 정본 1장 · 데이터는 이 브라우저(localStorage)에 저장됨 · <a class="back" href="erp-map.html">← 지도로 돌아가기</a><br>
+  [AI 생성 초안 - 검토 전]
+</footer>
+
+<script>
+// ───────── 서랍 (localStorage) ─────────
+// 서랍 2칸: 계사 목록 / 매일 기록
+const HOUSE_KEY  = "nongbuErpHouses";
+const RECORD_KEY = "nongbuErpEggRecords";
+
+function load(key, fallback){
+  try{
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  }catch(e){ return fallback; }
+}
+function store(key, value){
+  try{ localStorage.setItem(key, JSON.stringify(value)); return true; }catch(e){ return false; }
+}
+
+// 계사 목록: [{ id, name, startBirds }]
+let houses  = load(HOUSE_KEY, [
+  { id:"h1", name:"1동", startBirds:null },
+  { id:"h2", name:"2동", startBirds:null },
+  { id:"h3", name:"3동", startBirds:null },
+  { id:"h4", name:"4동", startBirds:null }
+]);
+// 매일 기록: [{ id, date, houseId, birds, eggs, dead, memo, writer }]
+let records = load(RECORD_KEY, []);
+
+// ───────── 계산 ─────────
+function pct(part, whole, digits){
+  if(!whole) return null;
+  return part / whole * 100;
+}
+function fmtPct(v, digits){ return v === null ? "-" : v.toFixed(digits) + "%"; }
+function fmtNum(n){ return (n ?? 0).toLocaleString("ko-KR"); }
+function houseName(id){ const h = houses.find(h => h.id === id); return h ? h.name : "(삭제된 동)"; }
+function today(){
+  const d = new Date();
+  return new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+}
+
+// 그 동의 「바로 전 기록」을 찾아서, 마릿수 − 폐사 = 오늘 아침 마릿수로 제안
+function suggestBirds(houseId, date){
+  const prev = records
+    .filter(r => r.houseId === houseId && r.date < date)
+    .sort((a,b) => b.date.localeCompare(a.date))[0];
+  if(prev) return { birds: prev.birds - prev.dead, from: prev.date + " 기록에서 폐사 " + prev.dead + "마리를 뺀 숫자" };
+  const h = houses.find(h => h.id === houseId);
+  if(h && h.startBirds) return { birds: h.startBirds, from: "계사 목록의 처음 마릿수" };
+  return null;
+}
+
+// ───────── 입력 양식 ─────────
+const $ = id => document.getElementById(id);
+
+function fillHouseSelects(){
+  const opts = houses.map(h => `<option value="${h.id}">${esc(h.name)}</option>`).join("");
+  const keep = $("fHouse").value;
+  $("fHouse").innerHTML = opts;
+  if(houses.some(h => h.id === keep)) $("fHouse").value = keep;
+  const keepF = $("filterHouse").value;
+  $("filterHouse").innerHTML = `<option value="">모든 동</option>` + opts;
+  $("filterHouse").value = keepF;
+}
+
+// 날짜·동을 바꾸면: 이미 적은 기록이 있으면 불러오고, 없으면 마릿수만 제안
+function onFormKeyChange(){
+  const date = $("fDate").value, houseId = $("fHouse").value;
+  const existing = records.find(r => r.date === date && r.houseId === houseId);
+  if(existing){
+    $("fBirds").value = existing.birds;
+    $("fEggs").value = existing.eggs;
+    $("fDead").value = existing.dead;
+    $("fMemo").value = existing.memo || "";
+    $("fWriter").value = existing.writer || $("fWriter").value;
+    $("formTitle").textContent = "✏️ 기록 고치기 (이미 적은 날)";
+    $("birdsHelp").textContent = "이 날짜·동은 이미 기록이 있어요. 저장하면 고쳐집니다.";
+    return;
+  }
+  $("formTitle").textContent = "✏️ 오늘 기록 적기";
+  $("fEggs").value = ""; $("fDead").value = ""; $("fMemo").value = "";
+  const s = suggestBirds(houseId, date);
+  $("fBirds").value = s ? s.birds : "";
+  $("birdsHelp").textContent = s ? "자동으로 채움: " + s.from : "처음 적는 동이에요. 지금 마릿수를 적어 주세요.";
+}
+
+function showMsg(el, text, ok){
+  el.textContent = text;
+  el.className = "msg " + (ok ? "ok" : "err");
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.className = "msg"; }, 3500);
+}
+
+function readInt(id){
+  const v = $(id).value.trim();
+  if(v === "") return null;
+  const n = Number(v);
+  return Number.isInteger(n) && n >= 0 ? n : NaN;
+}
+
+function saveRecord(){
+  const date = $("fDate").value, houseId = $("fHouse").value;
+  const birds = readInt("fBirds"), eggs = readInt("fEggs");
+  const dead = readInt("fDead") ?? 0;
+  const msg = $("formMsg");
+
+  // 규칙: 꼭 적어야 하는 칸 / 말이 안 되는 숫자 막기
+  if(!date || !houseId)            return showMsg(msg, "날짜와 동을 골라 주세요.", false);
+  if(birds === null || !birds)     return showMsg(msg, "닭 마릿수를 적어 주세요.", false);
+  if(eggs === null)                return showMsg(msg, "계란 수를 적어 주세요.", false);
+  if([birds, eggs, dead].some(Number.isNaN)) return showMsg(msg, "숫자는 0 이상의 정수로 적어 주세요.", false);
+  if(dead > birds)                 return showMsg(msg, "폐사 수가 마릿수보다 많아요. 다시 확인해 주세요.", false);
+  if(eggs > birds * 1.2 && !confirm("계란 수가 마릿수보다 훨씬 많아요 (산란율 " + Math.round(eggs/birds*100) + "%). 그대로 저장할까요?")) return;
+
+  const rec = { date, houseId, birds, eggs, dead, memo: $("fMemo").value.trim(), writer: $("fWriter").value.trim() };
+  const i = records.findIndex(r => r.date === date && r.houseId === houseId);
+  if(i >= 0) records[i] = { ...records[i], ...rec };
+  else records.push({ id: "r" + Date.now(), ...rec });
+
+  const saved = store(RECORD_KEY, records);
+  try{ localStorage.setItem("nongbuErpEggWriter", rec.writer); }catch(e){}
+  $("sumDate").value = date;
+  renderAll();
+  onFormKeyChange();
+  if(!saved) return showMsg(msg, "화면에는 넣었지만 서랍에 저장하지 못했어요. 새로고침하면 사라집니다 (브라우저 저장소 문제).", false);
+  showMsg(msg, houseName(houseId) + " " + date + " 기록을 " + (i >= 0 ? "고쳤어요." : "저장했어요."), true);
+}
+
+function editRecord(id){
+  const r = records.find(r => r.id === id);
+  if(!r) return;
+  $("fDate").value = r.date; $("fHouse").value = r.houseId;
+  onFormKeyChange();
+  window.scrollTo({ top: $("fDate").getBoundingClientRect().top + window.scrollY - 80, behavior:"smooth" });
+}
+
+function deleteRecord(id){
+  const r = records.find(r => r.id === id);
+  if(!r || !confirm(r.date + " " + houseName(r.houseId) + " 기록을 지울까요?")) return;
+  records = records.filter(x => x.id !== id);
+  store(RECORD_KEY, records);
+  renderAll();
+  onFormKeyChange();
+}
+
+// ───────── 하루 요약 ─────────
+function renderSummary(){
+  const date = $("sumDate").value;
+  const day = records.filter(r => r.date === date);
+  const prevDate = records.map(r => r.date).filter(d => d < date).sort().pop();
+  const prev = prevDate ? records.filter(r => r.date === prevDate) : [];
+
+  function tile(name, list, prevList, cls){
+    const birds = list.reduce((s,r) => s + r.birds, 0);
+    const eggs  = list.reduce((s,r) => s + r.eggs, 0);
+    const dead  = list.reduce((s,r) => s + r.dead, 0);
+    const lay = pct(eggs, birds), mort = pct(dead, birds);
+    let diff = "";
+    if(prevList.length && lay !== null){
+      const pb = prevList.reduce((s,r) => s + r.birds, 0), pe = prevList.reduce((s,r) => s + r.eggs, 0);
+      const d = lay - pct(pe, pb);
+      diff = `<div class="diff">${prevDate} 보다 ${d >= 0 ? "▲" : "▼"} ${Math.abs(d).toFixed(1)}%p</div>`;
+    }
+    return `<div class="tile ${cls}">
+      <div class="name">${esc(name)}</div>
+      <div class="big">${fmtPct(lay,1)}<small>산란율</small></div>
+      <div class="line">계란 ${fmtNum(eggs)}개 / 닭 ${fmtNum(birds)}마리</div>
+      <div class="line dead">폐사 <b>${fmtNum(dead)}</b>마리 · 폐사율 ${fmtPct(mort,2)}</div>
+      ${diff}
+    </div>`;
+  }
+
+  let html = "";
+  // 전체 비교는 두 날 모두 같은 동들이 적혀 있을 때만 (안 그러면 숫자가 엉뚱해짐)
+  const sameHouses = prev.length === day.length && day.every(r => prev.some(p => p.houseId === r.houseId));
+  if(day.length) html += tile("농장 전체", day, sameHouses ? prev : [], "total");
+  houses.forEach(h => {
+    const list = day.filter(r => r.houseId === h.id);
+    if(list.length) html += tile(h.name, list, prev.filter(r => r.houseId === h.id), "");
+    else html += `<div class="tile missing"><div class="name">${esc(h.name)}</div><div class="line" style="margin-top:6px;">이 날 기록이 아직 없어요</div></div>`;
+  });
+  $("tiles").innerHTML = html;
+}
+
+// ───────── 기록 표 ─────────
+function renderTable(){
+  const hf = $("filterHouse").value, days = Number($("filterDays").value);
+  let from = "";
+  if(days){
+    const d = new Date(); d.setDate(d.getDate() - days + 1);
+    from = new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+  }
+  const list = records
+    .filter(r => (!hf || r.houseId === hf) && (!from || r.date >= from))
+    .sort((a,b) => b.date.localeCompare(a.date) || houseName(a.houseId).localeCompare(houseName(b.houseId)));
+
+  $("countLabel").textContent = list.length;
+  $("emptyState").style.display = list.length ? "none" : "block";
+  $("tbody").innerHTML = list.map(r => `<tr>
+      <td>${r.date}</td>
+      <td>${esc(houseName(r.houseId))}</td>
+      <td class="num">${fmtNum(r.birds)}</td>
+      <td class="num">${fmtNum(r.eggs)}</td>
+      <td class="num"><b>${fmtPct(pct(r.eggs, r.birds),1)}</b></td>
+      <td class="num">${fmtNum(r.dead)}</td>
+      <td class="num">${fmtPct(pct(r.dead, r.birds),2)}</td>
+      <td class="memo">${esc(r.memo || "")}</td>
+      <td>${esc(r.writer || "")}</td>
+      <td style="white-space:nowrap"><button class="edit" onclick="editRecord('${r.id}')">고치기</button><button class="del" onclick="deleteRecord('${r.id}')">지우기</button></td>
+    </tr>`).join("");
+}
+
+// ───────── 계사 목록 ─────────
+function renderHouses(){
+  $("houseList").innerHTML = houses.map((h, i) => `<div class="house-row">
+      <input type="text" value="${esc(h.name)}" data-i="${i}" data-f="name" placeholder="동 이름" style="flex:1">
+      <input type="number" value="${h.startBirds ?? ""}" data-i="${i}" data-f="startBirds" placeholder="처음 마릿수" min="0" style="flex:1.2">
+      <button class="x" title="이 동 빼기" onclick="removeHouse(${i})">✕</button>
+    </div>`).join("");
+}
+function readHouseInputs(){
+  document.querySelectorAll("#houseList input").forEach(inp => {
+    const h = houses[inp.dataset.i];
+    if(inp.dataset.f === "name") h.name = inp.value.trim();
+    else h.startBirds = inp.value === "" ? null : Math.max(0, Math.round(Number(inp.value)));
+  });
+}
+function addHouse(){
+  readHouseInputs();
+  houses.push({ id: "h" + Date.now(), name: (houses.length + 1) + "동", startBirds: null });
+  renderHouses();
+}
+function removeHouse(i){
+  readHouseInputs();
+  const h = houses[i];
+  const used = records.filter(r => r.houseId === h.id).length;
+  if(used && !confirm(h.name + "에는 기록이 " + used + "건 있어요. 목록에서 빼도 기록은 남지만 「삭제된 동」으로 보입니다. 뺄까요?")) return;
+  houses.splice(i, 1);
+  renderHouses();
+}
+function saveHouses(){
+  readHouseInputs();
+  if(houses.some(h => !h.name)) return showMsg($("houseMsg"), "동 이름이 빈 칸이 있어요.", false);
+  store(HOUSE_KEY, houses);
+  showMsg($("houseMsg"), "계사 목록을 저장했어요.", true);
+  renderAll();
+  onFormKeyChange();
+}
+
+// ───────── 공통 ─────────
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
+
+function renderAll(){
+  fillHouseSelects();
+  renderSummary();
+  renderTable();
+}
+
+// 처음 열 때
+$("fDate").value = today();
+$("sumDate").value = today();
+try{ $("fWriter").value = localStorage.getItem("nongbuErpEggWriter") || ""; }catch(e){}
+$("fDate").addEventListener("change", onFormKeyChange);
+$("fHouse").addEventListener("change", onFormKeyChange);
+renderHouses();
+renderAll();
+onFormKeyChange();
+</script>
+</body>
+</html>
