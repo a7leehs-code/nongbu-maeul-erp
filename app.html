@@ -1,0 +1,219 @@
+<!-- [AI 생성 초안 - 검토 전] 농부마을 앱 홈 — 휴대폰 첫 화면 -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>농부마을</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="erp-icon.png">
+<link rel="icon" href="erp-icon.png">
+<meta name="theme-color" content="#2B3A4E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="농부마을">
+<style>
+  :root{ --navy:#2B3A4E; --copper:#C67B3C; --cream:#F7F3EE; --teal:#3A8FB7; --ink:#243140; --muted:#6b7785; --line:#e3dccf; --green:#3f7a52; --red:#b3503a; --amber:#b7791f; }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{ font-family:"맑은 고딕","Malgun Gothic",sans-serif; background:var(--cream); color:var(--ink); line-height:1.5; padding:16px; padding-top:max(16px, env(safe-area-inset-top)); max-width:560px; margin:0 auto; }
+  header{ background:linear-gradient(135deg,#2B3A4E,#1a2636 58%,#C67B3C 210%); color:#fff; border-radius:16px; padding:18px 20px; margin-bottom:16px; display:flex; align-items:center; gap:14px; }
+  header img{ width:48px; height:48px; border-radius:12px; background:#fff; flex:0 0 auto; }
+  header .t{ font-size:20px; font-weight:800; }
+  header .s{ font-size:13px; color:#d7dee6; }
+  .who{ display:flex; align-items:center; gap:8px; font-size:13px; color:var(--muted); margin:-4px 2px 12px; }
+  .who b{ color:var(--ink); }
+  .who button{ margin-left:auto; border:1px solid var(--line); background:#fff; color:var(--muted); border-radius:8px; padding:5px 10px; font:inherit; font-size:12px; cursor:pointer; }
+
+  h2{ font-size:13px; color:var(--muted); font-weight:800; margin:18px 4px 8px; letter-spacing:.02em; }
+  .grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
+  a.app{ display:flex; flex-direction:column; gap:4px; background:#fff; border:1px solid var(--line); border-radius:16px; padding:16px 14px; text-decoration:none; color:var(--ink); min-height:112px; position:relative; }
+  a.app:active{ transform:scale(.98); background:#fbf8f3; }
+  a.app.big{ grid-column:span 1; border-width:1.5px; }
+  a.app .ic{ font-size:32px; line-height:1.1; }
+  a.app .nm{ font-size:15.5px; font-weight:800; color:var(--navy); }
+  a.app .st{ font-size:12.5px; color:var(--muted); }
+  a.app .st.ok{ color:var(--green); font-weight:700; }
+  a.app .st.soon{ color:var(--amber); font-weight:700; }
+  a.app .st.late{ color:var(--red); font-weight:700; }
+
+  .card{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:12px; }
+  label{ display:block; font-size:12px; color:var(--muted); font-weight:700; margin:10px 0 4px; }
+  input{ width:100%; border:1px solid var(--line); border-radius:8px; padding:10px; font-size:15px; font-family:inherit; background:#fdfbf8; }
+  .btn{ width:100%; border:none; border-radius:10px; padding:12px; font-size:15px; font-weight:800; cursor:pointer; font-family:inherit; background:var(--copper); color:#fff; margin-top:14px; }
+  .err{ font-size:12.5px; color:var(--red); margin-top:8px; min-height:1em; }
+  .hint{ font-size:12px; color:var(--muted); margin-top:10px; }
+
+  .install{ background:#eef4f8; border:1px solid #c9dde9; border-radius:14px; padding:12px 14px; font-size:13px; color:#2f4a5e; margin-top:18px; }
+  .install b{ color:var(--navy); }
+  footer{ text-align:center; color:var(--muted); font-size:11.5px; margin:22px 0 10px; }
+  footer a{ color:var(--copper); font-weight:700; text-decoration:none; }
+</style>
+</head>
+<body>
+
+<header>
+  <img src="erp-icon.png" alt="">
+  <div>
+    <div class="t">농부마을</div>
+    <div class="s" id="today"></div>
+  </div>
+</header>
+
+<div class="who" id="who"></div>
+<div id="login"></div>
+<div id="menu"></div>
+
+<div class="install" id="install">
+  📲 <b>휴대폰 홈 화면에 이 앱 하나만 두세요.</b><br>
+  브라우저 메뉴(⋮ 또는 공유 버튼) → 「홈 화면에 추가」. 예전에 따로 추가한 산란 기록·방역 소독 아이콘은 지워도 돼요. 이 앱 안에서 모두 열립니다.
+</div>
+
+<footer>농부마을 ERP · <a href="erp-map.html">전체 지도 보기</a> · [AI 생성 초안 - 검토 전]</footer>
+
+<script src="erp-config.js"></script>
+<script src="erp-data.js"></script>
+<script>
+const CFG = window.ERP_CONFIG || {};
+const LIVE = Boolean(CFG.supabaseUrl && CFG.supabaseAnonKey);
+const SUPABASE_JS = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js";
+const $ = id => document.getElementById(id);
+function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
+function localDate(d){ return new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10); }
+const TODAY = localDate(new Date());
+
+// ───────── 메뉴: ERP 지도(erp-data.js)에서 화면이 있는 칸을 모아 자동으로 버튼을 만듦 ─────────
+// 새 화면이 지도에 연결되면 여기에도 저절로 나타납니다.
+const GROUPS = [
+  { title:"🌾 매일 하는 일", codes:["일"] },
+  { title:"🤝 함께 쓰는 것", codes:["전사"] },
+  { title:"📦 그 밖에",      codes:["돈","물건","사람","기한","알리기"] }
+];
+// 짧은 이름 (휴대폰 버튼에 맞게)
+const SHORT = { "산란율/폐사율 기록":"산란·폐사 기록", "방역 소독 스케줄 체크":"방역 소독", "거래처 목록/연락처":"거래처 지도", "회사 일정판 (첫 칸)":"회사 일정판", "마을톡 (사내메신저)":"마을톡" };
+
+// 매일 쓰는 화면을 맨 앞에
+const FIRST = ["erp-eggs.html", "erp-disinfect.html"];
+// 아직 창고(DB)에 연결 안 된 화면 — 그 기기에만 저장된다고 알려줌
+const LOCAL_ONLY = { "erp-clients-map.html": "이 기기에만 저장" };
+
+function menuItems(codes){
+  return (window.ERP_CATEGORIES || [])
+    .filter(c => codes.includes(c.code))
+    .flatMap(c => c.items)
+    .filter(i => i.file && !/^https?:/.test(i.file) && i.status !== "todo")
+    .sort((a, b) => (FIRST.includes(b.file) - FIRST.includes(a.file)) || (FIRST.indexOf(a.file) - FIRST.indexOf(b.file)));
+}
+
+let status = {};   // file → { text, cls }  오늘 상황 한 줄
+
+function renderMenu(){
+  $("menu").innerHTML = GROUPS.map(g => {
+    const items = menuItems(g.codes);
+    if(!items.length) return "";
+    return `<h2>${g.title}</h2><div class="grid">` + items.map(i => {
+      const st = status[i.file];
+      return `<a class="app" href="${esc(i.file)}">
+        <span class="ic">${i.icon}</span>
+        <span class="nm">${esc(SHORT[i.name] || i.name)}</span>
+        <span class="st ${st ? st.cls : ""}">${st ? esc(st.text) : esc(LOCAL_ONLY[i.file] || i.often || "")}</span>
+      </a>`;
+    }).join("") + `</div>`;
+  }).join("");
+}
+
+// ───────── 로그인 (한 번 하면 앱 안의 모든 화면이 로그인된 상태) ─────────
+let sb = null, session = null, me = null;
+
+function loadScript(src){
+  return new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = src; s.onload = resolve; s.onerror = () => reject(new Error("인터넷 연결을 확인하세요."));
+    document.head.appendChild(s);
+  });
+}
+
+function renderWho(){
+  if(!LIVE){ $("who").innerHTML = ""; return; }
+  if(!session){ $("who").innerHTML = ""; return; }
+  $("who").innerHTML = `👤 <b>${esc(me ? me.name : "")}</b>${me ? " (" + esc(me.role) + ")" : ""} <button id="logoutBtn">로그아웃</button>`;
+  $("logoutBtn").onclick = () => sb.auth.signOut();
+}
+
+function renderLogin(){
+  if(!LIVE || session){ $("login").innerHTML = ""; return; }
+  $("login").innerHTML = `<div class="card">
+    <div style="font-weight:800;color:var(--navy)">로그인</div>
+    <label for="aEmail">이메일</label><input id="aEmail" type="email" autocomplete="email">
+    <label for="aPw">비밀번호</label><input id="aPw" type="password" autocomplete="current-password">
+    <div class="err" id="aErr"></div>
+    <button class="btn" id="authBtn">로그인</button>
+    <p class="hint">전자결재·산란 기록과 같은 계정입니다. 처음이면 아래 아무 화면에서 「처음 가입」을 하세요.</p>
+  </div>`;
+  $("authBtn").onclick = async () => {
+    const email = $("aEmail").value.trim(), password = $("aPw").value;
+    if(!email.includes("@") || password.length < 6){ $("aErr").textContent = "이메일과 비밀번호(6자 이상)를 확인해주세요."; return; }
+    $("authBtn").disabled = true;
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    $("authBtn").disabled = false;
+    if(error) $("aErr").textContent = error.message === "Invalid login credentials" ? "이메일 또는 비밀번호가 틀렸습니다." : error.message;
+  };
+}
+
+// ───────── 오늘 상황 (로그인했을 때만) ─────────
+async function loadStatus(){
+  status = {};
+  if(!session || !me || !me.active) return;
+  try{
+    const [houses, eggs, dis] = await Promise.all([
+      sb.from("egg_houses").select("id").eq("active", true),
+      sb.from("egg_records").select("house_id").eq("record_date", TODAY),
+      sb.from("disinfect_logs").select("kind,log_date").or("log_date.eq." + TODAY + ",kind.eq.주위").order("log_date", { ascending:false }).limit(500)
+    ]);
+    if(!houses.error && !eggs.error){
+      const total = houses.data.length, done = new Set(eggs.data.map(r => r.house_id)).size;
+      status["erp-eggs.html"] = done >= total && total
+        ? { text:"오늘 " + total + "동 모두 적음 ✓", cls:"ok" }
+        : { text:"오늘 " + done + " / " + total + "동 적음", cls: done ? "soon" : "" };
+    }
+    if(!dis.error){
+      const car = dis.data.filter(x => x.kind === "차량" && x.log_date === TODAY).length;
+      const person = dis.data.filter(x => x.kind === "사람" && x.log_date === TODAY).length;
+      const last = dis.data.filter(x => x.kind === "주위").map(x => x.log_date).sort().pop();
+      let text = "오늘 차량 " + car + " · 사람 " + person, cls = "";
+      if(last){
+        const left = Math.round((new Date(last + "T00:00:00").getTime() + 7*86400000 - new Date(TODAY + "T00:00:00").getTime()) / 86400000);
+        if(left < 0){ text += " · 주위 소독 " + (-left) + "일 지남"; cls = "late"; }
+        else if(left <= 2){ text += " · 주위 소독 " + (left ? left + "일 남음" : "오늘"); cls = "soon"; }
+      }else{ text += " · 주위 소독 기록 없음"; cls = "late"; }
+      status["erp-disinfect.html"] = { text, cls };
+    }
+  }catch(e){ /* 상황 한 줄은 못 불러와도 메뉴는 그대로 씀 */ }
+}
+
+async function onSession(){
+  me = null;
+  if(session){
+    const { data } = await sb.from("profiles").select("name,email,role,active").eq("id", session.user.id).maybeSingle();
+    me = data ? { name: data.name || data.email, role: data.role, active: data.active } : null;
+  }
+  await loadStatus();
+  renderWho(); renderLogin(); renderMenu();
+}
+
+// ───────── 시작 ─────────
+const d = new Date();
+$("today").textContent = (d.getMonth()+1) + "월 " + d.getDate() + "일 " + "일월화수목금토"[d.getDay()] + "요일";
+if(window.matchMedia("(display-mode: standalone)").matches || navigator.standalone) $("install").style.display = "none";
+renderMenu();
+(async () => {
+  if(!LIVE) return;
+  try{
+    await loadScript(SUPABASE_JS);
+    sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey);
+    sb.auth.onAuthStateChange((_e, s) => { session = s; setTimeout(onSession, 0); });
+  }catch(e){ /* 연결이 안 돼도 메뉴 버튼은 쓸 수 있음 */ }
+})();
+// 다른 화면에서 돌아오면 오늘 상황 다시 불러오기
+document.addEventListener("visibilitychange", () => { if(document.visibilityState === "visible" && session) onSession(); });
+</script>
+</body>
+</html>

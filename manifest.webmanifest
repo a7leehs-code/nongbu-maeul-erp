@@ -1,0 +1,14 @@
+{
+  "name": "농부마을 ERP",
+  "short_name": "농부마을",
+  "description": "농부마을 산란 기록·방역 소독·전자결재를 한 앱에서",
+  "start_url": "app.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F7F3EE",
+  "theme_color": "#2B3A4E",
+  "lang": "ko",
+  "icons": [
+    { "src": "erp-icon.png", "sizes": "256x256", "type": "image/png", "purpose": "any" }
+  ]
+}
