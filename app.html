@@ -173,6 +173,27 @@ async function loadStatus(){
       sb.from("disinfect_tasks").select("id,weekday,every_days,log_kind").eq("active", true),
       sb.from("disinfect_logs").select("kind,log_date,task_id").in("kind", ["주위", "일정"]).gte("log_date", since).limit(2000)
     ]);
+    // 부자재: 남은 개수가 알림 기준 이하인 품목 (부자재 화면과 같은 계산)
+    try{
+      const [si, sl] = await Promise.all([
+        sb.from("supplies").select("id,name,min_qty").eq("active", true),
+        sb.from("supply_logs").select("supply_id,kind,qty,log_date,id").lte("log_date", TODAY).order("log_date").order("id").limit(20000)
+      ]);
+      if(!si.error && !sl.error){
+        const need = [];
+        let any = false;
+        si.data.forEach(it => {
+          const L = sl.data.filter(l => l.supply_id === it.id);
+          if(!L.length) return;
+          any = true;
+          let stock = 0;
+          L.forEach(l => { const q = Number(l.qty); stock = l.kind === "실사" ? q : l.kind === "입고" ? stock + q : stock - q; });
+          if(stock <= Number(it.min_qty) || stock <= 0) need.push(it.name);
+        });
+        status["erp-supplies.html"] = need.length ? { text:"주문: " + need.join(", "), cls:"late" }
+          : any ? { text:"부자재 넉넉함 ✓", cls:"ok" } : { text:"처음 개수를 적어 주세요", cls:"" };
+      }
+    }catch(e){}
     // 사료 재고: 며칠치 남았는지 (사료 재고 화면과 같은 계산을 줄여서)
     try{
       const [fb, fl] = await Promise.all([
