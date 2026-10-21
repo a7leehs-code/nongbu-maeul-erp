@@ -26,9 +26,10 @@ create index if not exists medicine_purchases_date_idx on public.medicine_purcha
 create or replace function public.medicine_purchases_stamp() returns trigger
 language plpgsql set search_path = public as $$
 begin
-  new.written_by := auth.uid();
+  -- 적은 사람은 처음 적은 사람으로 고정 (고쳐도 바뀌지 않음) → 「자기가 적은 기록」 판정에 씀
+  if tg_op = 'INSERT' then new.written_by := auth.uid(); new.created_at := now();
+  else new.written_by := old.written_by; new.created_at := old.created_at; end if;
   new.updated_at := now();
-  if tg_op = 'INSERT' then new.created_at := now(); end if;
   return new;
 end;
 $$;
@@ -38,7 +39,7 @@ create trigger medicine_purchases_stamp before insert or update on public.medici
 
 -- ─────────────────────────────────────────────
 -- 2. 권한 (RLS) — 산란 기록·방역 소독과 같은 규칙
---    승인된 직원: 읽기·적기·고치기 / 대표만: 지우기 / 로그인 안 한 사람: 아무것도 못 함
+--    승인된 직원: 읽기·적기·고치기 / 지우기: 적은 사람 본인 또는 대표 / 로그인 안 한 사람: 아무것도 못 함
 -- ─────────────────────────────────────────────
 alter table public.medicine_purchases enable row level security;
 
@@ -49,7 +50,7 @@ drop policy if exists "medicine_delete" on public.medicine_purchases;
 create policy "medicine_read"   on public.medicine_purchases for select to authenticated using (public.is_active_member());
 create policy "medicine_insert" on public.medicine_purchases for insert to authenticated with check (public.is_active_member());
 create policy "medicine_update" on public.medicine_purchases for update to authenticated using (public.is_active_member()) with check (public.is_active_member());
-create policy "medicine_delete" on public.medicine_purchases for delete to authenticated using (public.is_ceo());
+create policy "medicine_delete" on public.medicine_purchases for delete to authenticated using (public.is_ceo() or (public.is_active_member() and written_by = auth.uid()));
 
 revoke all on public.medicine_purchases from anon, authenticated;
 grant select, insert, update, delete on public.medicine_purchases to authenticated;

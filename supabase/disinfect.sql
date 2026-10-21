@@ -25,9 +25,10 @@ create index if not exists disinfect_logs_date_idx on public.disinfect_logs(log_
 create or replace function public.disinfect_logs_stamp() returns trigger
 language plpgsql set search_path = public as $$
 begin
-  new.written_by := auth.uid();
+  -- 적은 사람은 처음 적은 사람으로 고정 (고쳐도 바뀌지 않음) → 「자기가 적은 기록」 판정에 씀
+  if tg_op = 'INSERT' then new.written_by := auth.uid(); new.created_at := now();
+  else new.written_by := old.written_by; new.created_at := old.created_at; end if;
   new.updated_at := now();
-  if tg_op = 'INSERT' then new.created_at := now(); end if;
   return new;
 end;
 $$;
@@ -37,7 +38,7 @@ create trigger disinfect_logs_stamp before insert or update on public.disinfect_
 
 -- ─────────────────────────────────────────────
 -- 2. 권한 (RLS) — 산란 기록과 같은 규칙
---    승인된 직원: 읽기·적기·고치기 / 대표만: 지우기 / 로그인 안 한 사람: 아무것도 못 함
+--    승인된 직원: 읽기·적기·고치기 / 지우기: 적은 사람 본인 또는 대표 / 로그인 안 한 사람: 아무것도 못 함
 -- ─────────────────────────────────────────────
 alter table public.disinfect_logs enable row level security;
 
@@ -48,7 +49,7 @@ drop policy if exists "disinfect_delete" on public.disinfect_logs;
 create policy "disinfect_read"   on public.disinfect_logs for select to authenticated using (public.is_active_member());
 create policy "disinfect_insert" on public.disinfect_logs for insert to authenticated with check (public.is_active_member());
 create policy "disinfect_update" on public.disinfect_logs for update to authenticated using (public.is_active_member()) with check (public.is_active_member());
-create policy "disinfect_delete" on public.disinfect_logs for delete to authenticated using (public.is_ceo());
+create policy "disinfect_delete" on public.disinfect_logs for delete to authenticated using (public.is_ceo() or (public.is_active_member() and written_by = auth.uid()));
 
 revoke all on public.disinfect_logs from anon, authenticated;
 grant select, insert, update, delete on public.disinfect_logs to authenticated;

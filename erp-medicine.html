@@ -139,7 +139,7 @@
         <text x="620" y="141" text-anchor="middle" font-size="14" font-weight="800" fill="#2B3A4E">유효기간 다가옴 · 지남 알림</text>
       </svg>
     </div>
-    <div class="ov-hint">전에 산 약품 이름을 고르면 종류·단위·구입처가 지난번 그대로 채워집니다. 적은 사람은 로그인한 이름으로 자동 기록돼요. 지우기는 대표만 할 수 있어요.</div>
+    <div class="ov-hint">전에 산 약품 이름을 고르면 종류·단위·구입처가 지난번 그대로 채워집니다. 적은 사람은 로그인한 이름으로 자동 기록돼요. 자기가 적은 기록은 지울 수 있고, 다른 사람 기록은 대표만 지울 수 있어요.</div>
   </div>
 </details>
 
@@ -183,6 +183,7 @@
 
       <div class="msg" id="formMsg"></div>
       <button class="btn btn-copper btn-block" id="saveBtn">저장</button>
+      <button class="btn btn-line btn-block" id="delBtn" style="display:none;margin-top:6px;color:var(--red)">🗑 이 기록 지우기</button>
       <button class="btn btn-line btn-block" id="cancelBtn" style="display:none;margin-top:6px">고치기 취소</button>
     </div>
   </div>
@@ -259,6 +260,14 @@ let editingId = null;
 const $ = id => document.getElementById(id);
 function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
 function isCeo(){ return !LIVE || (!!me && me.role === "대표"); }
+// 자기가 적은 기록은 본인이, 모든 기록은 대표가 지울 수 있음 (최종 판정은 창고가 함)
+function canDelete(x){ return !LIVE || isCeo() || (!!me && x.writerId === me.id); }
+// 입력 칸의 「이 기록 지우기」 버튼 — 고칠 기록이 있고 지울 수 있을 때만 보임. 지우고 나면 입력 칸을 비움
+function showDelBtn(rec, onDelete){
+  const b = document.getElementById("delBtn");
+  b.style.display = rec && canDelete(rec) ? "" : "none";
+  b.onclick = onDelete ? async () => { await onDelete(); if(!items.some(x => x.id === rec.id)) resetForm(); } : null;
+}
 function localDate(d){ return new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10); }
 function today(){ return localDate(new Date()); }
 function addDays(s, n){ const d = new Date(s + "T00:00:00"); d.setDate(d.getDate() + n); return localDate(d); }
@@ -297,13 +306,13 @@ function friendly(msg){
   if(/Email not confirmed/i.test(msg)) return "메일함의 확인 링크를 먼저 눌러주세요.";
   if(/already registered/i.test(msg)) return "이미 가입된 이메일입니다. 로그인해주세요.";
   if(/medicine_purchases.*does not exist|Could not find the table/i.test(msg)) return "약품 구입 표가 아직 없습니다. supabase/medicine.sql 을 실행했는지 확인하세요.";
-  if(/row-level security|permission denied/i.test(msg)) return "이 일은 권한이 없어요. (기록 지우기는 대표만 할 수 있어요)";
+  if(/row-level security|permission denied/i.test(msg)) return "이 일은 권한이 없어요. (기록은 적은 사람 본인이나 대표만 지울 수 있어요)";
   return msg;
 }
 function rowToItem(r){
   return { id: String(r.id), date: r.buy_date, category: r.category, name: r.name, qty: r.qty == null ? null : Number(r.qty),
            unit: r.unit, amount: r.amount == null ? null : Number(r.amount), vendor: r.vendor, expiry: r.expiry || "",
-           memo: r.memo, writer: (r.writer && r.writer.name) || "" };
+           memo: r.memo, writer: (r.writer && r.writer.name) || "", writerId: r.written_by };
 }
 const Live = {
   async init(){
@@ -315,7 +324,7 @@ const Live = {
     let all = [];
     for(let from = 0; ; from += 1000){
       const q = await sb.from("medicine_purchases")
-        .select("id,buy_date,category,name,qty,unit,amount,vendor,expiry,memo,writer:profiles(name)")
+        .select("id,buy_date,category,name,qty,unit,amount,vendor,expiry,memo,written_by,writer:profiles(name)")
         .order("buy_date").order("id").range(from, from + 999);
       if(q.error) throw new Error(q.error.message);
       all = all.concat(q.data);
@@ -335,7 +344,7 @@ const Live = {
   async remove(id){
     const { data, error } = await sb.from("medicine_purchases").delete().eq("id", Number(id)).select("id");
     if(error) throw new Error(friendly(error.message));
-    if(!data.length) throw new Error("지우지 못했어요. 기록 지우기는 대표만 할 수 있어요.");
+    if(!data.length) throw new Error("지우지 못했어요. 기록은 적은 사람 본인이나 대표만 지울 수 있어요.");
     await this.load();
   }
 };
@@ -365,6 +374,7 @@ function onNamePicked(){
 function resetForm(){
   editingId = null;
   $("formTitle").textContent = "✏️ 약품 구입 적기";
+  showDelBtn(null);
   $("cancelBtn").style.display = "none";
   $("fDate").value = today();
   $("fCat").value = CATS[0];
@@ -422,6 +432,7 @@ function editItem(id){
   $("fVendor").value = x.vendor; $("fExpiry").value = x.expiry; $("fMemo").value = x.memo;
   $("amountHelp").textContent = "";
   $("formTitle").textContent = "✏️ 구입 내역 고치기";
+  showDelBtn(x, () => deleteItem(id));
   $("cancelBtn").style.display = "";
   window.scrollTo({ top: $("formTitle").getBoundingClientRect().top + window.scrollY - 80, behavior:"smooth" });
 }
@@ -488,7 +499,7 @@ function renderTable(){
       <td class="${expCls}">${esc(x.expiry)}</td>
       <td class="memo">${esc(x.memo)}</td>
       <td>${esc(x.writer)}</td>
-      <td style="white-space:nowrap"><button class="edit" onclick="editItem('${x.id}')">고치기</button>${isCeo() ? `<button class="del" onclick="deleteItem('${x.id}')">지우기</button>` : ""}</td>
+      <td style="white-space:nowrap"><button class="edit" onclick="editItem('${x.id}')">고치기</button>${canDelete(x) ? `<button class="del" onclick="deleteItem('${x.id}')">지우기</button>` : ""}</td>
     </tr>`;
   }).join("");
 }
