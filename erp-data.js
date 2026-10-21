@@ -20,6 +20,7 @@ window.ERP_CATEGORIES = [
     sub: "돈이 새는 지점을 보는 묶음. 7·8회차(회계·재무)에서 채운다.",
     items: [
       { icon:"📥", name: "자료 수집현황", where: "통장·세금계산서·현금영수증·카드가 며칠 것까지 들어왔나 (클로브) · 대표·재무만 봄", often: "매일 확인", urgency: "상", order: "7회차", status: "inprogress", file: "erp-money-collect.html" },
+      { icon:"🗂️", name: "거래 분류함", where: "통장 거래를 내 분류(계란 매출·사람·사료·약품·자리·설비·파는 데 드는 돈 / 손익 아님)로 나눔 · 클로브 분류는 참고만 · 대표·재무만 봄", often: "매주", urgency: "상", order: "7회차", status: "inprogress", file: "erp-money-sort.html" },
       { icon:"🥚", name: "계란 출하량/매출 집계", where: "엑셀 일부 + 정리 안 함", often: "정산 때마다", urgency: "상", order: 1, status: "todo" },
       { icon:"💰", name: "거래처별 판매 단가", where: "엑셀/기억", often: "수시", urgency: "중", order: null, status: "todo" },
       { icon:"🧾", name: "거래처 정산서 작성", where: "수기/엑셀, 매번 번거로움", often: "월 1회", urgency: "중", order: null, status: "todo" },
