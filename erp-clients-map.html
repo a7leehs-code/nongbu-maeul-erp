@@ -14,6 +14,20 @@
   header h1{ font-size:20px; margin-bottom:6px; }
   header p{ font-size:13.5px; color:#d7dee6; }
 
+  .warn{ background:#fbeee9; border-left:4px solid var(--red); padding:11px 15px; font-size:12.8px; color:#8a3a2a; margin-bottom:16px; border-radius:6px; }
+  .warn.live{ background:#eef7f0; border-left-color:var(--green); color:#2f5e3e; }
+  .bar{ display:flex; flex-wrap:wrap; align-items:center; gap:10px; background:#fff; border:1px solid var(--line); border-radius:12px; padding:10px 16px; margin-bottom:14px; }
+  .bar .who{ font-size:13px; color:var(--muted); flex:1; min-width:180px; }
+  .auth{ max-width:420px; margin:0 auto 16px; }
+  .auth .switch{ display:flex; gap:6px; margin-bottom:6px; }
+  .auth .switch .btn{ flex:1; }
+  .msg{ font-size:12.5px; margin-top:8px; padding:8px 10px; border-radius:8px; display:none; }
+  .msg.ok{ background:#e3f2e6; color:var(--green); display:block; }
+  .msg.err{ background:#fbeee9; color:var(--red); display:block; }
+  .help{ font-size:11.5px; color:var(--muted); margin-top:3px; }
+  .migrate{ background:#fff8ea; border:1px solid #f0d9a8; border-radius:12px; padding:12px 16px; margin-bottom:14px; font-size:13px; color:#6b4a1a; display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+  .migrate span{ flex:1; min-width:200px; }
+
   .layout{ display:flex; gap:18px; align-items:flex-start; }
   .panel{ width:340px; flex:0 0 340px; }
   .mapcol{ flex:1; min-width:0; }
@@ -22,22 +36,20 @@
   .card h3{ font-size:14.5px; color:var(--navy); margin-bottom:12px; }
 
   label{ display:block; font-size:12px; color:var(--muted); font-weight:700; margin:10px 0 4px; }
-  label:first-of-type{ margin-top:0; }
-  input[type=text], input[type=tel], textarea{
+  input[type=text], input[type=tel], input[type=email], input[type=password], input[type=search], textarea{
     width:100%; border:1px solid var(--line); border-radius:8px; padding:8px 10px;
     font-size:13.5px; font-family:inherit; background:#fdfbf8;
   }
   textarea{ resize:vertical; min-height:44px; }
   .row2{ display:flex; gap:8px; }
-  .row2 > div{ flex:1; }
+  .row2 > div{ flex:1; min-width:0; }
 
   .btn{ border:none; border-radius:8px; padding:9px 14px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; }
   .btn-copper{ background:var(--copper); color:#fff; }
   .btn-teal{ background:var(--teal); color:#fff; }
   .btn-line{ background:#fff; color:var(--muted); border:1px solid var(--line); }
-  .btn-red{ background:#fbeee9; color:var(--red); }
   .btn-block{ width:100%; margin-top:12px; }
-  .btn-row{ display:flex; gap:8px; margin-top:12px; }
+  .btn-row{ display:flex; gap:8px; margin-top:8px; }
   .btn-row .btn{ flex:1; }
 
   .geo-status{ font-size:12px; margin-top:8px; padding:8px 10px; border-radius:8px; display:none; }
@@ -47,18 +59,20 @@
 
   #map{ height:560px; border-radius:14px; border:1px solid var(--line); }
 
-  .listcard{ margin-top:16px; }
-  .client-item{
-    display:flex; align-items:flex-start; gap:10px; padding:11px 4px; border-bottom:1px solid #eee; cursor:pointer;
-  }
+  .client-item{ display:flex; align-items:flex-start; gap:10px; padding:11px 4px; border-bottom:1px solid #eee; cursor:pointer; }
   .client-item:last-child{ border-bottom:none; }
   .client-item:hover{ background:var(--cream); border-radius:8px; }
   .client-item .dot{ width:9px; height:9px; border-radius:50%; background:var(--teal); margin-top:5px; flex:0 0 auto; }
   .client-item .body{ flex:1; min-width:0; }
   .client-item .name{ font-size:13.8px; font-weight:700; }
+  .client-item .kind{ font-size:11px; font-weight:800; color:var(--copper); margin-left:4px; }
   .client-item .addr{ font-size:12px; color:var(--muted); margin-top:2px; }
   .client-item .tel{ font-size:12px; color:var(--teal); margin-top:2px; }
-  .client-item .del{ font-size:11px; color:var(--red); border:none; background:none; cursor:pointer; padding:2px 6px; }
+  .client-item .tel a{ color:inherit; text-decoration:none; }
+  .client-item .act{ display:flex; flex-direction:column; gap:2px; }
+  .client-item .act button{ font-size:11px; border:none; background:none; cursor:pointer; padding:2px 6px; font-family:inherit; }
+  .client-item .act .ed{ color:var(--teal); }
+  .client-item .act .del{ color:var(--red); }
 
   .empty{ text-align:center; color:var(--muted); font-size:13px; padding:30px 10px; }
   .empty .big{ font-size:30px; margin-bottom:8px; }
@@ -68,6 +82,7 @@
   .popup-addr{ color:var(--muted); margin-bottom:2px; }
   .popup-tel{ color:var(--teal); }
   .popup-memo{ margin-top:6px; color:var(--ink); white-space:pre-wrap; }
+  .popup-who{ margin-top:4px; color:var(--muted); font-size:11.5px; }
   .popup-actions{ margin-top:8px; display:flex; gap:6px; }
   .popup-actions button{ font-size:11.5px; padding:4px 9px; border-radius:6px; border:none; cursor:pointer; font-family:inherit; font-weight:700; }
   .popup-edit{ background:var(--teal); color:#fff; }
@@ -77,10 +92,11 @@
   a.back{ color:var(--copper); font-weight:700; text-decoration:none; }
 
   @media (max-width: 860px){
+    body{ padding:16px; }
     .layout{ flex-direction:column; }
     .panel{ width:100%; flex:none; order:2; }
     .mapcol{ order:1; width:100%; }
-    #map{ height:380px; }
+    #map{ height:340px; }
   }
 </style>
 </head>
@@ -88,53 +104,60 @@
 
 <header>
   <h1>📍 거래처·배송지 지도</h1>
-  <p>거래처·배송지 주소를 입력하면 지도에 핀으로 표시됩니다. 핀을 누르면 수정·삭제할 수 있어요. 이 화면에 남긴 내용은 이 컴퓨터의 이 브라우저에만 저장됩니다.</p>
+  <p>거래처·배송지 주소를 입력하면 지도에 핀으로 표시됩니다. 핀이나 목록을 누르면 수정·삭제할 수 있어요. 직원이 등록하면 모두에게 함께 보입니다.</p>
 </header>
 
-<div class="layout">
+<div class="warn" id="modeNote"></div>
+<div class="bar" id="bar" style="display:none"></div>
+<div id="auth"></div>
+<div class="migrate" id="migrateBox" style="display:none"></div>
+
+<div class="layout" id="app" style="display:none">
 
   <div class="panel">
     <div class="card" id="formCard">
       <h3 id="formTitle">➕ 거래처·배송지 추가</h3>
 
       <label>이름 (거래처명 / 배송지명)</label>
-      <input type="text" id="fName" placeholder="예) 철원 협신농장">
+      <input type="text" id="fName" maxlength="60" placeholder="예) 철원 협신농장">
 
       <label>주소</label>
-      <input type="text" id="fAddr" placeholder="예) 강원도 철원군 ...">
+      <input type="text" id="fAddr" maxlength="200" placeholder="예) 강원도 철원군 ...">
 
       <div class="row2">
         <div>
           <label>연락처</label>
-          <input type="tel" id="fTel" placeholder="010-0000-0000">
+          <input type="tel" id="fTel" maxlength="40" placeholder="010-0000-0000">
         </div>
         <div>
           <label>분류</label>
-          <input type="text" id="fType" placeholder="거래처 / 배송지 등">
+          <input type="text" id="fType" maxlength="30" list="kindList" placeholder="거래처 / 배송지 등">
+          <datalist id="kindList"></datalist>
         </div>
       </div>
 
       <label>메모</label>
-      <textarea id="fMemo" placeholder="배송 시 참고사항 등"></textarea>
+      <textarea id="fMemo" maxlength="500" placeholder="배송 시 참고사항 등"></textarea>
 
       <div id="geoStatus" class="geo-status"></div>
 
       <button class="btn btn-copper btn-block" id="saveBtn" onclick="saveClient()">주소로 위치 찾아서 저장</button>
       <div class="btn-row" id="editExtra" style="display:none;">
         <button class="btn btn-line" onclick="cancelEdit()">취소</button>
+        <button class="btn btn-line" id="delBtn" style="color:var(--red)">🗑 지우기</button>
       </div>
       <div style="font-size:11px;color:var(--muted);margin-top:10px;">
-        주소 검색은 OpenStreetMap(Nominatim)을 사용합니다. 도로명 주소를 정확히 입력할수록 잘 찾습니다. 자동으로 안 찾아지면 지도를 직접 클릭해 위치를 지정해도 됩니다.
+        주소 검색은 OpenStreetMap(Nominatim)을 사용합니다. 도로명 주소를 정확히 입력할수록 잘 찾습니다. 자동으로 안 찾아지면 지도를 직접 눌러 위치를 지정해도 됩니다.
       </div>
     </div>
 
-    <div class="card listcard">
+    <div class="card">
       <h3>📋 등록된 거래처·배송지 (<span id="countLabel">0</span>)</h3>
+      <input type="search" id="q" placeholder="🔎 이름·주소·연락처·분류로 찾기" style="margin-bottom:6px">
       <div id="listBody"></div>
       <div class="empty" id="emptyState">
         <div class="big">🗺️</div>
-        <div>아직 등록된 위치가 없습니다.</div>
-        <div style="margin-top:4px;">위 양식에서 주소를 입력하고 저장해보세요.</div>
+        <div id="emptyText">아직 등록된 위치가 없습니다.</div>
       </div>
     </div>
   </div>
@@ -146,61 +169,125 @@
 </div>
 
 <footer>
-  erp-clients-map.html · 정본 1장 · 데이터는 이 브라우저(localStorage)에 저장됨 · <a class="back" href="erp-map.html">← 지도로 돌아가기</a><br>
+  erp-clients-map.html · 정본 1장 · 기록은 농부마을 창고(Supabase)에 저장됨 (실습판: 주소 끝 ?practice=1) · <a class="back" href="erp-map.html">← 지도로 돌아가기</a><br>
   [AI 생성 초안 - 검토 전]
 </footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="erp-config.js"></script>
 <script>
-// ---------------------------------------------------------------
-// 데이터: localStorage에 저장 (key: nongbuErpClients)
-// ---------------------------------------------------------------
-const STORAGE_KEY = "nongbuErpClients";
+const CFG = window.ERP_CONFIG || {};
+const LIVE = Boolean(CFG.supabaseUrl && CFG.supabaseAnonKey) && !/[?&]practice=1(&|$)/.test(location.search);
+const SUPABASE_JS = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js";
+const KINDS = ["거래처", "배송지", "소비자", "식당·납품처", "사료·약품 업체"];
 
-function loadClients(){
-  try{
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  }catch(e){ return []; }
-}
-function persistClients(list){
-  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }catch(e){}
-}
-
-let clients = loadClients();
+// 거래처: [{ id, name, type, addr, tel, memo, lat, lng, writer, writerId }]
+let clients = [];
+let me = null;
 let editingId = null;
 let pendingLatLng = null; // 지도 클릭으로 수동 지정한 좌표
 
-// ---------------------------------------------------------------
-// 지도 초기화 (기본 중심: 대한민국)
-// ---------------------------------------------------------------
-const map = L.map('map').setView([36.5, 127.8], 7);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19,
-  attribution: '&copy; OpenStreetMap contributors'
-}).addTo(map);
+const $ = id => document.getElementById(id);
+function escapeHtml(s){ return String(s ?? "").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function isCeo(){ return !LIVE || (!!me && me.role === "대표"); }
+// 자기가 등록한 곳은 본인이, 모든 곳은 대표가 지울 수 있음 (최종 판정은 창고가 함)
+function canDelete(c){ return !LIVE || isCeo() || (!!me && c.writerId === me.id); }
 
+// ───────── 저장소 ① 실습판 — 이 브라우저에만 (예전부터 쓰던 서랍 이름 그대로) ─────────
+const STORAGE_KEY = "nongbuErpClients";
+function loadLocal(){ try{ const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) : []; }catch(e){ return []; } }
+const Practice = {
+  async load(){ clients = loadLocal(); },
+  persist(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(clients)); }catch(e){ throw new Error("이 브라우저에 저장하지 못했어요."); } },
+  async save(rec){
+    if(rec.id) clients = clients.map(c => c.id === rec.id ? { ...c, ...rec } : c);
+    else clients.push({ ...rec, id: "c" + Date.now() });
+    this.persist();
+  },
+  async remove(id){ clients = clients.filter(c => c.id !== id); this.persist(); }
+};
+
+// ───────── 저장소 ② 실사용 — 창고 (농부마을 DB · Supabase) ─────────
+let sb = null, session = null, liveError = "";
+function loadScript(src){
+  return new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = src; s.onload = resolve;
+    s.onerror = () => reject(new Error("라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인하세요."));
+    document.head.appendChild(s);
+  });
+}
+function friendly(msg){
+  if(/Failed to fetch|NetworkError|Load failed/i.test(msg)) return "창고(서버)에 연결하지 못했습니다. 인터넷 연결을 확인하세요.";
+  if(msg === "Invalid login credentials") return "이메일 또는 비밀번호가 틀렸습니다.";
+  if(/Email not confirmed/i.test(msg)) return "메일함의 확인 링크를 먼저 눌러주세요.";
+  if(/already registered/i.test(msg)) return "이미 가입된 이메일입니다. 로그인해주세요.";
+  if(/clients.*does not exist|Could not find the table/i.test(msg)) return "거래처 표가 아직 없습니다. supabase/clients.sql 을 실행했는지 확인하세요.";
+  if(/row-level security|permission denied/i.test(msg)) return "이 일은 권한이 없어요. (등록한 사람 본인이나 대표만 지울 수 있어요)";
+  return msg;
+}
+function rowToClient(r){
+  return { id: String(r.id), name: r.name, type: r.kind, addr: r.addr, tel: r.tel, memo: r.memo, lat: r.lat, lng: r.lng,
+           writer: (r.writer && r.writer.name) || "", writerId: r.written_by };
+}
+function clientToRow(c){ return { name: c.name, kind: c.type || "", addr: c.addr || "", tel: c.tel || "", memo: c.memo || "", lat: c.lat, lng: c.lng }; }
+const Live = {
+  async init(){
+    if(!window.supabase) await loadScript(SUPABASE_JS);
+    sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey);
+    sb.auth.onAuthStateChange((_e, s) => { session = s; setTimeout(loadLive, 0); });
+  },
+  async load(){
+    let all = [];
+    for(let from = 0; ; from += 1000){
+      const q = await sb.from("clients").select("id,name,kind,addr,tel,memo,lat,lng,written_by,writer:profiles(name)")
+        .order("name").order("id").range(from, from + 999);
+      if(q.error) throw new Error(q.error.message);
+      all = all.concat(q.data);
+      if(q.data.length < 1000) break;
+    }
+    clients = all.map(rowToClient);
+  },
+  async save(rec){
+    const res = rec.id
+      ? await sb.from("clients").update(clientToRow(rec)).eq("id", Number(rec.id))
+      : await sb.from("clients").insert(clientToRow(rec));
+    if(res.error) throw new Error(friendly(res.error.message));
+    await this.load();
+  },
+  async remove(id){
+    const { data, error } = await sb.from("clients").delete().eq("id", Number(id)).select("id");
+    if(error) throw new Error(friendly(error.message));
+    if(!data.length) throw new Error("지우지 못했어요. 등록한 사람 본인이나 대표만 지울 수 있어요.");
+    await this.load();
+  },
+  // 이 컴퓨터(브라우저)에만 있던 거래처를 창고로 한 번에 옮기기
+  async importLocal(list){
+    const rows = list.filter(c => c.name && isFinite(c.lat) && isFinite(c.lng)).map(clientToRow);
+    if(!rows.length) return 0;
+    const { error } = await sb.from("clients").insert(rows);
+    if(error) throw new Error(friendly(error.message));
+    await this.load();
+    return rows.length;
+  }
+};
+const DB = LIVE ? Live : Practice;
+
+// ───────── 지도 (기본 중심: 대한민국) ─────────
+const map = L.map('map').setView([36.5, 127.8], 7);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
 const markers = {}; // id -> L.marker
+let fitted = false;
 
 map.on('click', function(e){
   pendingLatLng = e.latlng;
   showGeoStatus('busy', `📍 지도에서 위치를 지정했습니다 (${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)}). 저장을 누르면 이 위치로 저장됩니다.`);
 });
 
-function showGeoStatus(kind, text){
-  const el = document.getElementById('geoStatus');
-  el.className = 'geo-status ' + kind;
-  el.textContent = text;
-}
-function clearGeoStatus(){
-  const el = document.getElementById('geoStatus');
-  el.className = 'geo-status';
-  el.textContent = '';
-}
+function showGeoStatus(kind, text){ const el = $('geoStatus'); el.className = 'geo-status ' + kind; el.textContent = text; }
+function clearGeoStatus(){ const el = $('geoStatus'); el.className = 'geo-status'; el.textContent = ''; }
 
-// ---------------------------------------------------------------
-// Nominatim(OpenStreetMap) 주소 -> 좌표 검색 (API키 불필요)
-// ---------------------------------------------------------------
+// Nominatim(OpenStreetMap) 주소 → 좌표 검색 (API키 불필요)
 async function geocode(address){
   const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=kr&q=${encodeURIComponent(address)}`;
   const res = await fetch(url, { headers: { 'Accept-Language': 'ko' } });
@@ -211,161 +298,277 @@ async function geocode(address){
 }
 
 async function saveClient(){
-  const name = document.getElementById('fName').value.trim();
-  const addr = document.getElementById('fAddr').value.trim();
-  const tel = document.getElementById('fTel').value.trim();
-  const type = document.getElementById('fType').value.trim();
-  const memo = document.getElementById('fMemo').value.trim();
+  const name = $('fName').value.trim();
+  const addr = $('fAddr').value.trim();
+  const tel = $('fTel').value.trim();
+  const type = $('fType').value.trim();
+  const memo = $('fMemo').value.trim();
 
   if(!name){ showGeoStatus('err', '⚠️ 이름을 입력해주세요.'); return; }
-  if(!addr && !pendingLatLng){ showGeoStatus('err', '⚠️ 주소를 입력하거나 지도를 클릭해 위치를 지정해주세요.'); return; }
+  if(!addr && !pendingLatLng){ showGeoStatus('err', '⚠️ 주소를 입력하거나 지도를 눌러 위치를 지정해주세요.'); return; }
 
+  // 고치는 중에 주소를 바꿨으면 위치를 새로 찾음
+  const old = editingId ? clients.find(c => c.id === editingId) : null;
   let latlng = pendingLatLng;
+  if(old && pendingLatLng && pendingLatLng.lat === old.lat && pendingLatLng.lng === old.lng && addr !== (old.addr || "")) latlng = null;
 
   if(!latlng){
     showGeoStatus('busy', '🔎 주소로 위치를 찾는 중...');
     try{
       const found = await geocode(addr);
-      if(!found){
-        showGeoStatus('err', '⚠️ 이 주소로 위치를 찾지 못했습니다. 주소를 더 정확히 입력하거나, 지도를 직접 클릭해 위치를 지정한 뒤 다시 저장해주세요.');
-        return;
-      }
+      if(!found){ showGeoStatus('err', '⚠️ 이 주소로 위치를 찾지 못했습니다. 주소를 더 정확히 입력하거나, 지도를 직접 눌러 위치를 지정한 뒤 다시 저장해주세요.'); return; }
       latlng = found;
     }catch(e){
-      showGeoStatus('err', '⚠️ 위치 검색 중 오류가 발생했습니다(네트워크 확인). 지도를 직접 클릭해 위치를 지정한 뒤 다시 저장해보세요.');
+      showGeoStatus('err', '⚠️ 위치 검색 중 오류가 발생했습니다(네트워크 확인). 지도를 직접 눌러 위치를 지정한 뒤 다시 저장해보세요.');
       return;
     }
   }
 
-  const record = {
-    id: editingId || ('c' + Date.now()),
-    name, addr, tel, type, memo,
-    lat: latlng.lat, lng: latlng.lng
-  };
-
-  if(editingId){
-    clients = clients.map(c => c.id === editingId ? record : c);
-  }else{
-    clients.push(record);
-  }
-  persistClients(clients);
-  showGeoStatus('ok', '✅ 저장되었습니다.');
-  resetForm();
-  renderAll();
-  map.flyTo([record.lat, record.lng], 15);
+  const record = { id: editingId, name, addr, tel, type, memo, lat: latlng.lat, lng: latlng.lng };
+  const btn = $('saveBtn'); btn.disabled = true;
+  try{
+    await DB.save(record);
+    showGeoStatus('ok', '✅ ' + name + ' — 저장되었습니다.');
+    resetForm();
+    renderAll();
+    map.flyTo([record.lat, record.lng], 15);
+  }catch(e){
+    showGeoStatus('err', '⚠️ ' + e.message);
+  }finally{ btn.disabled = false; }
 }
 
 function resetForm(){
   editingId = null;
   pendingLatLng = null;
-  document.getElementById('fName').value = '';
-  document.getElementById('fAddr').value = '';
-  document.getElementById('fTel').value = '';
-  document.getElementById('fType').value = '';
-  document.getElementById('fMemo').value = '';
-  document.getElementById('formTitle').textContent = '➕ 거래처·배송지 추가';
-  document.getElementById('saveBtn').textContent = '주소로 위치 찾아서 저장';
-  document.getElementById('editExtra').style.display = 'none';
+  ['fName','fAddr','fTel','fType','fMemo'].forEach(id => $(id).value = '');
+  $('formTitle').textContent = '➕ 거래처·배송지 추가';
+  $('saveBtn').textContent = '주소로 위치 찾아서 저장';
+  $('editExtra').style.display = 'none';
 }
-
-function cancelEdit(){
-  resetForm();
-  clearGeoStatus();
-}
+function cancelEdit(){ resetForm(); clearGeoStatus(); }
 
 function startEdit(id){
   const c = clients.find(x => x.id === id);
   if(!c) return;
   editingId = id;
   pendingLatLng = { lat: c.lat, lng: c.lng };
-  document.getElementById('fName').value = c.name || '';
-  document.getElementById('fAddr').value = c.addr || '';
-  document.getElementById('fTel').value = c.tel || '';
-  document.getElementById('fType').value = c.type || '';
-  document.getElementById('fMemo').value = c.memo || '';
-  document.getElementById('formTitle').textContent = '✏️ 수정 중: ' + (c.name || '');
-  document.getElementById('saveBtn').textContent = '수정 내용 저장';
-  document.getElementById('editExtra').style.display = 'flex';
-  showGeoStatus('busy', '위치를 그대로 두려면 주소를 바꾸지 마세요. 위치를 바꾸려면 지도를 다시 클릭하거나 주소를 새로 입력하세요.');
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  $('fName').value = c.name || ''; $('fAddr').value = c.addr || ''; $('fTel').value = c.tel || '';
+  $('fType').value = c.type || ''; $('fMemo').value = c.memo || '';
+  $('formTitle').textContent = '✏️ 수정 중: ' + (c.name || '');
+  $('saveBtn').textContent = '수정 내용 저장';
+  $('editExtra').style.display = 'flex';
+  $('delBtn').style.display = canDelete(c) ? '' : 'none';
+  $('delBtn').onclick = () => deleteClient(id);
+  showGeoStatus('busy', '위치를 그대로 두려면 주소를 바꾸지 마세요. 위치를 바꾸려면 지도를 다시 누르거나 주소를 새로 입력하세요.');
+  $('formCard').scrollIntoView({ behavior: 'smooth' });
 }
 
-function deleteClient(id){
-  if(!window.confirm('이 항목을 삭제할까요?')) return;
-  clients = clients.filter(c => c.id !== id);
-  persistClients(clients);
-  if(editingId === id) resetForm();
+async function deleteClient(id){
+  const c = clients.find(x => x.id === id);
+  if(!c || !window.confirm(c.name + ' 을(를) 지울까요? 지우면 되돌릴 수 없어요.')) return;
+  try{
+    await DB.remove(id);
+    if(editingId === id) resetForm();
+    showGeoStatus('ok', '🗑 ' + c.name + ' — 지웠습니다.');
+  }catch(e){ showGeoStatus('err', '⚠️ ' + e.message); }
+  map.closePopup();
   renderAll();
 }
 
-// ---------------------------------------------------------------
-// 렌더링: 지도 핀 + 왼쪽 목록
-// ---------------------------------------------------------------
+// ───────── 그리기: 지도 핀 + 목록 ─────────
 function popupHtml(c){
   return `
     <div class="popup-name">${escapeHtml(c.name)}</div>
     ${c.type ? `<div class="popup-addr">🏷️ ${escapeHtml(c.type)}</div>` : ''}
     ${c.addr ? `<div class="popup-addr">📫 ${escapeHtml(c.addr)}</div>` : ''}
-    ${c.tel ? `<div class="popup-tel">☎️ ${escapeHtml(c.tel)}</div>` : ''}
+    ${c.tel ? `<div class="popup-tel">☎️ <a href="tel:${escapeHtml(c.tel.replace(/[^\d+]/g, ''))}">${escapeHtml(c.tel)}</a></div>` : ''}
     ${c.memo ? `<div class="popup-memo">${escapeHtml(c.memo)}</div>` : ''}
+    ${c.writer ? `<div class="popup-who">등록: ${escapeHtml(c.writer)}</div>` : ''}
     <div class="popup-actions">
       <button class="popup-edit" onclick="startEdit('${c.id}')">수정</button>
-      <button class="popup-del" onclick="deleteClient('${c.id}')">삭제</button>
-    </div>
-  `;
-}
-
-function escapeHtml(s){
-  return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+      ${canDelete(c) ? `<button class="popup-del" onclick="deleteClient('${c.id}')">삭제</button>` : ''}
+    </div>`;
 }
 
 function renderAll(){
-  // 기존 마커 제거
   Object.values(markers).forEach(m => map.removeLayer(m));
   for(const k in markers) delete markers[k];
+  clients.forEach(c => { markers[c.id] = L.marker([c.lat, c.lng]).addTo(map).bindPopup(popupHtml(c)); });
 
-  clients.forEach(c => {
-    const m = L.marker([c.lat, c.lng]).addTo(map).bindPopup(popupHtml(c));
-    markers[c.id] = m;
-  });
-
-  document.getElementById('countLabel').textContent = clients.length;
-  const listBody = document.getElementById('listBody');
-  const empty = document.getElementById('emptyState');
-
-  if(clients.length === 0){
-    listBody.innerHTML = '';
-    empty.style.display = 'block';
-    return;
+  // 처음 한 번은 모든 핀이 보이게 지도 맞추기
+  if(!fitted && clients.length && $('map').offsetWidth > 0){
+    map.fitBounds(L.latLngBounds(clients.map(c => [c.lat, c.lng])).pad(0.2), { maxZoom: 14 });
+    fitted = true;
   }
-  empty.style.display = 'none';
 
-  listBody.innerHTML = clients.map(c => `
+  $('kindList').innerHTML = [...new Set([...KINDS, ...clients.map(c => c.type).filter(Boolean)])].map(k => `<option value="${escapeHtml(k)}">`).join('');
+
+  const q = $('q').value.trim().toLowerCase();
+  const list = clients
+    .filter(c => !q || [c.name, c.addr, c.tel, c.type, c.memo].join(' ').toLowerCase().includes(q))
+    .sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+  $('countLabel').textContent = q ? list.length + ' / ' + clients.length : clients.length;
+  $('emptyState').style.display = list.length ? 'none' : 'block';
+  $('emptyText').textContent = clients.length ? '찾는 거래처가 없습니다.' : '아직 등록된 위치가 없습니다. 위 양식에서 주소를 넣고 저장해보세요.';
+  $('listBody').innerHTML = list.map(c => `
     <div class="client-item" onclick="focusClient('${c.id}')">
       <div class="dot"></div>
       <div class="body">
-        <div class="name">${escapeHtml(c.name)}</div>
+        <div class="name">${escapeHtml(c.name)}${c.type ? `<span class="kind">${escapeHtml(c.type)}</span>` : ''}</div>
         <div class="addr">${escapeHtml(c.addr || '주소 없음')}</div>
-        ${c.tel ? `<div class="tel">${escapeHtml(c.tel)}</div>` : ''}
+        ${c.tel ? `<div class="tel"><a href="tel:${escapeHtml(c.tel.replace(/[^\d+]/g, ''))}" onclick="event.stopPropagation()">☎️ ${escapeHtml(c.tel)}</a></div>` : ''}
       </div>
-      <button class="del" onclick="event.stopPropagation(); deleteClient('${c.id}')">삭제</button>
-    </div>
-  `).join('');
+      <div class="act">
+        <button class="ed" onclick="event.stopPropagation(); startEdit('${c.id}')">수정</button>
+        ${canDelete(c) ? `<button class="del" onclick="event.stopPropagation(); deleteClient('${c.id}')">삭제</button>` : ''}
+      </div>
+    </div>`).join('');
 }
 
 function focusClient(id){
   const c = clients.find(x => x.id === id);
   if(!c) return;
+  if(window.innerWidth < 860) $('map').scrollIntoView({ behavior: 'smooth' });
   map.flyTo([c.lat, c.lng], 16);
   markers[id] && markers[id].openPopup();
 }
 
-renderAll();
-
-// 예시 데이터가 하나도 없고 처음 여는 경우를 위한 안내(1회성, 저장하지 않음)
-if(clients.length === 0){
-  showGeoStatus('busy', '👋 처음 여셨네요. 왼쪽에서 거래처·배송지 이름과 주소를 넣고 "주소로 위치 찾아서 저장"을 눌러보세요.');
+// ───────── 이 컴퓨터에 있던 거래처를 창고로 옮기기 ─────────
+function renderMigrate(){
+  const box = $('migrateBox');
+  const local = LIVE && me && me.active ? loadLocal() : [];
+  if(!local.length){ box.style.display = 'none'; return; }
+  box.style.display = '';
+  box.innerHTML = `<span>📦 이 컴퓨터에만 저장돼 있던 거래처가 <b>${local.length}곳</b> 있어요. 회사 창고로 옮기면 직원 모두가 함께 볼 수 있어요.</span>
+    <button class="btn btn-copper" id="migrateBtn">창고로 옮기기</button>`;
+  $('migrateBtn').onclick = async () => {
+    const already = new Set(clients.map(c => c.name + '|' + c.addr));
+    const todo = local.filter(c => !already.has(c.name + '|' + (c.addr || '')));
+    if(!confirm(`${local.length}곳 중 ${todo.length}곳을 창고로 옮길까요? (이미 창고에 같은 이름·주소가 있는 ${local.length - todo.length}곳은 건너뜀)`)) return;
+    $('migrateBtn').disabled = true;
+    try{
+      const n = await Live.importLocal(todo);
+      try{ localStorage.setItem(STORAGE_KEY + 'Moved', localStorage.getItem(STORAGE_KEY)); localStorage.removeItem(STORAGE_KEY); }catch(e){}
+      box.innerHTML = `<span>✅ ${n}곳을 회사 창고로 옮겼어요. (이 컴퓨터의 예전 기록은 백업으로 남겨 두었어요)</span>`;
+      renderAll();
+    }catch(e){
+      $('migrateBtn').disabled = false;
+      alert(e.message);
+    }
+  };
 }
+
+// ───────── 로그인 · 화면 열고 닫기 (실사용 모드) ─────────
+let authMode = "login";
+function renderModeNote(){
+  const el = $("modeNote");
+  if(LIVE){
+    el.className = "warn live";
+    el.innerHTML = "✅ 함께 쓰는 모드 — 거래처는 농부마을 창고(DB · Supabase)에 저장됩니다. 직원이 등록하면 모두에게 바로 보입니다.";
+  }else{
+    el.className = "warn";
+    el.innerHTML = "⚠ 실습판입니다. 거래처가 <b>이 컴퓨터의 이 브라우저에만</b> 저장됩니다. 함께 쓰려면 주소 끝의 <b>?practice=1</b>을 빼고 여세요.";
+  }
+}
+function renderBar(){
+  const bar = $("bar");
+  if(!LIVE || !session){ bar.style.display = "none"; return; }
+  bar.style.display = "";
+  bar.innerHTML = `<span class="who">${me ? `👤 <b>${escapeHtml(me.name)}</b> (${escapeHtml(me.role)}) 로그인 중` : "로그인 중"}</span>
+    <button class="btn btn-line" id="refreshBtn">새로고침</button>
+    <button class="btn btn-line" id="logoutBtn">로그아웃</button>`;
+}
+function authView(){
+  return `<div class="card auth">
+    <div class="switch">
+      <button class="btn ${authMode === "login" ? "btn-copper" : "btn-line"}" data-auth="login">로그인</button>
+      <button class="btn ${authMode === "signup" ? "btn-copper" : "btn-line"}" data-auth="signup">처음 가입</button>
+    </div>
+    <label for="aEmail">이메일</label><input id="aEmail" type="email" autocomplete="email">
+    <label for="aPw">비밀번호${authMode === "signup" ? " (6자 이상)" : ""}</label><input id="aPw" type="password" autocomplete="${authMode === "signup" ? "new-password" : "current-password"}">
+    ${authMode === "signup" ? `
+      <label for="aName">이름</label><input id="aName" type="text" autocomplete="name">
+      <label for="aJob">맡은 일</label><input id="aJob" type="text" placeholder="예: 사육, 출하, 방역">` : ""}
+    <div class="msg err" id="aErr" style="display:none"></div>
+    <div class="msg ok" id="aOk" style="display:none"></div>
+    <button class="btn btn-copper btn-block" id="authBtn">${authMode === "signup" ? "가입하기" : "로그인"}</button>
+    <p class="help" style="margin-top:10px">${authMode === "signup"
+      ? "가입 후 대표가 전자결재 화면의 「직원 관리」에서 「사용 허용」을 눌러야 쓸 수 있습니다."
+      : "전자결재·산란 기록과 같은 계정입니다."}</p>
+  </div>`;
+}
+function authMsg(id, text){ const el = $(id); el.textContent = text; el.style.display = text ? "block" : "none"; }
+function bindAuth(){
+  document.querySelectorAll("[data-auth]").forEach(b => b.addEventListener("click", () => { authMode = b.dataset.auth; renderGate(); }));
+  $("authBtn").addEventListener("click", async () => {
+    authMsg("aErr", ""); authMsg("aOk", "");
+    const email = $("aEmail").value.trim(), password = $("aPw").value;
+    if(!email.includes("@")) return authMsg("aErr", "이메일을 확인해주세요.");
+    if(password.length < 6)  return authMsg("aErr", "비밀번호는 6자 이상이어야 합니다.");
+    const btn = $("authBtn"); btn.disabled = true;
+    try{
+      if(authMode === "signup"){
+        const name = $("aName").value.trim(), job = $("aJob").value.trim();
+        if(!name){ btn.disabled = false; return authMsg("aErr", "이름을 적어주세요."); }
+        const { data, error } = await sb.auth.signUp({ email, password, options: { data: { name, job }, emailRedirectTo: location.href.split("#")[0] } });
+        if(error) throw error;
+        if(!data.session) authMsg("aOk", "가입 신청이 됐습니다. 메일함에서 확인 링크를 누른 뒤 로그인하세요.");
+      }else{
+        const { error } = await sb.auth.signInWithPassword({ email, password });
+        if(error) throw error;
+      }
+    }catch(e){ authMsg("aErr", friendly(e.message)); }
+    finally{ btn.disabled = false; }
+  });
+}
+function renderGate(){
+  renderModeNote(); renderBar();
+  let gate = "";
+  if(LIVE && liveError) gate = `<div class="card auth"><h3>연결에 문제가 있습니다</h3><p class="msg err" style="display:block">${escapeHtml(liveError)}</p></div>`;
+  else if(LIVE && !sb) gate = `<div class="card auth" style="text-align:center;color:var(--muted)">창고(DB)에 연결하는 중…</div>`;
+  else if(LIVE && !session) gate = authView();
+  else if(LIVE && (!me || !me.active)) gate = `<div class="card auth"><h3>⏳ 대표 승인 대기 중</h3>
+      <p style="font-size:13.5px">${me ? escapeHtml(me.name) + "님, 가입은 됐습니다." : "직원 정보가 아직 없습니다."} 대표가 전자결재 화면의 「직원 관리」에서 「사용 허용」을 누르면 쓸 수 있습니다. 허용받은 뒤 「새로고침」을 누르세요.</p></div>`;
+  $("auth").innerHTML = gate;
+  const wasHidden = $("app").style.display === "none";
+  $("app").style.display = gate ? "none" : "";
+  // 숨겨져 있던 지도는 보이게 된 뒤 크기를 다시 계산해야 제대로 그려짐
+  if(!gate && wasHidden) setTimeout(() => { map.invalidateSize(); if(!fitted) renderAll(); }, 0);
+  if(LIVE && sb && !session && !liveError) bindAuth();
+}
+async function loadLive(){
+  liveError = ""; me = null;
+  if(session){
+    try{
+      const { data, error } = await sb.from("profiles").select("id,name,email,role,active").eq("id", session.user.id).maybeSingle();
+      if(error) throw new Error(error.message);
+      me = data ? { id: data.id, name: data.name || data.email, role: data.role, active: data.active } : null;
+      if(me && me.active) await Live.load();
+    }catch(e){ liveError = friendly(e.message); }
+  }else{ clients = []; }
+  renderGate();
+  renderMigrate();
+  if(!$("app").style.display) renderAll();
+}
+
+$("bar").addEventListener("click", async e => {
+  if(e.target.id === "refreshBtn") await loadLive();
+  else if(e.target.id === "logoutBtn") await sb.auth.signOut();
+});
+$("q").addEventListener("input", renderAll);
+
+// ───────── 처음 열 때 ─────────
+async function boot(){
+  if(!LIVE){
+    await Practice.load();
+    renderGate(); renderAll();
+    if(!clients.length) showGeoStatus('busy', '👋 처음 여셨네요. 이름과 주소를 넣고 "주소로 위치 찾아서 저장"을 눌러보세요.');
+    return;
+  }
+  renderGate();
+  try{ await Live.init(); }catch(e){ liveError = e.message; renderGate(); }
+}
+boot();
 </script>
 
 <script src="erp-home.js"></script>
