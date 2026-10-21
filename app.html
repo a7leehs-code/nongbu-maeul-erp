@@ -88,10 +88,10 @@ const GROUPS = [
   { title:"📦 물건 · 그 밖에", codes:["물건","돈","사람","기한","알리기"] }
 ];
 // 짧은 이름 (휴대폰 버튼에 맞게)
-const SHORT = { "약품 구입 내역":"약품 구입", "산란율/폐사율 기록":"산란·폐사 기록", "방역 소독 스케줄 체크":"방역 소독", "거래처 목록/연락처":"거래처 지도", "회사 일정판 (첫 칸)":"회사 일정판", "마을톡 (사내메신저)":"마을톡" };
+const SHORT = { "방역 소독 스케줄표":"방역 스케줄표", "약품 구입 내역":"약품 구입", "산란율/폐사율 기록":"산란·폐사 기록", "방역 소독 스케줄 체크":"방역 소독 장부", "거래처 목록/연락처":"거래처 지도", "회사 일정판 (첫 칸)":"회사 일정판", "마을톡 (사내메신저)":"마을톡" };
 
 // 매일 쓰는 화면을 맨 앞에
-const FIRST = ["erp-eggs.html", "erp-disinfect.html"];
+const FIRST = ["erp-eggs.html", "erp-disinfect-plan.html", "erp-disinfect.html"];
 // 아직 창고(DB)에 연결 안 된 화면 — 그 기기에만 저장된다고 알려줌
 const LOCAL_ONLY = {};
 
@@ -163,11 +163,37 @@ async function loadStatus(){
   status = {};
   if(!session || !me || !me.active) return;
   try{
-    const [houses, eggs, dis] = await Promise.all([
+    const since = localDate(new Date(Date.now() - 120 * 86400000));
+    const [houses, eggs, dis, tasks, done] = await Promise.all([
       sb.from("egg_houses").select("id").eq("active", true),
       sb.from("egg_records").select("house_id").eq("record_date", TODAY),
-      sb.from("disinfect_logs").select("kind,log_date").or("log_date.eq." + TODAY + ",kind.eq.주위").order("log_date", { ascending:false }).limit(500)
+      sb.from("disinfect_logs").select("kind,log_date").or("log_date.eq." + TODAY + ",kind.eq.주위").order("log_date", { ascending:false }).limit(500),
+      sb.from("disinfect_tasks").select("id,weekday,every_days,log_kind").eq("active", true),
+      sb.from("disinfect_logs").select("kind,log_date,task_id").in("kind", ["주위", "일정"]).gte("log_date", since).limit(2000)
     ]);
+    // 방역 소독 스케줄표: 오늘 할 차례·밀린 일정 수 (스케줄표 화면과 같은 규칙)
+    if(!tasks.error && !done.error){
+      const dayMs = 86400000, d0 = new Date(TODAY + "T00:00:00");
+      const addD = (s, n) => localDate(new Date(new Date(s + "T00:00:00").getTime() + n * dayMs));
+      let due = 0, late = 0;
+      tasks.data.forEach(t => {
+        const dates = [...new Set(done.data.filter(l => l.task_id === t.id || (t.log_kind === "주위" && l.kind === "주위")).map(l => l.log_date))].filter(d => d <= TODAY).sort();
+        let state;
+        if(t.weekday != null){
+          const mon = addD(TODAY, -((d0.getDay() + 6) % 7)), sun = addD(mon, 6), dueDay = addD(mon, (t.weekday + 6) % 7);
+          state = dates.some(d => d >= mon && d <= sun) ? "done" : (dueDay < TODAY ? "late" : dueDay === TODAY ? "today" : "soon");
+        }else{
+          const last = dates.pop();
+          const dueDay = last ? addD(last, t.every_days) : TODAY;
+          state = last === TODAY ? "done" : (dueDay < TODAY ? "late" : dueDay === TODAY ? "today" : "soon");
+        }
+        if(state === "late") late++; else if(state === "today") due++;
+      });
+      status["erp-disinfect-plan.html"] = late
+        ? { text:"밀린 방역 " + late + "개" + (due ? " · 오늘 " + due + "개" : ""), cls:"late" }
+        : due ? { text:"오늘 할 방역 " + due + "개", cls:"soon" }
+              : { text:"오늘 할 방역 없음 ✓", cls:"ok" };
+    }
     if(!houses.error && !eggs.error){
       const total = houses.data.length, done = new Set(eggs.data.map(r => r.house_id)).size;
       status["erp-eggs.html"] = done >= total && total
