@@ -45,7 +45,7 @@ window.ERP_CATEGORIES = [
     code: "물건", anchor: "cat-goods", name: "③ 물건",
     sub: "사료·계란·시설의 흐름. 이것도 혼자 붙이는 칸 — 오늘 순서를 전부 정했다.",
     items: [
-      { icon:"🌽", name: "사료 재고량", where: "담당 직원 눈대중 확인 → 구두 보고", often: "발주 필요시 수시", urgency: "상", order: 4, status: "todo" },
+      { icon:"🌽", name: "사료 재고량", where: "사료통 2개 남은 양·들어온 양·발주 기록 → 하루 사용량·며칠 남음 계산, 이틀치 남으면 「오늘 발주」 알림 · 농부마을 DB에 저장 (로그인 필요)", often: "매일", urgency: "상", order: 4, status: "inprogress", file: "erp-feed.html" },
       { icon:"📦", name: "사료 발주", where: "대표 보고받고 결정", often: "정기", urgency: "상", order: 5, status: "todo" },
       { icon:"🥚", name: "계란 등급별(왕란/특란/대란) 재고", where: "세분화는 하나 방식 불명", often: "매일", urgency: "중", order: 10, status: "todo" },
       { icon:"🔧", name: "장비/설비 점검·수리 이력", where: "미논의", often: "수시", urgency: "중", order: 11, status: "todo", proposed:true },

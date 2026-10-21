@@ -1,0 +1,618 @@
+<!-- [AI 생성 초안 - 검토 전] 농부마을 사료 재고 -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>사료 재고</title>
+<style>
+  :root{ --navy:#2B3A4E; --copper:#C67B3C; --cream:#F7F3EE; --teal:#3A8FB7; --ink:#243140; --muted:#6b7785; --line:#e3dccf; --green:#3f7a52; --red:#b3503a; --amber:#b7791f; }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{ font-family:"맑은 고딕","Malgun Gothic",sans-serif; background:var(--cream); color:var(--ink); padding:24px; line-height:1.6; max-width:1100px; margin:0 auto; }
+  header{ background:linear-gradient(135deg,#2B3A4E,#1a2636 58%,#C67B3C 210%); color:#fff; border-radius:14px; padding:22px 26px; margin-bottom:20px; }
+  header h1{ font-size:20px; margin-bottom:6px; }
+  header p{ font-size:13.5px; color:#d7dee6; }
+
+  details.overview{ background:#fff; border:1px solid var(--line); border-radius:12px; margin-bottom:16px; }
+  details.overview > summary{ list-style:none; cursor:pointer; padding:14px 18px; display:flex; flex-wrap:wrap; align-items:baseline; gap:8px; border-bottom:1px solid var(--line); }
+  details.overview > summary::-webkit-details-marker{ display:none; }
+  details.overview:not([open]) > summary{ border-bottom:none; }
+  .ov-title{ font-size:14.5px; font-weight:800; color:var(--navy); }
+  .ov-stats{ font-size:12.5px; color:var(--muted); }
+  .ov-toggle{ margin-left:auto; font-size:12px; color:var(--teal); font-weight:700; }
+  details.overview:not([open]) .ov-toggle::after{ content:"펼쳐 보기 ▾"; }
+  details.overview[open] .ov-toggle::after{ content:"접기 ▴"; }
+  .ov-body{ padding:16px 18px 20px; font-size:13px; }
+  .ov-body ul{ margin:6px 0 0 18px; }
+  .formula{ background:#faf7f1; border:1.5px solid var(--line); border-radius:10px; padding:10px 14px; margin-top:10px; }
+
+  .warn{ background:#fbeee9; border-left:4px solid var(--red); padding:11px 15px; font-size:12.8px; color:#8a3a2a; margin-bottom:16px; border-radius:6px; }
+  .warn.live{ background:#eef7f0; border-left-color:var(--green); color:#2f5e3e; }
+  .bar{ display:flex; flex-wrap:wrap; align-items:center; gap:10px; background:#fff; border:1px solid var(--line); border-radius:12px; padding:10px 16px; margin-bottom:14px; }
+  .bar .who{ font-size:13px; color:var(--muted); flex:1; min-width:180px; }
+  .auth{ max-width:420px; margin:0 auto 16px; }
+  .auth .switch{ display:flex; gap:6px; margin-bottom:6px; }
+  .auth .switch .btn{ flex:1; }
+
+  .card{ background:#fff; border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin-bottom:16px; }
+  .card h3{ font-size:14.5px; color:var(--navy); margin-bottom:12px; }
+  label{ display:block; font-size:12px; color:var(--muted); font-weight:700; margin:10px 0 4px; }
+  input, select, textarea{ width:100%; border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:14px; font-family:inherit; background:#fdfbf8; }
+  input[type=number]{ font-variant-numeric:tabular-nums; }
+  .row2{ display:flex; gap:8px; flex-wrap:wrap; }
+  .row2 > div{ flex:1; min-width:120px; }
+  .help{ font-size:11.5px; color:var(--muted); margin-top:3px; }
+  .btn{ border:none; border-radius:8px; padding:9px 14px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; }
+  .btn-copper{ background:var(--copper); color:#fff; }
+  .btn-line{ background:#fff; color:var(--muted); border:1px solid var(--line); }
+  .btn-block{ width:100%; margin-top:12px; }
+  .btn-sm{ padding:5px 10px; font-size:12px; }
+  .msg{ font-size:12.5px; margin-top:8px; padding:8px 10px; border-radius:8px; display:none; }
+  .msg.ok{ background:#e3f2e6; color:var(--green); display:block; }
+  .msg.err{ background:#fbeee9; color:var(--red); display:block; }
+
+  /* 사료통 카드 */
+  .bins{ display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:12px; }
+  .bin{ border:1.5px solid var(--line); border-radius:12px; padding:14px; background:#faf7f1; }
+  .bin.ok{ background:#eef7f0; border-color:#c6e2cd; }
+  .bin.soon, .bin.ordered{ background:#fff8ea; border-color:#f0d9a8; }
+  .bin.late{ background:#fbeee9; border-color:#e8c1b6; }
+  .bin .nm{ font-size:15px; font-weight:800; color:var(--navy); }
+  .bin .ty{ font-size:12px; color:var(--muted); margin-left:4px; font-weight:400; }
+  .bin .big{ font-size:26px; font-weight:800; font-variant-numeric:tabular-nums; line-height:1.25; margin-top:4px; }
+  .bin .big small{ font-size:13px; color:var(--muted); font-weight:700; margin-left:3px; }
+  .bin .st{ font-size:13.5px; font-weight:800; margin-top:2px; }
+  .bin.ok .st{ color:var(--green); } .bin.soon .st, .bin.ordered .st{ color:var(--amber); } .bin.late .st{ color:var(--red); }
+  .bin .line{ font-size:12px; color:var(--muted); }
+  .gauge{ height:8px; background:#e8e1d4; border-radius:5px; overflow:hidden; margin:6px 0 4px; }
+  .gauge > div{ height:100%; background:var(--teal); }
+  .bin.late .gauge > div{ background:var(--red); } .bin.soon .gauge > div, .bin.ordered .gauge > div{ background:var(--amber); }
+  .bin .acts{ display:flex; gap:6px; flex-wrap:wrap; margin-top:10px; }
+  .bin .acts a{ text-decoration:none; }
+
+  .kinds{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
+  .kinds button{ border:1.5px solid var(--line); background:#faf7f1; border-radius:10px; padding:9px 4px; cursor:pointer; font-family:inherit; font-size:13px; font-weight:800; color:var(--navy); }
+  .kinds button.on{ border-color:var(--copper); background:#fff7ec; box-shadow:0 0 0 1px var(--copper) inset; }
+
+  .layout{ display:flex; gap:18px; align-items:flex-start; }
+  .panel{ width:340px; flex:0 0 340px; }
+  .main{ flex:1; min-width:0; }
+  .filters{ display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
+  .filters select{ width:auto; padding:5px 8px; font-size:13px; }
+  .tbl-wrap{ overflow-x:auto; }
+  table{ width:100%; border-collapse:collapse; font-size:13px; min-width:560px; }
+  th{ background:#f4efe6; color:var(--navy); font-weight:800; text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  td{ padding:8px 10px; border-bottom:1px solid #eee; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  td.num, th.num{ text-align:right; }
+  td.memo{ color:var(--muted); font-size:12px; white-space:normal; }
+  td .edit{ font-size:11px; color:var(--teal); border:none; background:none; cursor:pointer; font-family:inherit; }
+  td .del{ font-size:11px; color:var(--red); border:none; background:none; cursor:pointer; font-family:inherit; }
+  .chip{ display:inline-block; font-size:11.5px; font-weight:800; padding:1px 8px; border-radius:10px; }
+  .chip.k잔량{ background:#eaf3f8; color:var(--teal); } .chip.k입고{ background:#eef7f0; color:var(--green); } .chip.k발주{ background:#fff4e0; color:var(--amber); }
+  .empty{ text-align:center; color:var(--muted); font-size:13px; padding:22px 10px; }
+  table.sum tr.total td{ background:#eef4f8; font-weight:800; }
+
+  .bin-row{ border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin-bottom:8px; background:#fdfbf8; }
+  .bin-row.off{ opacity:.55; }
+
+  footer{ text-align:center; color:var(--muted); font-size:12px; margin-top:20px; line-height:1.7; }
+  a.back{ color:var(--copper); font-weight:700; text-decoration:none; }
+  @media (max-width: 860px){ body{ padding:16px; } .layout{ flex-direction:column; } .panel, .main{ width:100%; flex:none; } }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🌽 사료 재고</h1>
+  <p>사료통에 남은 양을 적으면 하루에 쓰는 양과 며칠 남았는지 계산해 줍니다. 이틀치가 남으면 「오늘 발주하세요」로 알려 드려요. (하루 전에 발주하면 다음 날 도착)</p>
+</header>
+
+<details class="overview" open>
+  <summary>
+    <span class="ov-title">🧠 구조 한눈에 보기 — 사료 재고는 어떻게 계산되나</span>
+    <span class="ov-stats">사료통 2개 · 기록 3가지(남은 양 · 들어온 양 · 발주함)</span>
+    <span class="ov-toggle"></span>
+  </summary>
+  <div class="ov-body">
+    <ul>
+      <li><b>남은 양</b>: 사료통을 보고 지금 남은 양(톤)을 적어요. 자주 적을수록 정확해져요.</li>
+      <li><b>들어온 양</b>: 사료차가 와서 넣은 양(톤)을 적어요.</li>
+      <li><b>발주함</b>: 전화로 주문했으면 눌러요. 「도착 기다리는 중」으로 바뀌어 같은 사료를 두 번 주문하지 않게 해요.</li>
+    </ul>
+    <div class="formula">
+      <b>하루에 쓰는 양</b> = (앞에 적은 남은 양 + 그 사이 들어온 양 − 지금 남은 양) ÷ 지난 날 수 → 최근 5번 평균<br>
+      <b>지금 남은 양(추정)</b> = 마지막으로 적은 남은 양 + 그 뒤 들어온 양 − 하루 쓰는 양 × 지난 날 수<br>
+      <b>며칠 남음</b> = 지금 남은 양 ÷ 하루 쓰는 양 → 사료통마다 정한 날 수(처음엔 2일) 이하면 <b style="color:var(--red)">오늘 발주하세요</b>
+    </div>
+  </div>
+</details>
+
+<div class="warn" id="modeNote"></div>
+<div class="bar" id="bar" style="display:none"></div>
+<div id="auth"></div>
+
+<div id="app" style="display:none">
+  <div class="card">
+    <h3>🌽 사료통 현황 <span class="help" id="binsHelp"></span></h3>
+    <div class="bins" id="bins"></div>
+  </div>
+
+  <div class="layout">
+    <div class="panel">
+      <div class="card">
+        <h3 id="formTitle">✏️ 사료 기록 적기</h3>
+        <div class="kinds" id="kinds">
+          <button data-kind="잔량" class="on">📏 남은 양</button>
+          <button data-kind="입고">🚚 들어온 양</button>
+          <button data-kind="발주">📞 발주함</button>
+        </div>
+        <div class="row2">
+          <div><label>날짜</label><input type="date" id="fDate"></div>
+          <div><label>사료통</label><select id="fBin"></select></div>
+        </div>
+        <label id="amountLabel">남은 양 (톤)</label>
+        <input type="number" id="fAmount" min="0" step="0.1" inputmode="decimal" placeholder="예) 6.5">
+        <div class="help" id="amountHelp"></div>
+        <label>메모 (선택)</label>
+        <input type="text" id="fMemo" maxlength="300" placeholder="특이사항">
+        <div class="msg" id="formMsg"></div>
+        <button class="btn btn-copper btn-block" id="saveBtn">저장</button>
+        <button class="btn btn-line btn-block" id="cancelBtn" style="display:none;margin-top:6px">고치기 취소</button>
+        <button class="btn btn-line btn-block" id="delBtn" style="display:none;margin-top:6px;color:var(--red)">🗑 이 기록 지우기</button>
+      </div>
+    </div>
+
+    <div class="main">
+      <div class="card">
+        <h3>📋 사료 기록 (<span id="countLabel">0</span>건)</h3>
+        <div class="filters">
+          <select id="filterBin"></select>
+          <select id="filterKind"><option value="">모든 종류</option><option value="잔량">📏 남은 양</option><option value="입고">🚚 들어온 양</option><option value="발주">📞 발주함</option></select>
+          <select id="filterDays"><option value="14">최근 2주</option><option value="60" selected>최근 2달</option><option value="0">전체</option></select>
+        </div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>날짜</th><th>사료통</th><th>종류</th><th class="num">양(톤)</th><th>메모</th><th>적은 사람</th><th></th></tr></thead>
+          <tbody id="tbody"></tbody>
+        </table></div>
+        <div class="empty" id="emptyState">이 기간에는 기록이 없습니다.</div>
+      </div>
+
+      <div class="card">
+        <h3>📅 월별 들어온 사료 (톤)</h3>
+        <div class="filters"><select id="sumYear"></select></div>
+        <div class="tbl-wrap"><table class="sum"><thead id="sumHead"></thead><tbody id="sumBody"></tbody></table></div>
+      </div>
+
+      <div class="card" id="binCard">
+        <h3>⚙️ 사료통 설정 <span class="help" id="binSetHelp"></span></h3>
+        <div id="binList"></div>
+        <div id="binEdit">
+          <div class="row2">
+            <div><button class="btn btn-line btn-block" id="binAdd">+ 사료통 추가</button></div>
+            <div><button class="btn btn-copper btn-block" id="binSave">설정 저장</button></div>
+          </div>
+          <div class="msg" id="binMsg"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  erp-feed.html · 정본 1장 · 기록은 농부마을 창고(Supabase)에 저장됨 (실습판: 주소 끝 ?practice=1) · <a class="back" href="erp-map.html">← 지도로 돌아가기</a><br>
+  [AI 생성 초안 - 검토 전]
+</footer>
+
+<script src="erp-config.js"></script>
+<script>
+const CFG = window.ERP_CONFIG || {};
+const LIVE = Boolean(CFG.supabaseUrl && CFG.supabaseAnonKey) && !/[?&]practice=1(&|$)/.test(location.search);
+const SUPABASE_JS = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js";
+const KIND = { "잔량": { label:"남은 양", icon:"📏" }, "입고": { label:"들어온 양", icon:"🚚" }, "발주": { label:"발주함", icon:"📞" } };
+
+// 사료통: [{ id, name, feedType, capacity, vendorTel, warnDays, active }]
+let bins = [];
+// 기록: [{ id, date, binId, kind, amount, memo, writer, writerId }]
+let logs = [];
+let me = null, kind = "잔량", editingId = null;
+
+const $ = id => document.getElementById(id);
+function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
+function isCeo(){ return !LIVE || (!!me && me.role === "대표"); }
+function canDelete(x){ return !LIVE || isCeo() || (!!me && x.writerId === me.id); }
+function localDate(d){ return new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10); }
+function today(){ return localDate(new Date()); }
+function addDays(s, n){ const d = new Date(s + "T00:00:00"); d.setDate(d.getDate() + n); return localDate(d); }
+function daysBetween(a, b){ return Math.round((new Date(b + "T00:00:00") - new Date(a + "T00:00:00")) / 86400000); }
+function fmtDate(s){ const d = new Date(s + "T00:00:00"); return (d.getMonth()+1) + "/" + d.getDate() + "(" + "일월화수목금토"[d.getDay()] + ")"; }
+function ton(n){ return n == null ? "-" : (Math.round(n * 10) / 10).toLocaleString("ko-KR", { maximumFractionDigits: 1 }); }
+function binName(id){ const b = bins.find(x => x.id === id); return b ? b.name : "(없는 통)"; }
+function activeBins(){ return bins.filter(b => b.active !== false); }
+
+// ───────── 계산: 하루 쓰는 양 · 지금 남은 양 · 며칠 남음 ─────────
+function binStats(b){
+  const t0 = today();
+  const L = logs.filter(l => l.binId === b.id && l.date <= t0).sort((x, y) => x.date.localeCompare(y.date) || String(x.id).localeCompare(String(y.id)));
+  const readings = L.filter(l => l.kind === "잔량");
+  const inbound = (from, to) => L.filter(l => l.kind === "입고" && l.date > from && l.date <= to).reduce((s, l) => s + l.amount, 0);
+  // 같은 날 여러 번 적었으면 마지막 것만
+  const byDay = []; readings.forEach(r => { if(byDay.length && byDay[byDay.length-1].date === r.date) byDay[byDay.length-1] = r; else byDay.push(r); });
+  const rates = [];
+  for(let i = 1; i < byDay.length; i++){
+    const a = byDay[i-1], c = byDay[i], days = daysBetween(a.date, c.date);
+    const used = a.amount + inbound(a.date, c.date) - c.amount;
+    if(days > 0 && used >= 0) rates.push(used / days);
+  }
+  const recent = rates.slice(-5);
+  const perDay = recent.length ? recent.reduce((s, n) => s + n, 0) / recent.length : null;
+  const last = byDay[byDay.length - 1];
+  const lastIn = L.filter(l => l.kind === "입고").pop();
+  const lastOrder = L.filter(l => l.kind === "발주").pop();
+  const ordered = !!lastOrder && (!lastIn || lastOrder.date > lastIn.date || (lastOrder.date === lastIn.date && String(lastOrder.id) > String(lastIn.id)));
+  if(!last) return { state:"none", perDay, ordered, lastOrder };
+  const since = daysBetween(last.date, t0);
+  const est = Math.max(0, last.amount + inbound(last.date, t0) - (perDay || 0) * since);
+  const daysLeft = perDay > 0 ? est / perDay : null;
+  let state;
+  if(daysLeft == null) state = "unknown";
+  else if(daysLeft <= b.warnDays) state = ordered ? "ordered" : "late";
+  else if(daysLeft <= b.warnDays + 1) state = ordered ? "ordered" : "soon";
+  else state = "ok";
+  return { state, perDay, est, daysLeft, last, since, ordered, lastOrder };
+}
+
+// ───────── 저장소 ① 실습판 ─────────
+const KEY_B = "nongbuErpFeedBins", KEY_L = "nongbuErpFeedLogs";
+const Practice = {
+  async load(){
+    try{ bins = JSON.parse(localStorage.getItem(KEY_B)) || null; }catch(e){ bins = null; }
+    if(!bins) bins = [1,2].map(i => ({ id:"b" + i, name: i + "번 사료통", feedType:"", capacity:null, vendorTel:"", warnDays:2, active:true }));
+    try{ logs = JSON.parse(localStorage.getItem(KEY_L)) || []; }catch(e){ logs = []; }
+  },
+  persist(){ try{ localStorage.setItem(KEY_B, JSON.stringify(bins)); localStorage.setItem(KEY_L, JSON.stringify(logs)); }catch(e){ throw new Error("이 브라우저에 저장하지 못했어요."); } },
+  async save(rec){
+    if(rec.id){ logs = logs.map(l => l.id === rec.id ? { ...l, ...rec } : l); } else logs.push({ ...rec, id:"f" + Date.now() });
+    this.persist();
+  },
+  async remove(id){ logs = logs.filter(l => l.id !== id); this.persist(); },
+  async saveBins(){ this.persist(); }
+};
+
+// ───────── 저장소 ② 실사용 — 창고 ─────────
+let sb = null, session = null, liveError = "";
+function loadScript(src){
+  return new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = src; s.onload = resolve;
+    s.onerror = () => reject(new Error("라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인하세요."));
+    document.head.appendChild(s);
+  });
+}
+function friendly(msg){
+  if(/Failed to fetch|NetworkError|Load failed/i.test(msg)) return "창고(서버)에 연결하지 못했습니다. 인터넷 연결을 확인하세요.";
+  if(msg === "Invalid login credentials") return "이메일 또는 비밀번호가 틀렸습니다.";
+  if(/Email not confirmed/i.test(msg)) return "메일함의 확인 링크를 먼저 눌러주세요.";
+  if(/feed_(bins|logs).*does not exist|Could not find the table/i.test(msg)) return "사료 표가 아직 없습니다. supabase/feed.sql 을 실행했는지 확인하세요.";
+  if(/row-level security|permission denied/i.test(msg)) return "이 일은 권한이 없어요. (사료통 설정은 대표만, 기록 지우기는 적은 본인이나 대표만 할 수 있어요)";
+  if(/duplicate|unique/i.test(msg)) return "같은 이름의 사료통이 이미 있어요.";
+  return msg;
+}
+const Live = {
+  async init(){
+    if(!window.supabase) await loadScript(SUPABASE_JS);
+    sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey);
+    sb.auth.onAuthStateChange((_e, s) => { session = s; setTimeout(loadLive, 0); });
+  },
+  async load(){
+    const [b, l] = await Promise.all([
+      sb.from("feed_bins").select("*").order("sort").order("id"),
+      sb.from("feed_logs").select("id,log_date,bin_id,kind,amount,memo,written_by,writer:profiles(name)").gte("log_date", addDays(today(), -730)).order("log_date").order("id").limit(10000)
+    ]);
+    if(b.error) throw new Error(b.error.message);
+    if(l.error) throw new Error(l.error.message);
+    bins = b.data.map(x => ({ id:String(x.id), name:x.name, feedType:x.feed_type, capacity: x.capacity == null ? null : Number(x.capacity), vendorTel:x.vendor_tel, warnDays:x.warn_days, active:x.active }));
+    logs = l.data.map(x => ({ id:String(x.id), date:x.log_date, binId:String(x.bin_id), kind:x.kind, amount:Number(x.amount), memo:x.memo, writer:(x.writer && x.writer.name) || "", writerId:x.written_by }));
+  },
+  async save(rec){
+    const row = { log_date: rec.date, bin_id: Number(rec.binId), kind: rec.kind, amount: rec.amount, memo: rec.memo };
+    const res = rec.id ? await sb.from("feed_logs").update(row).eq("id", Number(rec.id)) : await sb.from("feed_logs").insert(row);
+    if(res.error) throw new Error(friendly(res.error.message));
+    await this.load();
+  },
+  async remove(id){
+    const { data, error } = await sb.from("feed_logs").delete().eq("id", Number(id)).select("id");
+    if(error) throw new Error(friendly(error.message));
+    if(!data.length) throw new Error("지우지 못했어요. 적은 본인이나 대표만 지울 수 있어요.");
+    await this.load();
+  },
+  async saveBins(){
+    for(const [i, b] of bins.entries()){
+      const row = { name:b.name, feed_type:b.feedType || "", capacity:b.capacity, vendor_tel:b.vendorTel || "", warn_days:b.warnDays, active:b.active !== false, sort:i + 1 };
+      const res = b.id.startsWith("new") ? await sb.from("feed_bins").insert(row) : await sb.from("feed_bins").update(row).eq("id", Number(b.id));
+      if(res.error) throw new Error(friendly(res.error.message));
+    }
+    await this.load();
+  }
+};
+const DB = LIVE ? Live : Practice;
+
+// ───────── 사료통 현황 카드 ─────────
+function renderBins(){
+  const list = activeBins();
+  const late = list.filter(b => binStats(b).state === "late").length;
+  $("binsHelp").textContent = late ? "오늘 발주할 사료통 " + late + "개" : "";
+  $("bins").innerHTML = list.map(b => {
+    const s = binStats(b);
+    let big, st, line = "";
+    if(s.state === "none"){ big = "-"; st = "남은 양을 한 번 적어 주세요"; }
+    else{
+      big = ton(s.est) + "<small>톤</small>";
+      if(s.state === "unknown") st = "두 번 이상 적으면 며칠 남았는지 계산돼요";
+      else{
+        const d = Math.floor(s.daysLeft * 10) / 10;
+        st = s.state === "late" ? "🔴 약 " + d + "일치 · 오늘 발주하세요"
+           : s.state === "soon" ? "🟡 약 " + d + "일치 · 내일 발주하세요"
+           : s.state === "ordered" ? "🟡 약 " + d + "일치 · 발주함, 도착 기다리는 중"
+           : "🟢 약 " + d + "일치 남음";
+      }
+      line = "마지막 확인 " + fmtDate(s.last.date) + (s.since ? " (" + s.since + "일 전, 그 뒤는 추정)" : "") + (s.perDay ? " · 하루 약 " + ton(s.perDay) + "톤" : "");
+    }
+    if(s.ordered && s.state !== "ordered") line += (line ? " · " : "") + "발주함 " + fmtDate(s.lastOrder.date);
+    const pct = b.capacity && s.est != null ? Math.min(100, s.est / b.capacity * 100) : null;
+    return `<div class="bin ${s.state}">
+      <div class="nm">${esc(b.name)}<span class="ty">${esc(b.feedType || "")}</span></div>
+      <div class="big">${big}</div>
+      ${pct != null ? `<div class="gauge"><div style="width:${pct.toFixed(0)}%"></div></div>` : ""}
+      <div class="st">${st}</div>
+      <div class="line">${esc(line)}</div>
+      <div class="acts">
+        <button class="btn btn-line btn-sm" data-q="잔량" data-bin="${b.id}">📏 남은 양</button>
+        <button class="btn btn-line btn-sm" data-q="입고" data-bin="${b.id}">🚚 들어옴</button>
+        <button class="btn btn-line btn-sm" data-q="발주" data-bin="${b.id}">📞 발주함</button>
+        ${b.vendorTel ? `<a class="btn btn-copper btn-sm" href="tel:${esc(b.vendorTel.replace(/[^\d+]/g, ""))}">📞 주문 전화</a>` : ""}
+      </div>
+    </div>`;
+  }).join("") || `<div class="help">사료통이 없어요. 아래 「사료통 설정」에서 추가하세요.</div>`;
+}
+$("bins").addEventListener("click", e => {
+  const b = e.target.closest("[data-q]");
+  if(!b) return;
+  resetForm(); setKind(b.dataset.q); $("fBin").value = b.dataset.bin;
+  $("formTitle").scrollIntoView({ behavior:"smooth" });
+  setTimeout(() => $("fAmount").focus(), 300);
+});
+
+// ───────── 입력 양식 ─────────
+function setKind(k){
+  kind = k;
+  document.querySelectorAll("#kinds button").forEach(b => b.classList.toggle("on", b.dataset.kind === k));
+  $("amountLabel").textContent = ({ "잔량":"남은 양", "입고":"들어온 양", "발주":"주문한 양" })[k] + " (톤)";
+  $("amountHelp").textContent = k === "잔량" ? "사료통을 보고 지금 남아 있는 양을 적어요." : k === "입고" ? "사료차가 넣고 간 양을 적어요." : "전화로 주문한 양을 적어요. 모르면 0으로 적어도 돼요.";
+}
+function fillBinSelects(){
+  const opts = activeBins().map(b => `<option value="${b.id}">${esc(b.name)}${b.feedType ? " · " + esc(b.feedType) : ""}</option>`).join("");
+  const keep = $("fBin").value; $("fBin").innerHTML = opts; if(activeBins().some(b => b.id === keep)) $("fBin").value = keep;
+  const keepF = $("filterBin").value; $("filterBin").innerHTML = `<option value="">모든 사료통</option>` + bins.map(b => `<option value="${b.id}">${esc(b.name)}</option>`).join(""); $("filterBin").value = keepF;
+}
+function resetForm(){
+  editingId = null;
+  $("formTitle").textContent = "✏️ 사료 기록 적기";
+  $("cancelBtn").style.display = "none"; $("delBtn").style.display = "none";
+  $("fDate").value = today(); $("fAmount").value = ""; $("fMemo").value = "";
+  setKind(kind);
+}
+function showMsg(t, ok){ const el = $("formMsg"); el.textContent = t; el.className = "msg " + (ok ? "ok" : "err"); clearTimeout(el._t); el._t = setTimeout(() => el.className = "msg", 3500); }
+
+async function saveLog(){
+  const v = $("fAmount").value.trim(), amount = Number(v);
+  const rec = { id: editingId, date: $("fDate").value, binId: $("fBin").value, kind, amount, memo: $("fMemo").value.trim() };
+  if(!rec.date || rec.date > today()) return showMsg("날짜를 오늘이나 그 전으로 골라 주세요.", false);
+  if(!rec.binId) return showMsg("사료통을 골라 주세요.", false);
+  if(v === "" || !isFinite(amount) || amount < 0) return showMsg("양을 0 이상의 숫자(톤)로 적어 주세요.", false);
+  const b = bins.find(x => x.id === rec.binId);
+  if(kind === "잔량" && b && b.capacity && amount > b.capacity * 1.05 && !confirm("통 크기(" + b.capacity + "톤)보다 많아요. 그대로 저장할까요?")) return;
+  const btn = $("saveBtn"); btn.disabled = true;
+  try{
+    await DB.save(rec);
+    showMsg(KIND[kind].icon + " " + binName(rec.binId) + " " + KIND[kind].label + " " + ton(amount) + "톤 — " + (editingId ? "고쳤어요." : "저장했어요."), true);
+    resetForm();
+  }catch(e){ showMsg(e.message, false); }
+  finally{ btn.disabled = false; }
+  renderAll();
+}
+function editLog(id){
+  const l = logs.find(x => x.id === id);
+  if(!l) return;
+  editingId = id; setKind(l.kind);
+  $("fDate").value = l.date; $("fBin").value = l.binId; $("fAmount").value = l.amount; $("fMemo").value = l.memo;
+  $("formTitle").textContent = "✏️ 기록 고치기";
+  $("cancelBtn").style.display = "";
+  $("delBtn").style.display = canDelete(l) ? "" : "none";
+  $("delBtn").onclick = async () => { await deleteLog(id); if(!logs.some(x => x.id === id)) resetForm(); };
+  $("formTitle").scrollIntoView({ behavior:"smooth" });
+}
+async function deleteLog(id){
+  const l = logs.find(x => x.id === id);
+  if(!l || !confirm(l.date + " " + binName(l.binId) + " " + KIND[l.kind].label + " 기록을 지울까요? 지우면 되돌릴 수 없어요.")) return;
+  try{ await DB.remove(id); }catch(e){ alert(e.message); }
+  renderAll();
+}
+
+// ───────── 기록 표 · 월별 입고 ─────────
+function renderTable(){
+  const bf = $("filterBin").value, kf = $("filterKind").value, days = Number($("filterDays").value);
+  const from = days ? addDays(today(), -(days - 1)) : "";
+  const list = logs.filter(l => (!bf || l.binId === bf) && (!kf || l.kind === kf) && (!from || l.date >= from))
+    .sort((a, b) => b.date.localeCompare(a.date) || String(b.id).localeCompare(String(a.id)));
+  $("countLabel").textContent = list.length;
+  $("emptyState").style.display = list.length ? "none" : "block";
+  $("tbody").innerHTML = list.map(l => `<tr>
+    <td>${l.date}</td><td>${esc(binName(l.binId))}</td>
+    <td><span class="chip k${l.kind}">${KIND[l.kind].icon} ${KIND[l.kind].label}</span></td>
+    <td class="num"><b>${ton(l.amount)}</b></td><td class="memo">${esc(l.memo)}</td><td>${esc(l.writer)}</td>
+    <td><button class="edit" onclick="editLog('${l.id}')">고치기</button>${canDelete(l) ? `<button class="del" onclick="deleteLog('${l.id}')">지우기</button>` : ""}</td>
+  </tr>`).join("");
+}
+function renderSums(){
+  const ins = logs.filter(l => l.kind === "입고");
+  const years = [...new Set(ins.map(l => l.date.slice(0,4)))].sort().reverse();
+  if(!years.length) years.push(today().slice(0,4));
+  const keep = $("sumYear").value;
+  $("sumYear").innerHTML = years.map(y => `<option value="${y}">${y}년</option>`).join("");
+  if(years.includes(keep)) $("sumYear").value = keep;
+  const y = $("sumYear").value, list = ins.filter(l => l.date.startsWith(y));
+  $("sumHead").innerHTML = `<tr><th>월</th>${bins.map(b => `<th class="num">${esc(b.name)}</th>`).join("")}<th class="num">합계</th></tr>`;
+  const months = [...new Set(list.map(l => l.date.slice(0,7)))].sort();
+  const line = (label, L, cls) => {
+    const per = bins.map(b => L.filter(l => l.binId === b.id).reduce((s, l) => s + l.amount, 0));
+    return `<tr class="${cls}"><td>${label}</td>${per.map(n => `<td class="num">${n ? ton(n) : "-"}</td>`).join("")}<td class="num"><b>${ton(per.reduce((s, n) => s + n, 0))}</b></td></tr>`;
+  };
+  $("sumBody").innerHTML = months.length
+    ? months.map(m => line(Number(m.slice(5)) + "월", list.filter(l => l.date.startsWith(m)), "")).join("") + line(y + "년 합계", list, "total")
+    : `<tr><td colspan="${bins.length + 2}" style="text-align:center;color:var(--muted)">이 해에는 들어온 사료 기록이 없습니다.</td></tr>`;
+}
+
+// ───────── 사료통 설정 (대표만) ─────────
+function renderBinSettings(){
+  const can = isCeo();
+  $("binEdit").style.display = can ? "" : "none";
+  $("binSetHelp").textContent = can ? "사료 이름·통 크기·주문 전화·며칠 전에 알릴지 정해요." : "설정은 대표만 바꿀 수 있어요.";
+  $("binList").innerHTML = bins.map((b, i) => `<div class="bin-row ${b.active === false ? "off" : ""}">
+    <div class="row2">
+      <div><label>이름</label><input data-i="${i}" data-f="name" value="${esc(b.name)}" maxlength="30" ${can ? "" : "disabled"}></div>
+      <div><label>사료 종류</label><input data-i="${i}" data-f="feedType" value="${esc(b.feedType || "")}" maxlength="30" placeholder="예) 산란 전기" ${can ? "" : "disabled"}></div>
+    </div>
+    <div class="row2">
+      <div><label>통 크기 (톤, 선택)</label><input type="number" step="0.1" min="0" data-i="${i}" data-f="capacity" value="${b.capacity ?? ""}" ${can ? "" : "disabled"}></div>
+      <div><label>주문 전화 (선택)</label><input type="tel" data-i="${i}" data-f="vendorTel" value="${esc(b.vendorTel || "")}" maxlength="40" placeholder="010-0000-0000" ${can ? "" : "disabled"}></div>
+      <div><label>며칠치 남으면 알림</label><input type="number" min="1" max="30" data-i="${i}" data-f="warnDays" value="${b.warnDays}" ${can ? "" : "disabled"}></div>
+    </div>
+    ${can ? `<label style="display:flex;gap:6px;align-items:center;margin-top:8px"><input type="checkbox" data-i="${i}" data-f="active" ${b.active !== false ? "checked" : ""} style="width:auto"> 사용 중</label>` : ""}
+  </div>`).join("");
+}
+function readBinInputs(){
+  document.querySelectorAll("#binList [data-f]").forEach(inp => {
+    const b = bins[inp.dataset.i], f = inp.dataset.f;
+    if(f === "active") b.active = inp.checked;
+    else if(f === "capacity") b.capacity = inp.value === "" ? null : Math.max(0.1, Number(inp.value));
+    else if(f === "warnDays") b.warnDays = Math.min(30, Math.max(1, Math.round(Number(inp.value) || 2)));
+    else b[f] = inp.value.trim();
+  });
+}
+$("binAdd").onclick = () => { readBinInputs(); bins.push({ id:(LIVE ? "new" : "b") + Date.now(), name:(bins.length + 1) + "번 사료통", feedType:"", capacity:null, vendorTel:"", warnDays:2, active:true }); renderBinSettings(); };
+$("binSave").onclick = async () => {
+  readBinInputs();
+  const msg = $("binMsg");
+  if(bins.some(b => !b.name)){ msg.className = "msg err"; msg.textContent = "사료통 이름이 빈 칸이 있어요."; return; }
+  try{ await DB.saveBins(); msg.className = "msg ok"; msg.textContent = "사료통 설정을 저장했어요."; }
+  catch(e){ msg.className = "msg err"; msg.textContent = e.message; }
+  renderAll();
+};
+
+function renderAll(){ fillBinSelects(); renderBins(); renderTable(); renderSums(); renderBinSettings(); }
+
+// ───────── 로그인 · 화면 열고 닫기 ─────────
+let authMode = "login";
+function renderModeNote(){
+  const el = $("modeNote");
+  if(LIVE){ el.className = "warn live"; el.innerHTML = "✅ 함께 쓰는 모드 — 사료 기록은 농부마을 창고(DB · Supabase)에 저장됩니다. 직원이 적으면 대표 화면에도 바로 보여요."; }
+  else{ el.className = "warn"; el.innerHTML = "⚠ 실습판입니다. <b>이 컴퓨터의 이 브라우저에만</b> 저장됩니다. 함께 쓰려면 주소 끝의 <b>?practice=1</b>을 빼고 여세요."; }
+}
+function renderBar(){
+  const bar = $("bar");
+  if(!LIVE || !session){ bar.style.display = "none"; return; }
+  bar.style.display = "";
+  bar.innerHTML = `<span class="who">${me ? `👤 <b>${esc(me.name)}</b> (${esc(me.role)}) 로그인 중` : "로그인 중"}</span>
+    <button class="btn btn-line" id="refreshBtn">새로고침</button><button class="btn btn-line" id="logoutBtn">로그아웃</button>`;
+}
+function authView(){
+  return `<div class="card auth">
+    <div class="switch">
+      <button class="btn ${authMode === "login" ? "btn-copper" : "btn-line"}" data-auth="login">로그인</button>
+      <button class="btn ${authMode === "signup" ? "btn-copper" : "btn-line"}" data-auth="signup">처음 가입</button>
+    </div>
+    <label for="aEmail">이메일</label><input id="aEmail" type="email" autocomplete="email">
+    <label for="aPw">비밀번호${authMode === "signup" ? " (6자 이상)" : ""}</label><input id="aPw" type="password" autocomplete="${authMode === "signup" ? "new-password" : "current-password"}">
+    ${authMode === "signup" ? `<label for="aName">이름</label><input id="aName" autocomplete="name"><label for="aJob">맡은 일</label><input id="aJob" placeholder="예: 사육, 출하, 방역">` : ""}
+    <div class="msg err" id="aErr" style="display:none"></div><div class="msg ok" id="aOk" style="display:none"></div>
+    <button class="btn btn-copper btn-block" id="authBtn">${authMode === "signup" ? "가입하기" : "로그인"}</button>
+    <p class="help" style="margin-top:10px">${authMode === "signup" ? "가입 후 대표가 전자결재 화면의 「직원 관리」에서 「사용 허용」을 눌러야 쓸 수 있습니다." : "전자결재·산란 기록과 같은 계정입니다."}</p>
+  </div>`;
+}
+function authMsg(id, text){ const el = $(id); el.textContent = text; el.style.display = text ? "block" : "none"; }
+function bindAuth(){
+  document.querySelectorAll("[data-auth]").forEach(b => b.addEventListener("click", () => { authMode = b.dataset.auth; renderGate(); }));
+  $("authBtn").addEventListener("click", async () => {
+    authMsg("aErr", ""); authMsg("aOk", "");
+    const email = $("aEmail").value.trim(), password = $("aPw").value;
+    if(!email.includes("@")) return authMsg("aErr", "이메일을 확인해주세요.");
+    if(password.length < 6) return authMsg("aErr", "비밀번호는 6자 이상이어야 합니다.");
+    const btn = $("authBtn"); btn.disabled = true;
+    try{
+      if(authMode === "signup"){
+        const name = $("aName").value.trim(), job = $("aJob").value.trim();
+        if(!name){ btn.disabled = false; return authMsg("aErr", "이름을 적어주세요."); }
+        const { data, error } = await sb.auth.signUp({ email, password, options: { data: { name, job }, emailRedirectTo: location.href.split("#")[0] } });
+        if(error) throw error;
+        if(!data.session) authMsg("aOk", "가입 신청이 됐습니다. 메일함에서 확인 링크를 누른 뒤 로그인하세요.");
+      }else{
+        const { error } = await sb.auth.signInWithPassword({ email, password });
+        if(error) throw error;
+      }
+    }catch(e){ authMsg("aErr", friendly(e.message)); } finally{ btn.disabled = false; }
+  });
+}
+function renderGate(){
+  renderModeNote(); renderBar();
+  let gate = "";
+  if(LIVE && liveError) gate = `<div class="card auth"><h3>연결에 문제가 있습니다</h3><p class="msg err" style="display:block">${esc(liveError)}</p></div>`;
+  else if(LIVE && !sb) gate = `<div class="card auth" style="text-align:center;color:var(--muted)">창고(DB)에 연결하는 중…</div>`;
+  else if(LIVE && !session) gate = authView();
+  else if(LIVE && (!me || !me.active)) gate = `<div class="card auth"><h3>⏳ 대표 승인 대기 중</h3><p style="font-size:13.5px">대표가 전자결재 화면의 「직원 관리」에서 「사용 허용」을 누르면 쓸 수 있습니다. 허용받은 뒤 「새로고침」을 누르세요.</p></div>`;
+  $("auth").innerHTML = gate;
+  $("app").style.display = gate ? "none" : "";
+  if(LIVE && sb && !session && !liveError) bindAuth();
+}
+async function loadLive(){
+  liveError = ""; me = null;
+  if(session){
+    try{
+      const { data, error } = await sb.from("profiles").select("id,name,email,role,active").eq("id", session.user.id).maybeSingle();
+      if(error) throw new Error(error.message);
+      me = data ? { id: data.id, name: data.name || data.email, role: data.role, active: data.active } : null;
+      if(me && me.active) await Live.load();
+    }catch(e){ liveError = friendly(e.message); }
+  }else{ bins = []; logs = []; }
+  renderGate();
+  if(!$("app").style.display) renderAll();
+}
+$("bar").addEventListener("click", async e => {
+  if(e.target.id === "refreshBtn") await loadLive();
+  else if(e.target.id === "logoutBtn") await sb.auth.signOut();
+});
+$("kinds").addEventListener("click", e => { const b = e.target.closest("[data-kind]"); if(b) setKind(b.dataset.kind); });
+$("saveBtn").onclick = saveLog;
+$("cancelBtn").onclick = resetForm;
+["filterBin", "filterKind", "filterDays"].forEach(id => $(id).addEventListener("change", renderTable));
+$("sumYear").addEventListener("change", renderSums);
+async function backgroundRefresh(){
+  if(!LIVE || !me || !me.active || document.visibilityState !== "visible") return;
+  if(document.activeElement && document.activeElement.closest("#app input, #app select")) return;
+  try{ await Live.load(); renderAll(); }catch(e){}
+}
+document.addEventListener("visibilitychange", backgroundRefresh);
+setInterval(backgroundRefresh, 60 * 1000);
+
+// ───────── 처음 열 때 ─────────
+if(window.innerWidth < 700) document.querySelectorAll("details.overview").forEach(d => d.open = false);
+async function boot(){
+  resetForm();
+  if(!LIVE){ await Practice.load(); renderGate(); renderAll(); return; }
+  renderGate();
+  try{ await Live.init(); }catch(e){ liveError = e.message; renderGate(); }
+}
+boot();
+</script>
+<script src="erp-home.js"></script>
+</body>
+</html>
