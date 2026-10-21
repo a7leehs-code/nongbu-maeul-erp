@@ -27,6 +27,10 @@
   .help{ font-size:11.5px; color:var(--muted); margin-top:3px; }
   .migrate{ background:#fff8ea; border:1px solid #f0d9a8; border-radius:12px; padding:12px 16px; margin-bottom:14px; font-size:13px; color:#6b4a1a; display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
   .migrate span{ flex:1; min-width:200px; }
+  .perm-row{ display:flex; align-items:center; gap:10px; padding:8px 2px; border-bottom:1px solid #eee; font-size:13.5px; cursor:pointer; }
+  .perm-row:last-child{ border-bottom:none; }
+  .perm-row input{ width:18px; height:18px; accent-color:var(--copper); }
+  .perm-row .job{ color:var(--muted); font-size:12px; }
 
   .layout{ display:flex; gap:18px; align-items:flex-start; }
   .panel{ width:340px; flex:0 0 340px; }
@@ -160,6 +164,13 @@
         <div id="emptyText">아직 등록된 위치가 없습니다.</div>
       </div>
     </div>
+
+    <div class="card" id="permCard" style="display:none">
+      <h3>🔑 거래처를 볼 수 있는 직원</h3>
+      <div class="help" style="margin-bottom:8px">대표는 언제나 볼 수 있어요. 체크한 직원만 거래처를 보고 등록할 수 있어요. 체크를 빼면 바로 못 보게 됩니다.</div>
+      <div id="permList"></div>
+      <div class="msg" id="permMsg"></div>
+    </div>
   </div>
 
   <div class="mapcol">
@@ -184,6 +195,7 @@ const KINDS = ["거래처", "배송지", "소비자", "식당·납품처", "사�
 // 거래처: [{ id, name, type, addr, tel, memo, lat, lng, writer, writerId }]
 let clients = [];
 let me = null;
+let allowed = !LIVE;     // 거래처를 볼 수 있는지 (대표 또는 대표가 허락한 직원)
 let editingId = null;
 let pendingLatLng = null; // 지도 클릭으로 수동 지정한 좌표
 
@@ -272,6 +284,52 @@ const Live = {
   }
 };
 const DB = LIVE ? Live : Practice;
+
+// ───────── 허락 (대표가 허락한 직원만 거래처를 봄) ─────────
+async function checkAllowed(){
+  if(me.role === "대표") return true;
+  const { data, error } = await sb.from("member_perms").select("perm").eq("user_id", me.id).eq("perm", "clients");
+  return !error && data.length > 0;
+}
+let staff = [], granted = new Set();
+async function loadPerms(){
+  const [p, g] = await Promise.all([
+    sb.from("profiles").select("id,name,email,job,role,active").eq("active", true).order("name"),
+    sb.from("member_perms").select("user_id").eq("perm", "clients")
+  ]);
+  if(p.error) throw new Error(p.error.message);
+  if(g.error) throw new Error(g.error.message);
+  staff = p.data.filter(x => x.role !== "대표");
+  granted = new Set(g.data.map(x => x.user_id));
+}
+function renderPerms(){
+  const card = $("permCard");
+  if(!LIVE || !me || me.role !== "대표"){ card.style.display = "none"; return; }
+  card.style.display = "";
+  $("permList").innerHTML = staff.length
+    ? staff.map(s => `<label class="perm-row"><input type="checkbox" data-id="${s.id}" ${granted.has(s.id) ? "checked" : ""}>
+        <span><b>${escapeHtml(s.name || s.email)}</b> <span class="job">${escapeHtml(s.job || "")}</span></span></label>`).join("")
+    : `<div class="help">아직 승인된 직원이 없어요. (전자결재 화면의 「직원 관리」에서 사용 허용을 먼저 해 주세요)</div>`;
+}
+$("permList").addEventListener("change", async e => {
+  const cb = e.target.closest("input[data-id]");
+  if(!cb) return;
+  const id = cb.dataset.id, name = (staff.find(s => s.id === id) || {}).name || "";
+  const msg = $("permMsg");
+  cb.disabled = true;
+  const res = cb.checked
+    ? await sb.from("member_perms").insert({ user_id: id, perm: "clients" })
+    : await sb.from("member_perms").delete().eq("user_id", id).eq("perm", "clients");
+  cb.disabled = false;
+  if(res.error){
+    cb.checked = !cb.checked;
+    msg.className = "msg err"; msg.textContent = friendly(res.error.message);
+  }else{
+    if(cb.checked) granted.add(id); else granted.delete(id);
+    msg.className = "msg ok"; msg.textContent = name + "님 — " + (cb.checked ? "거래처를 볼 수 있게 했어요." : "이제 거래처를 볼 수 없어요.");
+  }
+  clearTimeout(msg._t); msg._t = setTimeout(() => { msg.className = "msg"; }, 3500);
+});
 
 // ───────── 지도 (기본 중심: 대한민국) ─────────
 const map = L.map('map').setView([36.5, 127.8], 7);
@@ -436,7 +494,7 @@ function focusClient(id){
 // ───────── 이 컴퓨터에 있던 거래처를 창고로 옮기기 ─────────
 function renderMigrate(){
   const box = $('migrateBox');
-  const local = LIVE && me && me.active ? loadLocal() : [];
+  const local = LIVE && me && me.active && allowed ? loadLocal() : [];
   if(!local.length){ box.style.display = 'none'; return; }
   box.style.display = '';
   box.innerHTML = `<span>📦 이 컴퓨터에만 저장돼 있던 거래처가 <b>${local.length}곳</b> 있어요. 회사 창고로 옮기면 직원 모두가 함께 볼 수 있어요.</span>
@@ -529,6 +587,8 @@ function renderGate(){
   else if(LIVE && !session) gate = authView();
   else if(LIVE && (!me || !me.active)) gate = `<div class="card auth"><h3>⏳ 대표 승인 대기 중</h3>
       <p style="font-size:13.5px">${me ? escapeHtml(me.name) + "님, 가입은 됐습니다." : "직원 정보가 아직 없습니다."} 대표가 전자결재 화면의 「직원 관리」에서 「사용 허용」을 누르면 쓸 수 있습니다. 허용받은 뒤 「새로고침」을 누르세요.</p></div>`;
+  else if(LIVE && !allowed) gate = `<div class="card auth"><h3>🔒 허락받은 사람만 볼 수 있어요</h3>
+      <p style="font-size:13.5px">거래처 정보는 대표가 허락한 직원만 볼 수 있습니다. 필요하면 대표에게 요청하세요. 허락받은 뒤 「새로고침」을 누르면 열립니다.</p></div>`;
   $("auth").innerHTML = gate;
   const wasHidden = $("app").style.display === "none";
   $("app").style.display = gate ? "none" : "";
@@ -537,17 +597,23 @@ function renderGate(){
   if(LIVE && sb && !session && !liveError) bindAuth();
 }
 async function loadLive(){
-  liveError = ""; me = null;
+  liveError = ""; me = null; allowed = false;
   if(session){
     try{
       const { data, error } = await sb.from("profiles").select("id,name,email,role,active").eq("id", session.user.id).maybeSingle();
       if(error) throw new Error(error.message);
       me = data ? { id: data.id, name: data.name || data.email, role: data.role, active: data.active } : null;
-      if(me && me.active) await Live.load();
+      if(me && me.active){
+        allowed = await checkAllowed();
+        if(allowed) await Live.load();
+        if(me.role === "대표") await loadPerms();
+      }
     }catch(e){ liveError = friendly(e.message); }
   }else{ clients = []; }
+  if(!allowed) clients = [];
   renderGate();
   renderMigrate();
+  renderPerms();
   if(!$("app").style.display) renderAll();
 }
 
