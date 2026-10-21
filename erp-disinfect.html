@@ -89,6 +89,7 @@
   .chip.car{ background:#eaf3f8; color:var(--teal); }
   .chip.person{ background:#f3eefb; color:#6b4fa0; }
   .chip.around{ background:#eef7f0; color:var(--green); }
+  .chip.plan{ background:#fff4e0; color:#b7791f; }
   .empty{ text-align:center; color:var(--muted); font-size:13px; padding:26px 10px; }
   .empty .big{ font-size:30px; margin-bottom:8px; }
   table.month tr.total td{ background:#eef4f8; font-weight:800; }
@@ -220,6 +221,7 @@
           <option value="차량">🚚 차량</option>
           <option value="사람">🚶 사람</option>
           <option value="주위">🌳 농장 주위</option>
+          <option value="일정">📅 스케줄</option>
         </select>
         <select id="filterDays">
           <option value="1">오늘</option>
@@ -274,7 +276,9 @@ let editingId = null;
 const KIND = {
   "차량": { icon:"🚚", cls:"car",    target:"차량번호",  need:"차량번호를", targetPh:"예) 12가 3456", purpose:"무슨 일로", purposeOpts:["사료 배송","계란 출하","분뇨 수거","택배·기타"], time:true,  chem:false },
   "사람": { icon:"🚶", cls:"person", target:"이름",      need:"이름을", targetPh:"예) 홍길동",    purpose:"소속 · 목적", purposeOpts:["직원 출근","방문객","수의사","사료회사","공무원 점검"], time:true, chem:false },
-  "주위": { icon:"🌳", cls:"around", target:"소독한 곳", need:"소독한 곳을", targetPh:"예) 농장 주위 전체", purpose:"", purposeOpts:[], time:false, chem:true }
+  "주위": { icon:"🌳", cls:"around", target:"소독한 곳", need:"소독한 곳을", targetPh:"예) 농장 주위 전체", purpose:"", purposeOpts:[], time:false, chem:true },
+  // 스케줄표에서 「했어요」로 생긴 기록 (입력 칸에서는 고르지 않음)
+  "일정": { icon:"📅", cls:"plan", target:"소독한 것", need:"소독한 것을", targetPh:"예) 계사 안 소독", purpose:"", purposeOpts:[], time:false, chem:true }
 };
 
 const $ = id => document.getElementById(id);
@@ -491,7 +495,7 @@ function renderTable(){
   $("tbody").innerHTML = list.map(x => `<tr>
       <td>${x.date}</td>
       <td>${esc(x.time || "")}</td>
-      <td><span class="chip ${KIND[x.kind].cls}">${KIND[x.kind].icon} ${x.kind === "주위" ? "농장 주위" : x.kind}</span></td>
+      <td><span class="chip ${KIND[x.kind].cls}">${KIND[x.kind].icon} ${x.kind === "주위" ? "농장 주위" : (x.kind === "일정" ? "스케줄" : x.kind)}</span></td>
       <td><b>${esc(x.target)}</b></td>
       <td>${esc(x.purpose)}</td>
       <td>${esc(x.chemical)}</td>

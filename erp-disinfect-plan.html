@@ -1,0 +1,572 @@
+<!-- [AI 생성 초안 - 검토 전] 농부마을 방역 소독 스케줄표 -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>방역 소독 스케줄표</title>
+<style>
+  :root{ --navy:#2B3A4E; --copper:#C67B3C; --cream:#F7F3EE; --teal:#3A8FB7; --ink:#243140; --muted:#6b7785; --line:#e3dccf; --green:#3f7a52; --red:#b3503a; --amber:#b7791f; }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{ font-family:"맑은 고딕","Malgun Gothic",sans-serif; background:var(--cream); color:var(--ink); padding:24px; line-height:1.6; max-width:1100px; margin:0 auto; }
+  header{ background:linear-gradient(135deg,#2B3A4E,#1a2636 58%,#C67B3C 210%); color:#fff; border-radius:14px; padding:22px 26px; margin-bottom:20px; }
+  header h1{ font-size:20px; margin-bottom:6px; }
+  header p{ font-size:13.5px; color:#d7dee6; }
+
+  details.overview{ background:#fff; border:1px solid var(--line); border-radius:12px; margin-bottom:16px; }
+  details.overview > summary{ list-style:none; cursor:pointer; padding:14px 18px; display:flex; flex-wrap:wrap; align-items:baseline; gap:8px; border-bottom:1px solid var(--line); }
+  details.overview > summary::-webkit-details-marker{ display:none; }
+  details.overview:not([open]) > summary{ border-bottom:none; }
+  .ov-title{ font-size:14.5px; font-weight:800; color:var(--navy); }
+  .ov-stats{ font-size:12.5px; color:var(--muted); }
+  .ov-toggle{ margin-left:auto; font-size:12px; color:var(--teal); font-weight:700; }
+  details.overview:not([open]) .ov-toggle::after{ content:"펼쳐 보기 ▾"; }
+  details.overview[open] .ov-toggle::after{ content:"접기 ▴"; }
+  .ov-body{ padding:16px 18px 20px; font-size:13px; }
+  .ov-body ul{ margin:6px 0 0 18px; }
+  .legend{ display:flex; flex-wrap:wrap; gap:14px; margin-top:10px; font-size:12.5px; color:var(--muted); }
+
+  .warn{ background:#fbeee9; border-left:4px solid var(--red); padding:11px 15px; font-size:12.8px; color:#8a3a2a; margin-bottom:16px; border-radius:6px; }
+  .warn.live{ background:#eef7f0; border-left-color:var(--green); color:#2f5e3e; }
+  .bar{ display:flex; flex-wrap:wrap; align-items:center; gap:10px; background:#fff; border:1px solid var(--line); border-radius:12px; padding:10px 16px; margin-bottom:14px; }
+  .bar .who{ font-size:13px; color:var(--muted); flex:1; min-width:180px; }
+  .auth{ max-width:420px; margin:0 auto 16px; }
+  .auth .switch{ display:flex; gap:6px; margin-bottom:6px; }
+  .auth .switch .btn{ flex:1; }
+
+  .card{ background:#fff; border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin-bottom:16px; }
+  .card h3{ font-size:14.5px; color:var(--navy); margin-bottom:12px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+
+  label{ display:block; font-size:12px; color:var(--muted); font-weight:700; margin:10px 0 4px; }
+  input, select, textarea{ width:100%; border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:14px; font-family:inherit; background:#fdfbf8; }
+  .row2{ display:flex; gap:8px; flex-wrap:wrap; }
+  .row2 > div{ flex:1; min-width:120px; }
+  .help{ font-size:11.5px; color:var(--muted); margin-top:3px; }
+
+  .btn{ border:none; border-radius:8px; padding:9px 14px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; }
+  .btn-copper{ background:var(--copper); color:#fff; }
+  .btn-green{ background:var(--green); color:#fff; }
+  .btn-line{ background:#fff; color:var(--muted); border:1px solid var(--line); }
+  .btn-block{ width:100%; margin-top:12px; }
+  .btn-sm{ padding:5px 10px; font-size:12px; }
+  .msg{ font-size:12.5px; margin-top:8px; padding:8px 10px; border-radius:8px; display:none; }
+  .msg.ok{ background:#e3f2e6; color:var(--green); display:block; }
+  .msg.err{ background:#fbeee9; color:var(--red); display:block; }
+
+  /* 오늘 할 일 */
+  .todo{ display:flex; align-items:center; gap:12px; padding:12px 10px; border:1.5px solid var(--line); border-radius:12px; margin-bottom:8px; background:#faf7f1; flex-wrap:wrap; }
+  .todo.late{ background:#fbeee9; border-color:#e8c1b6; }
+  .todo.today{ background:#fff8ea; border-color:#f0d9a8; }
+  .todo.done{ background:#eef7f0; border-color:#c6e2cd; }
+  .todo .nm{ font-size:15px; font-weight:800; color:var(--navy); }
+  .todo .st{ font-size:12.5px; }
+  .todo.late .st{ color:var(--red); font-weight:800; }
+  .todo.today .st{ color:var(--amber); font-weight:800; }
+  .todo.done .st{ color:var(--green); font-weight:800; }
+  .todo .info{ flex:1; min-width:160px; }
+  .todo .who{ font-size:12px; color:var(--muted); }
+  .done-form{ width:100%; display:none; background:#fff; border:1px solid var(--line); border-radius:10px; padding:10px 12px; }
+  .done-form.open{ display:block; }
+
+  /* 주간 스케줄표 */
+  .weeknav{ display:flex; align-items:center; gap:8px; margin-left:auto; }
+  .weeknav button{ border:1px solid var(--line); background:#fff; border-radius:8px; padding:4px 10px; cursor:pointer; font-family:inherit; font-size:13px; color:var(--navy); }
+  .tbl-wrap{ overflow-x:auto; }
+  table.week{ width:100%; border-collapse:collapse; min-width:640px; table-layout:fixed; }
+  table.week th, table.week td{ border:1px solid #eee; text-align:center; padding:6px 4px; font-size:13px; }
+  table.week th{ background:#f4efe6; color:var(--navy); font-weight:800; }
+  table.week th.sun{ color:var(--red); } table.week th.sat{ color:var(--teal); }
+  table.week th.today, table.week td.today{ background:#fff7ec; }
+  table.week th.today{ box-shadow:inset 0 -3px 0 var(--copper); }
+  table.week td.task{ text-align:left; font-weight:800; color:var(--navy); width:150px; }
+  table.week td.task small{ display:block; font-weight:400; color:var(--muted); font-size:11.5px; }
+  .mk{ display:inline-block; min-width:26px; padding:2px 4px; border-radius:8px; font-size:15px; line-height:1.3; }
+  .mk.done{ background:#e3f2e6; cursor:pointer; }
+  .mk.late{ background:#fbeee9; color:var(--red); font-weight:800; font-size:12px; }
+  .mk.due{ background:#fff2d6; color:var(--amber); font-weight:800; font-size:12px; }
+  .mk.plan{ color:#b9b2a4; }
+
+  /* 일정 관리 */
+  .task-row{ border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin-bottom:8px; background:#fdfbf8; }
+  .task-row.off{ opacity:.55; }
+  .task-row .top{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .task-row .top b{ color:var(--navy); }
+  .task-row .top span{ font-size:12.5px; color:var(--muted); }
+  .task-row .top .sp{ flex:1; }
+
+  footer{ text-align:center; color:var(--muted); font-size:12px; margin-top:20px; line-height:1.7; }
+  a.back{ color:var(--copper); font-weight:700; text-decoration:none; }
+  @media (max-width: 700px){ body{ padding:16px; } }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📅 방역 소독 스케줄표</h1>
+  <p>정해 둔 방역 소독을 언제 해야 하는지 보여 주고, 했으면 「했어요」로 체크합니다. 체크하면 방역 소독 장부에도 자동으로 기록됩니다.</p>
+</header>
+
+<details class="overview" open>
+  <summary>
+    <span class="ov-title">🧠 구조 한눈에 보기 — 스케줄표는 어떻게 돌아가나</span>
+    <span class="ov-stats">일정 정하기(대표) → 할 차례 알림 → 했어요 → 장부에 기록</span>
+    <span class="ov-toggle"></span>
+  </summary>
+  <div class="ov-body">
+    <ul>
+      <li><b>일정</b>은 대표가 정합니다: 이름, 주기(「매주 ○요일」 또는 「○일마다」), 담당자.</li>
+      <li>「○일마다」 일정은 <b>마지막으로 한 날 + ○일</b>이 다음 차례예요. 늦게 하면 다음 차례도 그만큼 밀려요.</li>
+      <li>「매주 ○요일」 일정은 <b>그 주 안에 한 번</b> 하면 한 것으로 봐요.</li>
+      <li>「했어요」를 누르면 <b>방역 소독 체크 장부</b>에 한 줄이 생겨요. (농장 주위 소독은 장부의 「농장 주위」로 기록)</li>
+    </ul>
+    <div class="legend"><span><span class="mk done">✅</span> 했음</span><span><span class="mk due">오늘</span> 할 차례</span><span><span class="mk late">지남</span> 날짜 지났는데 안 함</span><span><span class="mk plan">○</span> 앞으로 할 날</span></div>
+  </div>
+</details>
+
+<div class="warn" id="modeNote"></div>
+<div class="bar" id="bar" style="display:none"></div>
+<div id="auth"></div>
+
+<div id="app" style="display:none">
+  <div class="card">
+    <h3>✅ 오늘 할 방역 <span class="help" id="todoCount"></span></h3>
+    <div id="todoList"></div>
+  </div>
+
+  <div class="card">
+    <h3>📅 주간 스케줄표
+      <span class="weeknav"><button id="prevWeek">◀ 지난주</button><span id="weekLabel" style="font-size:13px;color:var(--muted)"></span><button id="nextWeek">다음주 ▶</button><button id="thisWeek">이번 주</button></span>
+    </h3>
+    <div class="tbl-wrap" id="weeks"></div>
+    <div class="help" style="margin-top:6px">✅를 누르면 누가 언제 했는지 보이고, 잘못 체크했으면 지울 수 있어요.</div>
+  </div>
+
+  <div class="card" id="taskCard">
+    <h3>⚙️ 소독 일정 정하기 <span class="help" id="taskHelp"></span></h3>
+    <div id="taskList"></div>
+    <div id="taskForm">
+      <div class="row2">
+        <div style="flex:2"><label>소독 이름</label><input type="text" id="tName" maxlength="40" placeholder="예) 계사 안 소독"></div>
+        <div><label>담당자 (선택)</label><input type="text" id="tWho" maxlength="30" placeholder="예) 김사육"></div>
+      </div>
+      <div class="row2">
+        <div><label>주기</label>
+          <select id="tCycle"><option value="every">○일마다</option><option value="weekday">매주 ○요일</option></select></div>
+        <div id="tEveryBox"><label>며칠마다</label><input type="number" id="tEvery" min="1" max="90" value="7" inputmode="numeric"></div>
+        <div id="tWeekdayBox" style="display:none"><label>요일</label>
+          <select id="tWeekday"><option value="1">월요일</option><option value="2">화요일</option><option value="3">수요일</option><option value="4">목요일</option><option value="5">금요일</option><option value="6">토요일</option><option value="0">일요일</option></select></div>
+      </div>
+      <div class="msg" id="taskMsg"></div>
+      <div class="row2"><div><button class="btn btn-copper btn-block" id="taskSave">일정 추가</button></div><div id="taskCancelBox" style="display:none"><button class="btn btn-line btn-block" id="taskCancel">취소</button></div></div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  erp-disinfect-plan.html · 정본 1장 · 일정·체크는 농부마을 창고(Supabase)에 저장됨 (실습판: 주소 끝 ?practice=1) · <a class="back" href="erp-disinfect.html">방역 소독 장부 보기</a> · <a class="back" href="erp-map.html">← 지도로 돌아가기</a><br>
+  [AI 생성 초안 - 검토 전]
+</footer>
+
+<script src="erp-config.js"></script>
+<script>
+const CFG = window.ERP_CONFIG || {};
+const LIVE = Boolean(CFG.supabaseUrl && CFG.supabaseAnonKey) && !/[?&]practice=1(&|$)/.test(location.search);
+const SUPABASE_JS = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js";
+const DAY = "일월화수목금토";
+
+// 일정: [{ id, name, weekday|null, everyDays|null, logKind, assignee, active, sort }]
+let tasks = [];
+// 체크 기록 (방역 소독 장부 중 주위·일정): [{ id, kind, date, target, taskId, memo, chemical, writer, writerId }]
+let logs = [];
+let me = null;
+let weekOffset = 0;
+let editingTaskId = null;
+
+const $ = id => document.getElementById(id);
+function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
+function isCeo(){ return !LIVE || (!!me && me.role === "대표"); }
+function canDelete(x){ return !LIVE || isCeo() || (!!me && x.writerId === me.id); }
+function localDate(d){ return new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10); }
+function today(){ return localDate(new Date()); }
+function addDays(s, n){ const d = new Date(s + "T00:00:00"); d.setDate(d.getDate() + n); return localDate(d); }
+function daysBetween(a, b){ return Math.round((new Date(b + "T00:00:00") - new Date(a + "T00:00:00")) / 86400000); }
+function dow(s){ return new Date(s + "T00:00:00").getDay(); }
+function monday(s){ return addDays(s, -((dow(s) + 6) % 7)); }
+function fmtDate(s){ const d = new Date(s + "T00:00:00"); return (d.getMonth()+1) + "/" + d.getDate() + "(" + DAY[d.getDay()] + ")"; }
+function cycleText(t){ return t.weekday != null ? "매주 " + DAY[t.weekday] + "요일" : t.everyDays + "일마다"; }
+
+// 이 일정을 한 기록인가? (농장 주위 소독은 장부에서 직접 적은 「농장 주위」 기록도 인정)
+function matches(t, l){ return l.taskId === t.id || (t.logKind === "주위" && l.kind === "주위"); }
+function doneDates(t){ return [...new Set(logs.filter(l => matches(t, l)).map(l => l.date))].sort(); }
+
+// 오늘 기준 상태: done(이번 차례 함) / today(오늘 할 차례) / late(지남) / soon(앞으로)
+function taskState(t, ref){
+  ref = ref || today();
+  const dates = doneDates(t).filter(d => d <= ref);
+  if(t.weekday != null){
+    const mon = monday(ref), sun = addDays(mon, 6);
+    const due = addDays(mon, (t.weekday + 6) % 7);
+    const doneOn = dates.filter(d => d >= mon && d <= sun).pop();
+    if(doneOn) return { state:"done", due, doneOn };
+    const left = daysBetween(ref, due);
+    return { state: left < 0 ? "late" : (left === 0 ? "today" : "soon"), due, left };
+  }
+  const last = dates.pop();
+  if(last === ref) return { state:"done", due: ref, doneOn: ref, next: addDays(ref, t.everyDays) };
+  const due = last ? addDays(last, t.everyDays) : ref;
+  const left = daysBetween(ref, due);
+  return { state: left < 0 ? "late" : (left === 0 ? "today" : "soon"), due, left, last };
+}
+
+// ───────── 저장소 ① 실습판 ─────────
+const KEY_T = "nongbuErpDisinfectTasks", KEY_L = "nongbuErpDisinfect";
+const Practice = {
+  async load(){
+    try{ tasks = JSON.parse(localStorage.getItem(KEY_T)) || null; }catch(e){ tasks = null; }
+    if(!tasks) tasks = [{ id:"t1", name:"농장 주위 소독", weekday:null, everyDays:7, logKind:"주위", assignee:"", active:true, sort:1 }];
+    let all = [];
+    try{ all = JSON.parse(localStorage.getItem(KEY_L)) || []; }catch(e){}
+    logs = all.filter(x => x.kind === "주위" || x.kind === "일정").map(x => ({ ...x, taskId: x.taskId || null }));
+  },
+  saveAll(){
+    try{
+      localStorage.setItem(KEY_T, JSON.stringify(tasks));
+      let all = []; try{ all = JSON.parse(localStorage.getItem(KEY_L)) || []; }catch(e){}
+      all = all.filter(x => x.kind !== "주위" && x.kind !== "일정").concat(logs);
+      localStorage.setItem(KEY_L, JSON.stringify(all));
+    }catch(e){ throw new Error("이 브라우저에 저장하지 못했어요."); }
+  },
+  async markDone(t, date, chemical, memo){
+    logs.push({ id:"d" + Date.now(), kind: t.logKind, date, time:"", target: t.name, purpose:"", chemical, memo, taskId: t.id, writer:"" });
+    this.saveAll();
+  },
+  async removeLog(id){ logs = logs.filter(l => l.id !== id); this.saveAll(); },
+  async saveTask(t){
+    if(t.id){ tasks = tasks.map(x => x.id === t.id ? { ...x, ...t } : x); }
+    else tasks.push({ ...t, id:"t" + Date.now(), active:true, sort: tasks.length + 1 });
+    this.saveAll();
+  }
+};
+
+// ───────── 저장소 ② 실사용 — 창고 ─────────
+let sb = null, session = null, liveError = "";
+function loadScript(src){
+  return new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = src; s.onload = resolve;
+    s.onerror = () => reject(new Error("라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인하세요."));
+    document.head.appendChild(s);
+  });
+}
+function friendly(msg){
+  if(/Failed to fetch|NetworkError|Load failed/i.test(msg)) return "창고(서버)에 연결하지 못했습니다. 인터넷 연결을 확인하세요.";
+  if(msg === "Invalid login credentials") return "이메일 또는 비밀번호가 틀렸습니다.";
+  if(/Email not confirmed/i.test(msg)) return "메일함의 확인 링크를 먼저 눌러주세요.";
+  if(/disinfect_tasks.*does not exist|Could not find the table/i.test(msg)) return "소독 일정 표가 아직 없습니다. supabase/disinfect_plan.sql 을 실행했는지 확인하세요.";
+  if(/row-level security|permission denied/i.test(msg)) return "이 일은 권한이 없어요. (일정 정하기는 대표만, 체크 지우기는 체크한 본인이나 대표만 할 수 있어요)";
+  return msg;
+}
+const Live = {
+  async init(){
+    if(!window.supabase) await loadScript(SUPABASE_JS);
+    sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey);
+    sb.auth.onAuthStateChange((_e, s) => { session = s; setTimeout(loadLive, 0); });
+  },
+  async load(){
+    const from = addDays(today(), -400);
+    const [t, l] = await Promise.all([
+      sb.from("disinfect_tasks").select("*").order("sort").order("id"),
+      sb.from("disinfect_logs").select("id,kind,log_date,target,task_id,memo,chemical,written_by,writer:profiles(name)")
+        .in("kind", ["주위", "일정"]).gte("log_date", from).order("log_date").limit(5000)
+    ]);
+    if(t.error) throw new Error(t.error.message);
+    if(l.error) throw new Error(l.error.message);
+    tasks = t.data.map(x => ({ id:String(x.id), name:x.name, weekday:x.weekday, everyDays:x.every_days, logKind:x.log_kind, assignee:x.assignee, active:x.active, sort:x.sort }));
+    logs = l.data.map(x => ({ id:String(x.id), kind:x.kind, date:x.log_date, target:x.target, taskId: x.task_id == null ? null : String(x.task_id),
+                              memo:x.memo, chemical:x.chemical, writer:(x.writer && x.writer.name) || "", writerId:x.written_by }));
+  },
+  async markDone(t, date, chemical, memo){
+    const { error } = await sb.from("disinfect_logs").insert({ kind: t.logKind, log_date: date, target: t.name, task_id: Number(t.id), chemical, memo });
+    if(error) throw new Error(friendly(error.message));
+    await this.load();
+  },
+  async removeLog(id){
+    const { data, error } = await sb.from("disinfect_logs").delete().eq("id", Number(id)).select("id");
+    if(error) throw new Error(friendly(error.message));
+    if(!data.length) throw new Error("지우지 못했어요. 체크한 본인이나 대표만 지울 수 있어요.");
+    await this.load();
+  },
+  async saveTask(t){
+    const row = { name: t.name, weekday: t.weekday, every_days: t.everyDays, assignee: t.assignee, log_kind: t.logKind || "일정" };
+    if(t.active != null) row.active = t.active;
+    const res = t.id
+      ? await sb.from("disinfect_tasks").update(row).eq("id", Number(t.id))
+      : await sb.from("disinfect_tasks").insert({ ...row, sort: tasks.length + 1 });
+    if(res.error) throw new Error(friendly(res.error.message));
+    await this.load();
+  }
+};
+const DB = LIVE ? Live : Practice;
+
+// ───────── 오늘 할 방역 ─────────
+function renderTodo(){
+  const t0 = today();
+  const list = tasks.filter(t => t.active).map(t => ({ t, s: taskState(t, t0) }));
+  const order = { late:0, today:1, soon:3, done:2 };
+  list.sort((a, b) => order[a.s.state] - order[b.s.state] || (a.s.due || "").localeCompare(b.s.due || ""));
+  const need = list.filter(x => x.s.state === "late" || x.s.state === "today").length;
+  $("todoCount").textContent = need ? "할 차례 " + need + "개" : "오늘은 할 차례가 없어요";
+  if(!list.length){ $("todoList").innerHTML = `<div class="help">아직 정해 둔 소독 일정이 없어요. 아래 「소독 일정 정하기」에서 추가하세요.</div>`; return; }
+  $("todoList").innerHTML = list.map(({ t, s }) => {
+    let st;
+    if(s.state === "done") st = "✅ " + fmtDate(s.doneOn) + " 했어요" + (s.next ? " · 다음 " + fmtDate(s.next) : "");
+    else if(s.state === "late") st = "🔴 " + (-s.left) + "일 지남 (" + fmtDate(s.due) + "에 할 차례)";
+    else if(s.state === "today") st = "⬜ 오늘 할 차례";
+    else st = "다음 " + fmtDate(s.due) + " · " + s.left + "일 남음";
+    const showBtn = s.state !== "done";
+    return `<div class="todo ${s.state}">
+      <div class="info"><div class="nm">${esc(t.name)}</div>
+        <div class="st">${st}</div>
+        <div class="who">${esc(cycleText(t))}${t.assignee ? " · 담당 " + esc(t.assignee) : ""}</div></div>
+      ${showBtn ? `<button class="btn btn-green" data-open="${t.id}">✔ 했어요</button>` : `<button class="btn btn-line btn-sm" data-open="${t.id}">다른 날 한 것 적기</button>`}
+      <div class="done-form" id="df-${t.id}">
+        <div class="row2">
+          <div><label>한 날</label><input type="date" id="dd-${t.id}" value="${t0}" max="${t0}"></div>
+          <div><label>소독약 (선택)</label><input type="text" id="dc-${t.id}" maxlength="60" placeholder="예) 버콘 S 1:200"></div>
+        </div>
+        <label>메모 (선택)</label><input type="text" id="dm-${t.id}" maxlength="300">
+        <div class="row2"><div><button class="btn btn-copper btn-block" data-done="${t.id}">저장</button></div><div><button class="btn btn-line btn-block" data-close="${t.id}">닫기</button></div></div>
+        <div class="msg" id="dmsg-${t.id}"></div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+$("todoList")?.addEventListener("click", async e => {
+  const open = e.target.closest("[data-open]"), close = e.target.closest("[data-close]"), done = e.target.closest("[data-done]");
+  if(open){ $("df-" + open.dataset.open).classList.add("open"); open.style.display = "none"; return; }
+  if(close){ renderTodo(); return; }
+  if(done){
+    const t = tasks.find(x => x.id === done.dataset.done);
+    const date = $("dd-" + t.id).value, msg = $("dmsg-" + t.id);
+    if(!date || date > today()){ msg.className = "msg err"; msg.textContent = "한 날을 오늘이나 그 전으로 골라 주세요."; return; }
+    if(logs.some(l => l.taskId === t.id && l.date === date) && !confirm(fmtDate(date) + "에 이미 체크한 기록이 있어요. 한 번 더 적을까요?")) return;
+    done.disabled = true;
+    try{
+      await DB.markDone(t, date, $("dc-" + t.id).value.trim(), $("dm-" + t.id).value.trim());
+      renderAll();
+    }catch(err){ done.disabled = false; msg.className = "msg err"; msg.textContent = err.message; }
+  }
+});
+
+// ───────── 주간 스케줄표 (이번 주 + 다음 주) ─────────
+function cellMark(t, d){
+  const t0 = today();
+  const doneLogs = logs.filter(l => matches(t, l) && l.date === d);
+  if(doneLogs.length) return `<span class="mk done" data-log="${doneLogs[0].id}" title="${esc(doneLogs[0].writer || "")}">✅</span>`;
+  if(t.weekday != null){
+    if(dow(d) !== t.weekday) return "";
+    const mon = monday(d), sun = addDays(mon, 6);
+    if(logs.some(l => matches(t, l) && l.date >= mon && l.date <= sun)) return `<span class="mk plan" title="이번 주에 이미 함">–</span>`;
+    if(d < t0) return `<span class="mk late">지남</span>`;
+    return d === t0 ? `<span class="mk due">오늘</span>` : `<span class="mk plan">○</span>`;
+  }
+  // ○일마다: 다음 차례(밀렸으면 오늘 칸에 「지남」), 그 뒤로 주기마다 ○
+  const s = taskState(t, t0);
+  const next = s.state === "done" ? s.next : s.due;
+  if(s.state === "late" && d === t0) return `<span class="mk late">${-s.left}일 지남</span>`;
+  const start = s.state === "late" ? t0 : next;
+  if(d < start) return "";
+  if(d === start && s.state !== "late") return d === t0 ? `<span class="mk due">오늘</span>` : `<span class="mk plan">○</span>`;
+  const k = daysBetween(start, d);
+  return k > 0 && k % t.everyDays === 0 ? `<span class="mk plan">○</span>` : "";
+}
+
+function weekTable(mon){
+  const t0 = today();
+  const days = [...Array(7)].map((_, i) => addDays(mon, i));
+  const active = tasks.filter(t => t.active);
+  return `<table class="week" style="margin-bottom:10px">
+    <thead><tr><th style="width:150px">${fmtDate(mon).replace(/\(.\)/, "")} 주</th>${days.map(d => `<th class="${dow(d) === 0 ? "sun" : dow(d) === 6 ? "sat" : ""} ${d === t0 ? "today" : ""}">${DAY[dow(d)]}<br><span style="font-weight:400;font-size:11.5px">${Number(d.slice(5,7))}/${Number(d.slice(8))}</span></th>`).join("")}</tr></thead>
+    <tbody>${active.length ? active.map(t => `<tr><td class="task">${esc(t.name)}<small>${esc(cycleText(t))}${t.assignee ? " · " + esc(t.assignee) : ""}</small></td>${days.map(d => `<td class="${d === t0 ? "today" : ""}">${cellMark(t, d)}</td>`).join("")}</tr>`).join("")
+      : `<tr><td colspan="8" style="color:var(--muted)">정해 둔 일정이 없어요</td></tr>`}</tbody>
+  </table>`;
+}
+
+function renderWeeks(){
+  const mon = addDays(monday(today()), weekOffset * 7);
+  $("weekLabel").textContent = weekOffset === 0 ? "이번 주부터" : (weekOffset < 0 ? (-weekOffset) + "주 전" : weekOffset + "주 뒤");
+  $("weeks").innerHTML = weekTable(mon) + weekTable(addDays(mon, 7));
+}
+
+$("weeks").addEventListener("click", async e => {
+  const m = e.target.closest("[data-log]");
+  if(!m) return;
+  const l = logs.find(x => x.id === m.dataset.log);
+  if(!l) return;
+  const info = fmtDate(l.date) + " " + l.target + (l.writer ? " — " + l.writer + " 체크" : "") + (l.chemical ? "\n소독약: " + l.chemical : "") + (l.memo ? "\n메모: " + l.memo : "");
+  if(!canDelete(l)){ alert(info); return; }
+  if(!confirm(info + "\n\n잘못 체크했으면 지울까요? (지우면 되돌릴 수 없어요)")) return;
+  try{ await DB.removeLog(l.id); renderAll(); }catch(err){ alert(err.message); }
+});
+$("prevWeek").onclick = () => { weekOffset--; renderWeeks(); };
+$("nextWeek").onclick = () => { weekOffset++; renderWeeks(); };
+$("thisWeek").onclick = () => { weekOffset = 0; renderWeeks(); };
+
+// ───────── 소독 일정 정하기 (대표만) ─────────
+function renderTasks(){
+  const can = isCeo();
+  $("taskForm").style.display = can ? "" : "none";
+  $("taskHelp").textContent = can ? "" : "일정은 대표만 정할 수 있어요.";
+  $("taskList").innerHTML = tasks.map(t => `<div class="task-row ${t.active ? "" : "off"}">
+    <div class="top"><b>${esc(t.name)}</b><span>${esc(cycleText(t))}${t.assignee ? " · 담당 " + esc(t.assignee) : ""}${t.active ? "" : " · 쉬는 중"}</span><span class="sp"></span>
+      ${can ? `<button class="btn btn-line btn-sm" data-edit="${t.id}">고치기</button>
+      <button class="btn btn-line btn-sm" data-toggle="${t.id}">${t.active ? "쉬기" : "다시 쓰기"}</button>` : ""}</div>
+  </div>`).join("") || `<div class="help">아직 일정이 없어요.</div>`;
+}
+function resetTaskForm(){
+  editingTaskId = null;
+  $("tName").value = ""; $("tWho").value = ""; $("tCycle").value = "every"; $("tEvery").value = 7; $("tWeekday").value = "1";
+  $("taskSave").textContent = "일정 추가"; $("taskCancelBox").style.display = "none";
+  syncCycle();
+}
+function syncCycle(){ const w = $("tCycle").value === "weekday"; $("tWeekdayBox").style.display = w ? "" : "none"; $("tEveryBox").style.display = w ? "none" : ""; }
+function taskMsg(text, ok){ const el = $("taskMsg"); el.textContent = text; el.className = "msg " + (ok ? "ok" : "err"); clearTimeout(el._t); el._t = setTimeout(() => el.className = "msg", 3500); }
+
+$("tCycle").onchange = syncCycle;
+$("taskCancel").onclick = resetTaskForm;
+$("taskSave").onclick = async () => {
+  const name = $("tName").value.trim();
+  const weekly = $("tCycle").value === "weekday";
+  const every = Number($("tEvery").value);
+  if(!name) return taskMsg("소독 이름을 적어 주세요.", false);
+  if(!weekly && !(Number.isInteger(every) && every >= 1 && every <= 90)) return taskMsg("며칠마다는 1~90 사이 숫자로 적어 주세요.", false);
+  const old = editingTaskId ? tasks.find(x => x.id === editingTaskId) : null;
+  const t = { id: editingTaskId, name, assignee: $("tWho").value.trim(),
+              weekday: weekly ? Number($("tWeekday").value) : null, everyDays: weekly ? null : every,
+              logKind: old ? old.logKind : (/주위/.test(name) ? "주위" : "일정") };
+  try{
+    await DB.saveTask(t);
+    taskMsg(name + " — " + (editingTaskId ? "고쳤어요." : "추가했어요."), true);
+    resetTaskForm(); renderAll();
+  }catch(e){ taskMsg(e.message, false); }
+};
+$("taskList").addEventListener("click", async e => {
+  const ed = e.target.closest("[data-edit]"), tg = e.target.closest("[data-toggle]");
+  if(ed){
+    const t = tasks.find(x => x.id === ed.dataset.edit);
+    editingTaskId = t.id;
+    $("tName").value = t.name; $("tWho").value = t.assignee;
+    $("tCycle").value = t.weekday != null ? "weekday" : "every";
+    if(t.weekday != null) $("tWeekday").value = String(t.weekday); else $("tEvery").value = t.everyDays;
+    $("taskSave").textContent = "고친 내용 저장"; $("taskCancelBox").style.display = "";
+    syncCycle(); $("tName").focus();
+  }
+  if(tg){
+    const t = tasks.find(x => x.id === tg.dataset.toggle);
+    try{ await DB.saveTask({ ...t, active: !t.active }); renderAll(); }catch(err){ taskMsg(err.message, false); }
+  }
+});
+
+function renderAll(){ renderTodo(); renderWeeks(); renderTasks(); }
+
+// ───────── 로그인 · 화면 열고 닫기 ─────────
+let authMode = "login";
+function renderModeNote(){
+  const el = $("modeNote");
+  if(LIVE){ el.className = "warn live"; el.innerHTML = "✅ 함께 쓰는 모드 — 일정과 체크는 농부마을 창고(DB · Supabase)에 저장됩니다. 누가 체크하든 모두에게 바로 보여요."; }
+  else{ el.className = "warn"; el.innerHTML = "⚠ 실습판입니다. <b>이 컴퓨터의 이 브라우저에만</b> 저장됩니다. 함께 쓰려면 주소 끝의 <b>?practice=1</b>을 빼고 여세요."; }
+}
+function renderBar(){
+  const bar = $("bar");
+  if(!LIVE || !session){ bar.style.display = "none"; return; }
+  bar.style.display = "";
+  bar.innerHTML = `<span class="who">${me ? `👤 <b>${esc(me.name)}</b> (${esc(me.role)}) 로그인 중` : "로그인 중"}</span>
+    <button class="btn btn-line" id="refreshBtn">새로고침</button><button class="btn btn-line" id="logoutBtn">로그아웃</button>`;
+}
+function authView(){
+  return `<div class="card auth">
+    <div class="switch">
+      <button class="btn ${authMode === "login" ? "btn-copper" : "btn-line"}" data-auth="login">로그인</button>
+      <button class="btn ${authMode === "signup" ? "btn-copper" : "btn-line"}" data-auth="signup">처음 가입</button>
+    </div>
+    <label for="aEmail">이메일</label><input id="aEmail" type="email" autocomplete="email">
+    <label for="aPw">비밀번호${authMode === "signup" ? " (6자 이상)" : ""}</label><input id="aPw" type="password" autocomplete="${authMode === "signup" ? "new-password" : "current-password"}">
+    ${authMode === "signup" ? `<label for="aName">이름</label><input id="aName" autocomplete="name"><label for="aJob">맡은 일</label><input id="aJob" placeholder="예: 사육, 출하, 방역">` : ""}
+    <div class="msg err" id="aErr" style="display:none"></div><div class="msg ok" id="aOk" style="display:none"></div>
+    <button class="btn btn-copper btn-block" id="authBtn">${authMode === "signup" ? "가입하기" : "로그인"}</button>
+    <p class="help" style="margin-top:10px">${authMode === "signup" ? "가입 후 대표가 전자결재 화면의 「직원 관리」에서 「사용 허용」을 눌러야 쓸 수 있습니다." : "전자결재·산란 기록과 같은 계정입니다."}</p>
+  </div>`;
+}
+function authMsg(id, text){ const el = $(id); el.textContent = text; el.style.display = text ? "block" : "none"; }
+function bindAuth(){
+  document.querySelectorAll("[data-auth]").forEach(b => b.addEventListener("click", () => { authMode = b.dataset.auth; renderGate(); }));
+  $("authBtn").addEventListener("click", async () => {
+    authMsg("aErr", ""); authMsg("aOk", "");
+    const email = $("aEmail").value.trim(), password = $("aPw").value;
+    if(!email.includes("@")) return authMsg("aErr", "이메일을 확인해주세요.");
+    if(password.length < 6) return authMsg("aErr", "비밀번호는 6자 이상이어야 합니다.");
+    const btn = $("authBtn"); btn.disabled = true;
+    try{
+      if(authMode === "signup"){
+        const name = $("aName").value.trim(), job = $("aJob").value.trim();
+        if(!name){ btn.disabled = false; return authMsg("aErr", "이름을 적어주세요."); }
+        const { data, error } = await sb.auth.signUp({ email, password, options: { data: { name, job }, emailRedirectTo: location.href.split("#")[0] } });
+        if(error) throw error;
+        if(!data.session) authMsg("aOk", "가입 신청이 됐습니다. 메일함에서 확인 링크를 누른 뒤 로그인하세요.");
+      }else{
+        const { error } = await sb.auth.signInWithPassword({ email, password });
+        if(error) throw error;
+      }
+    }catch(e){ authMsg("aErr", friendly(e.message)); } finally{ btn.disabled = false; }
+  });
+}
+function renderGate(){
+  renderModeNote(); renderBar();
+  let gate = "";
+  if(LIVE && liveError) gate = `<div class="card auth"><h3>연결에 문제가 있습니다</h3><p class="msg err" style="display:block">${esc(liveError)}</p></div>`;
+  else if(LIVE && !sb) gate = `<div class="card auth" style="text-align:center;color:var(--muted)">창고(DB)에 연결하는 중…</div>`;
+  else if(LIVE && !session) gate = authView();
+  else if(LIVE && (!me || !me.active)) gate = `<div class="card auth"><h3>⏳ 대표 승인 대기 중</h3><p style="font-size:13.5px">대표가 전자결재 화면의 「직원 관리」에서 「사용 허용」을 누르면 쓸 수 있습니다. 허용받은 뒤 「새로고침」을 누르세요.</p></div>`;
+  $("auth").innerHTML = gate;
+  $("app").style.display = gate ? "none" : "";
+  if(LIVE && sb && !session && !liveError) bindAuth();
+}
+async function loadLive(){
+  liveError = ""; me = null;
+  if(session){
+    try{
+      const { data, error } = await sb.from("profiles").select("id,name,email,role,active").eq("id", session.user.id).maybeSingle();
+      if(error) throw new Error(error.message);
+      me = data ? { id: data.id, name: data.name || data.email, role: data.role, active: data.active } : null;
+      if(me && me.active) await Live.load();
+    }catch(e){ liveError = friendly(e.message); }
+  }else{ tasks = []; logs = []; }
+  renderGate();
+  if(!$("app").style.display) renderAll();
+}
+$("bar").addEventListener("click", async e => {
+  if(e.target.id === "refreshBtn") await loadLive();
+  else if(e.target.id === "logoutBtn") await sb.auth.signOut();
+});
+async function backgroundRefresh(){
+  if(!LIVE || !me || !me.active || document.visibilityState !== "visible") return;
+  if(document.activeElement && document.activeElement.closest("#app input, #app select")) return;
+  try{ await Live.load(); renderAll(); }catch(e){}
+}
+document.addEventListener("visibilitychange", backgroundRefresh);
+setInterval(backgroundRefresh, 60 * 1000);
+
+// ───────── 처음 열 때 ─────────
+if(window.innerWidth < 700) document.querySelectorAll("details.overview").forEach(d => d.open = false);
+async function boot(){
+  resetTaskForm();
+  if(!LIVE){ await Practice.load(); renderGate(); renderAll(); return; }
+  renderGate();
+  try{ await Live.init(); }catch(e){ liveError = e.message; renderGate(); }
+}
+boot();
+</script>
+<script src="erp-home.js"></script>
+</body>
+</html>
