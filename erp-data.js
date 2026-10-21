@@ -45,11 +45,12 @@ window.ERP_CATEGORIES = [
     code: "물건", anchor: "cat-goods", name: "③ 물건",
     sub: "사료·계란·시설의 흐름. 이것도 혼자 붙이는 칸 — 오늘 순서를 전부 정했다.",
     items: [
-      { icon:"🌽", name: "사료 재고량", where: "담당 직원 눈대중 확인 → 구두 보고", often: "발주 필요시 수시", urgency: "상", order: 4, status: "todo" },
+      { icon:"🌽", name: "사료 재고량", where: "사료통 2개 남은 양·들어온 양·발주 기록 → 하루 사용량·며칠 남음 계산, 이틀치 남으면 「오늘 발주」 알림 · 농부마을 DB에 저장 (로그인 필요)", often: "매일", urgency: "상", order: 4, status: "inprogress", file: "erp-feed.html" },
       { icon:"📦", name: "사료 발주", where: "대표 보고받고 결정", often: "정기", urgency: "상", order: 5, status: "todo" },
       { icon:"🥚", name: "계란 등급별(왕란/특란/대란) 재고", where: "세분화는 하나 방식 불명", often: "매일", urgency: "중", order: 10, status: "todo" },
       { icon:"🔧", name: "장비/설비 점검·수리 이력", where: "미논의", often: "수시", urgency: "중", order: 11, status: "todo", proposed:true },
       { icon:"💊", name: "약품 구입 내역", where: "소독약·백신·치료제 등 살 때마다 기록 → 월별·종류별 약품비, 유효기간 알림 · 농부마을 DB에 저장 (로그인 필요)", often: "살 때마다", urgency: "중", order: null, status: "inprogress", file: "erp-medicine.html" },
+      { icon:"📦", name: "부자재 관리", where: "계란판·박스·비닐·라벨·테이프 입고·사용·실제 개수 → 남은 개수 계산, 기준 밑이면 「주문하세요」 · 농부마을 DB에 저장 (로그인 필요)", often: "수시", urgency: "중", order: null, status: "inprogress", file: "erp-supplies.html" },
       { icon:"🏚️", name: "계사(농장) 시설 현황", where: "계사 4동 (1~4동)", often: "수시", urgency: "하", order: 12, status: "todo" }
     ]
   },

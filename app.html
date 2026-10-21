@@ -83,31 +83,33 @@ const TODAY = localDate(new Date());
 // ───────── 메뉴: ERP 지도(erp-data.js)에서 화면이 있는 칸을 모아 자동으로 버튼을 만듦 ─────────
 // 새 화면이 지도에 연결되면 여기에도 저절로 나타납니다.
 const GROUPS = [
-  { title:"🌾 매일 하는 일", codes:["일"] },
+  { title:"🌾 매일 하는 일", codes:["일"], extra:["erp-feed.html"] },   // extra: 다른 묶음에 있어도 매일 쓰는 화면은 여기로
   { title:"🤝 함께 쓰는 것", codes:["전사"] },
   { title:"📦 물건 · 그 밖에", codes:["물건","돈","사람","기한","알리기"] }
 ];
 // 짧은 이름 (휴대폰 버튼에 맞게)
-const SHORT = { "방역 소독 스케줄표":"방역 스케줄표", "약품 구입 내역":"약품 구입", "산란율/폐사율 기록":"산란·폐사 기록", "방역 소독 스케줄 체크":"방역 소독 장부", "거래처 목록/연락처":"거래처 지도", "회사 일정판 (첫 칸)":"회사 일정판", "마을톡 (사내메신저)":"마을톡" };
+const SHORT = { "사료 재고량":"사료 재고", "방역 소독 스케줄표":"방역 스케줄표", "약품 구입 내역":"약품 구입", "산란율/폐사율 기록":"산란·폐사 기록", "방역 소독 스케줄 체크":"방역 소독 장부", "거래처 목록/연락처":"거래처 지도", "회사 일정판 (첫 칸)":"회사 일정판", "마을톡 (사내메신저)":"마을톡" };
 
 // 매일 쓰는 화면을 맨 앞에
-const FIRST = ["erp-eggs.html", "erp-disinfect-plan.html", "erp-disinfect.html"];
+const FIRST = ["erp-eggs.html", "erp-feed.html", "erp-disinfect-plan.html", "erp-disinfect.html"];
 // 아직 창고(DB)에 연결 안 된 화면 — 그 기기에만 저장된다고 알려줌
 const LOCAL_ONLY = {};
 
-function menuItems(codes){
-  return (window.ERP_CATEGORIES || [])
-    .filter(c => codes.includes(c.code))
-    .flatMap(c => c.items)
-    .filter(i => i.file && !/^https?:/.test(i.file) && i.status !== "todo")
+function menuItems(g, used){
+  const all = (window.ERP_CATEGORIES || []).flatMap(c => c.items.map(i => ({ ...i, code: c.code })));
+  return all
+    .filter(i => g.codes.includes(i.code) || (g.extra || []).includes(i.file))
+    .filter(i => i.file && !/^https?:/.test(i.file) && i.status !== "todo" && !used.has(i.file))
     .sort((a, b) => (FIRST.includes(b.file) - FIRST.includes(a.file)) || (FIRST.indexOf(a.file) - FIRST.indexOf(b.file)));
 }
 
 let status = {};   // file → { text, cls }  오늘 상황 한 줄
 
 function renderMenu(){
+  const used = new Set();   // 한 화면은 한 묶음에만
   $("menu").innerHTML = GROUPS.map(g => {
-    const items = menuItems(g.codes);
+    const items = menuItems(g, used);
+    items.forEach(i => used.add(i.file));
     if(!items.length) return "";
     return `<h2>${g.title}</h2><div class="grid">` + items.map(i => {
       const st = status[i.file];
@@ -171,6 +173,56 @@ async function loadStatus(){
       sb.from("disinfect_tasks").select("id,weekday,every_days,log_kind").eq("active", true),
       sb.from("disinfect_logs").select("kind,log_date,task_id").in("kind", ["주위", "일정"]).gte("log_date", since).limit(2000)
     ]);
+    // 부자재: 남은 개수가 알림 기준 이하인 품목 (부자재 화면과 같은 계산)
+    try{
+      const [si, sl] = await Promise.all([
+        sb.from("supplies").select("id,name,min_qty").eq("active", true),
+        sb.from("supply_logs").select("supply_id,kind,qty,log_date,id").lte("log_date", TODAY).order("log_date").order("id").limit(20000)
+      ]);
+      if(!si.error && !sl.error){
+        const need = [];
+        let any = false;
+        si.data.forEach(it => {
+          const L = sl.data.filter(l => l.supply_id === it.id);
+          if(!L.length) return;
+          any = true;
+          let stock = 0;
+          L.forEach(l => { const q = Number(l.qty); stock = l.kind === "실사" ? q : l.kind === "입고" ? stock + q : stock - q; });
+          if(stock <= Number(it.min_qty) || stock <= 0) need.push(it.name);
+        });
+        status["erp-supplies.html"] = need.length ? { text:"주문: " + need.join(", "), cls:"late" }
+          : any ? { text:"부자재 넉넉함 ✓", cls:"ok" } : { text:"처음 개수를 적어 주세요", cls:"" };
+      }
+    }catch(e){}
+    // 사료 재고: 며칠치 남았는지 (사료 재고 화면과 같은 계산을 줄여서)
+    try{
+      const [fb, fl] = await Promise.all([
+        sb.from("feed_bins").select("id,name,warn_days").eq("active", true),
+        sb.from("feed_logs").select("bin_id,kind,amount,log_date,id").gte("log_date", localDate(new Date(Date.now() - 90 * 86400000))).lte("log_date", TODAY).order("log_date").order("id")
+      ]);
+      if(!fb.error && !fl.error){
+        const dB = (a, b) => Math.round((new Date(b + "T00:00:00") - new Date(a + "T00:00:00")) / 86400000);
+        let late = [], soon = 0, noData = 0;
+        fb.data.forEach(b => {
+          const L = fl.data.filter(l => l.bin_id === b.id).map(l => ({ ...l, amount: Number(l.amount) }));
+          const inb = (f, t) => L.filter(l => l.kind === "입고" && l.log_date > f && l.log_date <= t).reduce((s, l) => s + l.amount, 0);
+          const R = []; L.filter(l => l.kind === "잔량").forEach(r => { if(R.length && R[R.length-1].log_date === r.log_date) R[R.length-1] = r; else R.push(r); });
+          const rates = [];
+          for(let i = 1; i < R.length; i++){ const d = dB(R[i-1].log_date, R[i].log_date), u = R[i-1].amount + inb(R[i-1].log_date, R[i].log_date) - R[i].amount; if(d > 0 && u >= 0) rates.push(u / d); }
+          const rr = rates.slice(-5), per = rr.length ? rr.reduce((s, n) => s + n, 0) / rr.length : 0;
+          const last = R[R.length - 1];
+          if(!last || !per){ noData++; return; }
+          const lastIn = L.filter(l => l.kind === "입고").pop(), lastOrd = L.filter(l => l.kind === "발주").pop();
+          const ordered = lastOrd && (!lastIn || lastOrd.log_date > lastIn.log_date || (lastOrd.log_date === lastIn.log_date && lastOrd.id > lastIn.id));
+          const left = Math.max(0, last.amount + inb(last.log_date, TODAY) - per * dB(last.log_date, TODAY)) / per;
+          if(left <= b.warn_days && !ordered) late.push(b.name); else if(left <= b.warn_days + 1 && !ordered) soon++;
+        });
+        status["erp-feed.html"] = late.length ? { text:"오늘 발주: " + late.join(", "), cls:"late" }
+          : soon ? { text:"내일 발주할 사료통 " + soon + "개", cls:"soon" }
+          : noData === fb.data.length ? { text:"남은 양을 적어 주세요", cls:"" }
+          : { text:"사료 넉넉함 ✓", cls:"ok" };
+      }
+    }catch(e){}
     // 방역 소독 스케줄표: 오늘 할 차례·밀린 일정 수 (스케줄표 화면과 같은 규칙)
     if(!tasks.error && !done.error){
       const dayMs = 86400000, d0 = new Date(TODAY + "T00:00:00");
