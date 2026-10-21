@@ -1,0 +1,158 @@
+<!-- [AI 생성 초안 - 검토 전] 농부마을 월 손익 (7회차 돈의 장부 ④) -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>월 손익</title>
+<style>
+  :root{ --navy:#2B3A4E; --copper:#C67B3C; --cream:#F7F3EE; --teal:#3A8FB7; --ink:#243140; --muted:#6b7785; --line:#e3dccf; --green:#3f7a52; --red:#b3503a; --amber:#b7791f; --forest:#1f3b2d; --gold:#f3c48f; }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{ font-family:"맑은 고딕","Malgun Gothic",sans-serif; background:var(--cream); color:var(--ink); padding:24px; line-height:1.6; max-width:1000px; margin:0 auto; }
+  .flow{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-bottom:16px; }
+  .flow .step{ border:1px solid var(--line); background:#fff; border-radius:10px; padding:6px 12px; font-size:13px; color:var(--muted); line-height:1.35; text-decoration:none; }
+  .flow .step small{ display:block; font-size:11px; font-weight:800; color:var(--copper); }
+  .flow .step.on{ background:var(--forest); color:#fff; border-color:var(--forest); font-weight:800; }
+  .flow .step.on small{ color:var(--gold); }
+  .flow .step.later{ opacity:.55; }
+  .flow .arr{ color:var(--muted); font-size:13px; }
+  .crumb{ font-size:12.5px; color:var(--muted); }
+  h1{ font-size:26px; color:var(--navy); margin:2px 0 4px; }
+  .sub{ font-size:13.5px; color:var(--muted); margin-bottom:14px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .sub select{ width:auto; padding:4px 8px; font-size:13.5px; }
+  .warn{ background:#fbeee9; border-left:4px solid var(--red); padding:11px 15px; font-size:12.8px; color:#8a3a2a; margin-bottom:16px; border-radius:6px; }
+  .warn.live{ background:#eef7f0; border-left-color:var(--green); color:#2f5e3e; }
+  .bar{ display:flex; flex-wrap:wrap; align-items:center; gap:10px; background:#fff; border:1px solid var(--line); border-radius:12px; padding:10px 16px; margin-bottom:14px; }
+  .bar .who{ font-size:13px; color:var(--muted); flex:1; min-width:180px; }
+  .card{ background:#fff; border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin-bottom:16px; }
+  .card h3{ font-size:14.5px; color:var(--navy); margin-bottom:12px; }
+  .auth{ max-width:420px; margin:0 auto 16px; }
+  label{ display:block; font-size:12px; color:var(--muted); font-weight:700; margin:8px 0 4px; }
+  input, select{ width:100%; border:1px solid var(--line); border-radius:8px; padding:7px 9px; font-size:13.5px; font-family:inherit; background:#fdfbf8; }
+  .btn{ border:none; border-radius:8px; padding:9px 14px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; }
+  .btn-copper{ background:var(--copper); color:#fff; } .btn-line{ background:#fff; color:var(--muted); border:1px solid var(--line); }
+  .btn-block{ width:100%; margin-top:12px; }
+  .help{ font-size:11.5px; color:var(--muted); }
+  .msg{ font-size:12.5px; margin-top:8px; padding:8px 10px; border-radius:8px; display:none; }
+  .msg.err{ background:#fbeee9; color:var(--red); display:block; }
+
+  /* 남았나 모자랐나 */
+  .hero{ background:var(--navy); color:#fff; border-radius:16px; padding:22px 26px; margin-bottom:18px; }
+  .hero .t{ font-size:14px; color:#c9d3de; margin-bottom:10px; }
+  .hero .r{ display:flex; justify-content:space-between; gap:10px; font-size:16px; padding:5px 0; font-variant-numeric:tabular-nums; }
+  .hero .r small{ color:#9fb0c2; font-size:13px; margin-left:6px; }
+  .hero .tot{ border-top:1px solid rgba(255,255,255,.25); margin-top:8px; padding-top:12px; font-size:24px; font-weight:800; }
+  .hero .exp{ border-top:1px solid rgba(255,255,255,.18); margin-top:14px; padding-top:12px; font-size:13.5px; color:#dfe6ee; line-height:1.8; }
+  .hero .exp b{ color:var(--gold); }
+
+  h2{ font-size:17px; color:var(--navy); margin:4px 0 10px; }
+  .tbl-wrap{ overflow-x:auto; border-radius:12px; border:1px solid var(--line); background:#fff; margin-bottom:10px; }
+  table{ width:100%; border-collapse:collapse; font-size:13.5px; min-width:520px; }
+  th{ background:var(--forest); color:#fff; font-weight:800; text-align:left; padding:10px 14px; white-space:nowrap; }
+  td{ padding:10px 14px; border-bottom:1px solid #eee; vertical-align:middle; font-variant-numeric:tabular-nums; }
+  tr:last-child td{ border-bottom:none; }
+  td.num, th.num{ text-align:right; white-space:nowrap; }
+  td small{ color:var(--muted); font-size:12px; margin-left:4px; }
+  tr.uncls td{ background:#fff8e1; }
+  tr.sum td{ background:#eef4f8; font-weight:800; }
+  .barc{ width:120px; } .barc div{ height:8px; border-radius:5px; background:var(--teal); }
+  tr.uncls .barc div{ background:var(--amber); }
+  .note{ background:#fff8ea; border:1px solid #f0d9a8; border-radius:12px; padding:12px 16px; font-size:13px; color:#5a4a2a; margin-bottom:18px; }
+  .note.plain{ background:#fff; border-color:var(--line); color:var(--ink); }
+  .note a{ color:var(--copper); font-weight:700; }
+  .empty{ text-align:center; color:var(--muted); font-size:13px; padding:26px 10px; background:#fff; border:1px dashed var(--line); border-radius:12px; margin-bottom:16px; }
+  footer{ text-align:center; color:var(--muted); font-size:12px; margin-top:20px; line-height:1.7; }
+  a.back{ color:var(--copper); font-weight:700; text-decoration:none; }
+  @media (max-width: 700px){ body{ padding:16px; } .hero{ padding:18px; } .hero .tot{ font-size:20px; } }
+</style>
+</head>
+<body>
+
+<div class="flow">
+  <a class="step" href="erp-money-collect.html"><small>모은다</small>📥 자료 수집현황</a><span class="arr">→</span>
+  <a class="step" href="erp-money-sort.html"><small>붙인다</small>🗂️ 거래 분류함</a><span class="arr">→</span>
+  <a class="step" href="erp-money-view.html"><small>본다</small>🏦 통장·매출 보기</a><span class="arr">·</span>
+  <span class="step on"><small>본다</small>📊 월 손익</span><span class="arr">·</span>
+  <span class="step later"><small>본다</small>⏳ 미수금</span>
+</div>
+
+<div class="crumb">경영·자금 › 월 손익 🔒</div>
+<h1>월 손익</h1>
+<div class="sub"><select id="month"></select><span>장부 규칙 — <b>미분류는 손익에 넣지 않고 따로</b></span></div>
+
+<div class="warn" id="modeNote"></div>
+<div class="bar" id="bar" style="display:none"></div>
+<div id="auth"></div>
+
+<div id="app" style="display:none">
+  <div id="body"></div>
+</div>
+
+<footer>
+  erp-money-pnl.html · 정본 1장 · 7회차 돈의 장부 · 거래 분류함과 같은 자료(농부마을 창고)로 셈 (실습판: 주소 끝 ?practice=1) · <a class="back" href="erp-map.html">← 지도로 돌아가기</a><br>
+  관리회계(이번 달 보고 판단하려는 숫자)용 — 세무·회계 처리의 최종 판단은 세무사에게 확인 · [AI 생성 초안 - 검토 전]
+</footer>
+
+<script src="erp-config.js"></script>
+<script src="erp-money-common.js"></script>
+<script>
+const M = window.MoneyCommon, $ = id => document.getElementById(id), esc = M.esc, won = M.won;
+
+function render(){
+  const months = M.months();
+  const keep = $("month").value;
+  $("month").innerHTML = months.map(m => `<option value="${m}">${M.monthLabel(m)}</option>`).join("") || `<option value="">거래 없음</option>`;
+  if(months.includes(keep)) $("month").value = keep;
+  const month = $("month").value;
+  if(!month){
+    $("body").innerHTML = `<div class="empty">아직 통장 거래가 없어요.<br><a href="erp-money-sort.html">🗂️ 거래 분류함</a>에서 통장 거래를 붙이고 내 분류를 정하면 여기서 손익이 계산돼요.</div>`;
+    return;
+  }
+  const s = M.stats(month);
+  const ok = Math.abs(s.check - s.bankChange) < 1;
+
+  // ① 남았나 모자랐나 (장부 규칙)
+  let html = `<div class="hero">
+    <div class="t">${M.monthLabel(month)} — 남았나 모자랐나 (장부 규칙)</div>
+    <div class="r"><span>판 것</span><span>${won(s.sales)}</span></div>
+    <div class="r"><span>쓴 것 <small>미분류 · 손익 아님 뺌</small></span><span>${won(s.cost)}</span></div>
+    <div class="r tot"><span>남은 돈</span><span>${M.signed(s.profit)}</span></div>
+    <div class="exp">따로 둔 것 — 미분류 <b>${s.uncls.length}건 · ${won(s.unclsNet)}원</b> · 손익 아님 들어옴 <b>${won(s.nonIn)}</b> · 나감 <b>${won(s.nonOut)}</b></div>
+  </div>`;
+
+  // ② 통장 증감과 맞추기
+  const nonInWhat = [...new Set(s.nonInList.map(t => t.cat))].join("·");
+  const nonOutWhat = [...new Set(s.nonOutList.map(t => t.cat))].join("·");
+  html += `<h2>통장 증감과 맞추기</h2><div class="tbl-wrap"><table>
+    <thead><tr><th>줄</th><th class="num">금액</th><th>뜻</th></tr></thead><tbody>
+    <tr><td>남은 돈(손익)</td><td class="num">${M.signed(s.profit)}</td><td>판 것 − 쓴 것</td></tr>
+    <tr><td>+ 손익 아님 들어옴</td><td class="num">${M.signed(s.nonIn)}</td><td>${esc(nonInWhat || "없음")}${s.nonIn ? " — 손익이 아닌데 들어온 돈 (예: 지난달 판 것이 늦게 들어옴)" : ""}</td></tr>
+    <tr><td>− 손익 아님 나감</td><td class="num">${M.signed(-s.nonOut)}</td><td>${esc(nonOutWhat || "없음")}${s.nonOut ? " — 돌려받을 돈·갚은 빚" : ""}</td></tr>
+    <tr><td>− 미분류</td><td class="num">${M.signed(-s.unclsNet)}</td><td>아직 무엇인지 안 정한 돈</td></tr>
+    <tr class="sum"><td>= 통장 증감</td><td class="num">${M.signed(s.check)}</td><td>통장에서 직접 센 값 ${M.signed(s.bankChange)} — ${ok ? "맞습니다 ✓" : "<span style='color:var(--red)'>안 맞습니다 ✗ 거래 분류함을 확인하세요</span>"}</td></tr>
+    </tbody></table></div>`;
+
+  // ③ 분류별
+  const order = { "판 것":0, "쓴 것":1, "손익 아님":2 };
+  const rows = Object.values(s.byCat).sort((a, b) => order[a.kind] - order[b.kind] || b.amount - a.amount);
+  html += `<h2 style="margin-top:18px">분류별</h2><div class="tbl-wrap"><table>
+    <thead><tr><th>내 분류</th><th>종류</th><th class="num">건수</th><th class="num">금액</th></tr></thead><tbody>
+    ${rows.map(b => `<tr><td><b>${esc(b.cat.name)}</b></td><td>${b.kind}</td><td class="num">${b.count}</td><td class="num">${won(b.amount)}</td></tr>`).join("")}
+    ${s.uncls.length ? `<tr class="uncls"><td><b>미분류</b></td><td>—</td><td class="num">${s.uncls.length}</td><td class="num">${won(s.unclsNet)}</td></tr>` : ""}
+    </tbody></table></div>`;
+
+  // ④ 왜 통장·매출 보기와 다른가
+  if(s.uncls.length){
+    html += `<div class="note">★ 「통장·매출 보기」의 <b>${M.signed(s.viewResult)}</b> 과 왜 다른가요? 그 화면은 미분류 ${s.uncls.length}건(${won(s.unclsNet)})을 「쓴 것」에 넣어 셌고, 이 화면(장부 규칙)은 미분류를 따로 둡니다. 그래서 ${won(Math.abs(s.unclsNet))}원만큼 다릅니다. <b>둘 다 틀린 것이 아닙니다</b> — 어느 쪽으로 셌는지 적어 두는 것이 중요합니다. 미분류가 줄어들수록 두 숫자는 같아집니다.</div>`;
+  }
+  html += `<div class="note plain">거래 분류함에서 내 분류를 바꾸면 이 화면 숫자도 같이 바뀝니다. 계란 매출로 정한 것만 「판 것」, 보증금·카드정산·대출 원금처럼 「손익 아님」으로 정한 것은 손익에서 뺍니다.</div>`;
+  $("body").innerHTML = html;
+}
+
+$("month").addEventListener("change", render);
+M.onReady = render;
+M.start();
+</script>
+<script src="erp-home.js"></script>
+</body>
+</html>
