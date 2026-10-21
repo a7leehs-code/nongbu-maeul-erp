@@ -34,7 +34,7 @@ window.ERP_CATEGORIES = [
     sub: "매일 반복되는 현장 업무 기록. 수업에서 다루지 않아 혼자 붙이는 칸 — 오늘 순서를 전부 정했다.",
     items: [
       { icon:"🐔", name: "산란율/폐사율 기록", where: "동별 계란 5등급·폐사 입력 → 산란율·폐사율 자동 계산 · 농부마을 DB에 저장, 직원과 함께 씀 (로그인 필요)", often: "매일", urgency: "상", order: 3, status: "inprogress", file: "erp-eggs.html" },
-      { icon:"📇", name: "거래처 목록/연락처", where: "지도에서 등록·수정 (이 컴퓨터에 저장)", often: "수시", urgency: "중", order: 6, status: "inprogress", file: "erp-clients-map.html" },
+      { icon:"📇", name: "거래처 목록/연락처", where: "지도에서 등록·수정·검색, 전화 바로 걸기 · 농부마을 DB에 저장 · 대표가 허락한 직원만 볼 수 있음", often: "수시", urgency: "중", order: 6, status: "inprogress", file: "erp-clients-map.html" },
       { icon:"🧴", name: "방역 소독 스케줄 체크", where: "차량 소독기·대인소독실 출입 기록 + 농장 주위 소독(7일마다, 지나면 빨간색) · 농부마을 DB에 저장 (로그인 필요)", often: "매일 · 주 1회", urgency: "중", order: 7, status: "inprogress", file: "erp-disinfect.html" },
       { icon:"🔍", name: "폐사 원인 기록", where: "숫자만 기록, 원인 분석 없음", often: "발생 시", urgency: "중", order: 8, status: "todo", proposed:true },
       { icon:"🚚", name: "판매처별 배송/납품 일정", where: "미논의", often: "수시", urgency: "중", order: 9, status: "todo", proposed:true }
