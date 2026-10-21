@@ -46,9 +46,10 @@ create index if not exists egg_records_date_idx on public.egg_records(record_dat
 create or replace function public.egg_records_stamp() returns trigger
 language plpgsql set search_path = public as $$
 begin
-  new.written_by := auth.uid();
+  -- 적은 사람은 처음 적은 사람으로 고정 (고쳐도 바뀌지 않음) → 「자기가 적은 기록」 판정에 씀
+  if tg_op = 'INSERT' then new.written_by := auth.uid(); new.created_at := now();
+  else new.written_by := old.written_by; new.created_at := old.created_at; end if;
   new.updated_at := now();
-  if tg_op = 'INSERT' then new.created_at := now(); end if;
   return new;
 end;
 $$;
@@ -59,7 +60,7 @@ create trigger egg_records_stamp before insert or update on public.egg_records
 -- ─────────────────────────────────────────────
 -- 3. 권한 (RLS)
 --    승인된 직원: 계사·기록 읽기, 기록 적기·고치기
---    대표만: 기록 지우기, 계사 추가·수정
+--    기록 지우기: 적은 사람 본인 또는 대표, 계사 추가·수정
 --    로그인 안 한 사람(anon): 아무것도 못 함
 -- ─────────────────────────────────────────────
 alter table public.egg_houses  enable row level security;
@@ -77,7 +78,7 @@ drop policy if exists "egg_records_delete" on public.egg_records;
 create policy "egg_records_read"   on public.egg_records for select to authenticated using (public.is_active_member());
 create policy "egg_records_insert" on public.egg_records for insert to authenticated with check (public.is_active_member());
 create policy "egg_records_update" on public.egg_records for update to authenticated using (public.is_active_member()) with check (public.is_active_member());
-create policy "egg_records_delete" on public.egg_records for delete to authenticated using (public.is_ceo());
+create policy "egg_records_delete" on public.egg_records for delete to authenticated using (public.is_ceo() or (public.is_active_member() and written_by = auth.uid()));
 
 revoke all on public.egg_houses, public.egg_records from anon, authenticated;
 grant select, insert, update, delete on public.egg_houses, public.egg_records to authenticated;

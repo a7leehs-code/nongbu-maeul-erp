@@ -182,7 +182,7 @@
         <text x="690" y="86" text-anchor="middle" font-size="12.5" fill="#4a6a52">요약 · 표</text>
 
         <rect x="110" y="140" width="580" height="44" rx="10" fill="#ffffff" stroke="#b9b2a4" stroke-width="1.5" stroke-dasharray="6 4"/>
-        <text x="400" y="167" text-anchor="middle" font-size="13" fill="#9a9384">직원은 휴대폰으로 적고 · 대표는 컴퓨터에서 바로 봄 · 지우기는 대표만</text>
+        <text x="400" y="167" text-anchor="middle" font-size="13" fill="#9a9384">직원은 휴대폰으로 적고 · 대표는 컴퓨터에서 바로 봄 · 지우기는 적은 사람·대표</text>
         <line x1="295" y1="110" x2="295" y2="136" stroke="#9a9384" stroke-width="1.5" stroke-dasharray="5 4" marker-end="url(#ah)"/>
       </svg>
     </div>
@@ -236,6 +236,7 @@
 
       <div class="msg" id="formMsg"></div>
       <button class="btn btn-copper btn-block" id="saveBtn" onclick="saveRecord()">저장</button>
+      <button class="btn btn-line btn-block" id="delBtn" style="display:none;margin-top:6px;color:var(--red)">🗑 이 기록 지우기</button>
     </div>
 
     <div class="card">
@@ -334,6 +335,14 @@ let me = null;          // 지금 접속한 사람 (실사용 모드)
 
 function activeHouses(){ return houses.filter(h => h.active !== false); }
 function isCeo(){ return !LIVE || (!!me && me.role === "대표"); }
+// 자기가 적은 기록은 본인이, 모든 기록은 대표가 지울 수 있음 (최종 판정은 창고가 함)
+function canDelete(x){ return !LIVE || isCeo() || (!!me && x.writerId === me.id); }
+// 입력 칸의 「이 기록 지우기」 버튼 — 고칠 기록이 있고 지울 수 있을 때만 보임
+function showDelBtn(rec, onDelete){
+  const b = document.getElementById("delBtn");
+  b.style.display = rec && canDelete(rec) ? "" : "none";
+  b.onclick = onDelete || null;
+}
 
 // ───────── 저장소 ① 실습판 — 서랍 (이 브라우저에만) ─────────
 const HOUSE_KEY  = "nongbuErpHouses";
@@ -385,14 +394,14 @@ function friendly(msg){
   if(/Email not confirmed/i.test(msg)) return "메일함의 확인 링크를 먼저 눌러주세요.";
   if(/already registered/i.test(msg)) return "이미 가입된 이메일입니다. 로그인해주세요.";
   if(/egg_(records|houses).*does not exist|Could not find the table/i.test(msg)) return "산란 기록 표가 아직 없습니다. supabase/eggs.sql 을 실행했는지 확인하세요.";
-  if(/row-level security|permission denied/i.test(msg)) return "이 일은 권한이 없어요. (기록 지우기·계사 관리는 대표만 할 수 있어요)";
+  if(/row-level security|permission denied/i.test(msg)) return "이 일은 권한이 없어요. (기록은 적은 사람 본인이나 대표만 지울 수 있고, 계사 관리는 대표만 할 수 있어요)";
   if(/egg_records_check|dead/i.test(msg)) return "폐사 수가 마릿수보다 많아요.";
   return msg;
 }
 function rowToRec(r){
   const grades = { mid:r.mid, special:r.special, king:r.king, dirty:r.dirty, broken:r.broken };
   return { id: String(r.id), date: r.record_date, houseId: String(r.house_id), birds: r.birds, grades,
-           eggs: gradeSum(grades), dead: r.dead, memo: r.memo || "", writer: (r.writer && r.writer.name) || "" };
+           eggs: gradeSum(grades), dead: r.dead, memo: r.memo || "", writer: (r.writer && r.writer.name) || "", writerId: r.written_by };
 }
 const Live = {
   async init(){
@@ -408,7 +417,7 @@ const Live = {
     let all = [];
     for(let from = 0; ; from += 1000){
       const q = await sb.from("egg_records")
-        .select("id,record_date,house_id,birds,mid,special,king,dirty,broken,dead,memo,writer:profiles(name)")
+        .select("id,record_date,house_id,birds,mid,special,king,dirty,broken,dead,memo,written_by,writer:profiles(name)")
         .order("record_date").order("id").range(from, from + 999);
       if(q.error) throw new Error(q.error.message);
       all = all.concat(q.data);
@@ -425,7 +434,7 @@ const Live = {
   async remove(id){
     const { data, error } = await sb.from("egg_records").delete().eq("id", Number(id)).select("id");
     if(error) throw new Error(friendly(error.message));
-    if(!data.length) throw new Error("지우지 못했어요. 기록 지우기는 대표만 할 수 있어요.");
+    if(!data.length) throw new Error("지우지 못했어요. 기록은 적은 사람 본인이나 대표만 지울 수 있어요.");
     await this.load();
   },
   async saveHouses(){
@@ -503,10 +512,12 @@ function onFormKeyChange(){
     $("fMemo").value = existing.memo || "";
     $("fWriter").value = existing.writer || $("fWriter").value;
     $("formTitle").textContent = "✏️ 기록 고치기 (이미 적은 날)";
+    showDelBtn(existing, () => deleteRecord(existing.id));
     $("birdsHelp").textContent = "이 날짜·동은 이미 기록이 있어요. 저장하면 고쳐집니다.";
     return;
   }
   $("formTitle").textContent = "✏️ 오늘 기록 적기";
+  showDelBtn(null);
   setGradeInputs(null); $("eggTotalNote").textContent = "";
   $("fDead").value = ""; $("fMemo").value = "";
   const s = suggestBirds(houseId, date);
@@ -670,7 +681,7 @@ function renderTable(){
       <td class="num">${fmtPct(pct(r.dead, r.birds),2)}</td>
       <td class="memo">${esc(r.memo || "")}</td>
       <td>${esc(r.writer || "")}</td>
-      <td style="white-space:nowrap"><button class="edit" onclick="editRecord('${r.id}')">고치기</button>${isCeo() ? `<button class="del" onclick="deleteRecord('${r.id}')">지우기</button>` : ""}</td>
+      <td style="white-space:nowrap"><button class="edit" onclick="editRecord('${r.id}')">고치기</button>${canDelete(r) ? `<button class="del" onclick="deleteRecord('${r.id}')">지우기</button>` : ""}</td>
     </tr>`).join("");
 }
 

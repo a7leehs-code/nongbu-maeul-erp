@@ -48,6 +48,7 @@ window.ERP_CATEGORIES = [
       { icon:"📦", name: "사료 발주", where: "대표 보고받고 결정", often: "정기", urgency: "상", order: 5, status: "todo" },
       { icon:"🥚", name: "계란 등급별(왕란/특란/대란) 재고", where: "세분화는 하나 방식 불명", often: "매일", urgency: "중", order: 10, status: "todo" },
       { icon:"🔧", name: "장비/설비 점검·수리 이력", where: "미논의", often: "수시", urgency: "중", order: 11, status: "todo", proposed:true },
+      { icon:"💊", name: "약품 구입 내역", where: "소독약·백신·치료제 등 살 때마다 기록 → 월별·종류별 약품비, 유효기간 알림 · 농부마을 DB에 저장 (로그인 필요)", often: "살 때마다", urgency: "중", order: null, status: "inprogress", file: "erp-medicine.html" },
       { icon:"🏚️", name: "계사(농장) 시설 현황", where: "계사 4동 (1~4동)", often: "수시", urgency: "하", order: 12, status: "todo" }
     ]
   },

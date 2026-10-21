@@ -1,0 +1,654 @@
+<!-- [AI 생성 초안 - 검토 전] 농부마을 약품 구입 내역 -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>약품 구입 내역</title>
+<style>
+  :root{ --navy:#2B3A4E; --copper:#C67B3C; --cream:#F7F3EE; --teal:#3A8FB7; --ink:#243140; --muted:#6b7785; --line:#e3dccf; --green:#3f7a52; --red:#b3503a; --amber:#b7791f; }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{ font-family:"맑은 고딕","Malgun Gothic",sans-serif; background:var(--cream); color:var(--ink); padding:24px; line-height:1.6; }
+  header{ background:linear-gradient(135deg,#2B3A4E,#1a2636 58%,#C67B3C 210%); color:#fff; border-radius:14px; padding:22px 26px; margin-bottom:20px; }
+  header h1{ font-size:20px; margin-bottom:6px; }
+  header p{ font-size:13.5px; color:#d7dee6; }
+
+  details.overview{ background:#fff; border:1px solid var(--line); border-radius:12px; margin-bottom:16px; }
+  details.overview > summary{ list-style:none; cursor:pointer; padding:14px 18px; display:flex; flex-wrap:wrap; align-items:baseline; gap:8px; border-bottom:1px solid var(--line); }
+  details.overview > summary::-webkit-details-marker{ display:none; }
+  details.overview:not([open]) > summary{ border-bottom:none; }
+  .ov-title{ font-size:14.5px; font-weight:800; color:var(--navy); }
+  .ov-stats{ font-size:12.5px; color:var(--muted); }
+  .ov-toggle{ margin-left:auto; font-size:12px; color:var(--teal); font-weight:700; }
+  details.overview:not([open]) .ov-toggle::after{ content:"펼쳐 보기 ▾"; }
+  details.overview[open] .ov-toggle::after{ content:"접기 ▴"; }
+  .ov-body{ padding:16px 18px 20px; }
+  .ov-flow{ overflow-x:auto; }
+  .ov-flow svg{ width:100%; min-width:640px; height:auto; display:block; }
+  .ov-hint{ font-size:12px; color:var(--muted); margin-top:10px; }
+
+  .warn{ background:#fbeee9; border-left:4px solid var(--red); padding:11px 15px; font-size:12.8px; color:#8a3a2a; margin-bottom:16px; border-radius:6px; }
+  .warn.live{ background:#eef7f0; border-left-color:var(--green); color:#2f5e3e; }
+  .bar{ display:flex; flex-wrap:wrap; align-items:center; gap:10px; background:#fff; border:1px solid var(--line); border-radius:12px; padding:10px 16px; margin-bottom:14px; }
+  .bar .who{ font-size:13px; color:var(--muted); flex:1; min-width:180px; }
+  .auth{ max-width:420px; margin:0 auto 16px; }
+  .auth .switch{ display:flex; gap:6px; margin-bottom:6px; }
+  .auth .switch .btn{ flex:1; }
+
+  .layout{ display:flex; gap:18px; align-items:flex-start; }
+  .panel{ width:340px; flex:0 0 340px; }
+  .main{ flex:1; min-width:0; }
+  .card{ background:#fff; border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin-bottom:16px; }
+  .card h3{ font-size:14.5px; color:var(--navy); margin-bottom:12px; }
+
+  label{ display:block; font-size:12px; color:var(--muted); font-weight:700; margin:10px 0 4px; }
+  input, select, textarea{ width:100%; border:1px solid var(--line); border-radius:8px; padding:8px 10px; font-size:14px; font-family:inherit; background:#fdfbf8; }
+  input[type=number]{ font-variant-numeric:tabular-nums; }
+  textarea{ resize:vertical; min-height:44px; }
+  .row2{ display:flex; gap:8px; }
+  .row2 > div{ flex:1; min-width:0; }
+  .help{ font-size:11.5px; color:var(--muted); margin-top:3px; }
+
+  .btn{ border:none; border-radius:8px; padding:9px 14px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; }
+  .btn-copper{ background:var(--copper); color:#fff; }
+  .btn-line{ background:#fff; color:var(--muted); border:1px solid var(--line); }
+  .btn-block{ width:100%; margin-top:14px; }
+  .msg{ font-size:12.5px; margin-top:8px; padding:8px 10px; border-radius:8px; display:none; }
+  .msg.ok{ background:#e3f2e6; color:var(--green); display:block; }
+  .msg.err{ background:#fbeee9; color:var(--red); display:block; }
+
+  .tiles{ display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:10px; }
+  .tile{ border:1.5px solid var(--line); border-radius:10px; padding:12px 14px; background:#faf7f1; }
+  .tile .name{ font-size:13px; font-weight:800; color:var(--navy); }
+  .tile .big{ font-size:22px; font-weight:800; color:var(--teal); font-variant-numeric:tabular-nums; line-height:1.3; }
+  .tile .big small{ font-size:12px; color:var(--muted); font-weight:700; margin-left:2px; }
+  .tile .line{ font-size:12.5px; color:var(--ink); }
+  .tile.ok{ background:#eef7f0; border-color:#c6e2cd; } .tile.ok .big{ color:var(--green); }
+  .tile.soon{ background:#fff8ea; border-color:#f0d9a8; } .tile.soon .big{ color:var(--amber); }
+  .tile.late{ background:#fbeee9; border-color:#e8c1b6; } .tile.late .big{ color:var(--red); }
+
+  .filters{ display:flex; gap:8px; margin-bottom:10px; flex-wrap:wrap; }
+  .filters select{ width:auto; padding:5px 8px; font-size:13px; }
+  .tbl-wrap{ overflow-x:auto; }
+  table{ width:100%; border-collapse:collapse; font-size:13px; min-width:860px; }
+  td{ white-space:nowrap; }
+  td.memo{ white-space:normal; }
+  th{ background:#f4efe6; color:var(--navy); font-weight:800; text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); white-space:nowrap; }
+  td{ padding:8px 10px; border-bottom:1px solid #eee; font-variant-numeric:tabular-nums; vertical-align:top; }
+  td.num, th.num{ text-align:right; }
+  td.memo{ color:var(--muted); font-size:12px; max-width:180px; }
+  td .edit{ font-size:11px; color:var(--teal); border:none; background:none; cursor:pointer; font-family:inherit; }
+  td .del{ font-size:11px; color:var(--red); border:none; background:none; cursor:pointer; font-family:inherit; }
+  .chip{ display:inline-block; font-size:11.5px; font-weight:800; padding:1px 8px; border-radius:10px; white-space:nowrap; background:#f1ece2; color:var(--ink); }
+  .chip.c0{ background:#eef7f0; color:var(--green); }
+  .chip.c1{ background:#eaf3f8; color:var(--teal); }
+  .chip.c2{ background:#fbeee9; color:var(--red); }
+  .chip.c3{ background:#fff4e0; color:var(--amber); }
+  .exp-late{ color:var(--red); font-weight:800; }
+  .exp-soon{ color:var(--amber); font-weight:800; }
+  .empty{ text-align:center; color:var(--muted); font-size:13px; padding:26px 10px; }
+  .empty .big{ font-size:30px; margin-bottom:8px; }
+  table.sum tr.total td{ background:#eef4f8; font-weight:800; }
+
+  footer{ text-align:center; color:var(--muted); font-size:12px; margin-top:20px; line-height:1.7; }
+  a.back{ color:var(--copper); font-weight:700; text-decoration:none; }
+
+  @media (max-width: 860px){
+    body{ padding:16px; }
+    .layout{ flex-direction:column; }
+    .panel, .main{ width:100%; flex:none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>💊 약품 구입 내역</h1>
+  <p>소독약·백신·치료제 등을 살 때마다 한 줄씩 적습니다. 이번 달 약품비가 자동으로 더해지고, 유효기간이 다가오는 약품은 색으로 알려 줍니다.</p>
+</header>
+
+<details class="overview" open>
+  <summary>
+    <span class="ov-title">🧠 구조 한눈에 보기 — 약품 구입은 어떻게 기록되나</span>
+    <span class="ov-stats">약품 종류 5가지 · 창고 표 1개 · 유효기간 60일 전부터 알림</span>
+    <span class="ov-toggle"></span>
+  </summary>
+  <div class="ov-body">
+    <div class="ov-flow">
+      <svg viewBox="0 0 760 170" role="img" aria-label="약품을 살 때 구입일, 종류, 이름, 수량, 금액, 구입처, 유효기간을 적으면 창고에 저장되고, 이번 달 약품비 합계, 종류별 합계, 유효기간 알림으로 보여준다.">
+        <defs>
+          <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+        </defs>
+        <rect x="10" y="40" width="200" height="80" rx="12" fill="#eaf3f8" stroke="#3A8FB7" stroke-width="1.5"/>
+        <text x="110" y="72" text-anchor="middle" font-size="17" font-weight="800" fill="#2B3A4E">① 살 때 적기</text>
+        <text x="110" y="96" text-anchor="middle" font-size="12" fill="#4a6275">종류·이름·수량·금액·구입처</text>
+
+        <line x1="210" y1="80" x2="256" y2="80" stroke="#3A8FB7" stroke-width="2" marker-end="url(#ah)"/>
+        <rect x="260" y="40" width="180" height="80" rx="12" fill="#faf7f1" stroke="#C67B3C" stroke-width="1.5"/>
+        <text x="350" y="72" text-anchor="middle" font-size="17" font-weight="800" fill="#2B3A4E">② 창고에 저장</text>
+        <text x="350" y="96" text-anchor="middle" font-size="12" fill="#7a6a58">농부마을 DB · 표 1개</text>
+
+        <line x1="440" y1="80" x2="486" y2="80" stroke="#3A8FB7" stroke-width="2" marker-end="url(#ah)"/>
+        <rect x="490" y="10" width="260" height="44" rx="10" fill="#eef4f8" stroke="#3A8FB7" stroke-width="1.5"/>
+        <text x="620" y="37" text-anchor="middle" font-size="14" font-weight="800" fill="#2B3A4E">이번 달 · 올해 약품비</text>
+        <rect x="490" y="62" width="260" height="44" rx="10" fill="#eef4f8" stroke="#3A8FB7" stroke-width="1.5"/>
+        <text x="620" y="89" text-anchor="middle" font-size="14" font-weight="800" fill="#2B3A4E">월별 · 종류별 합계</text>
+        <rect x="490" y="114" width="260" height="44" rx="10" fill="#fff8ea" stroke="#b7791f" stroke-width="1.5"/>
+        <text x="620" y="141" text-anchor="middle" font-size="14" font-weight="800" fill="#2B3A4E">유효기간 다가옴 · 지남 알림</text>
+      </svg>
+    </div>
+    <div class="ov-hint">전에 산 약품 이름을 고르면 종류·단위·구입처가 지난번 그대로 채워집니다. 적은 사람은 로그인한 이름으로 자동 기록돼요. 자기가 적은 기록은 지울 수 있고, 다른 사람 기록은 대표만 지울 수 있어요.</div>
+  </div>
+</details>
+
+<div class="warn" id="modeNote"></div>
+<div class="bar" id="bar" style="display:none"></div>
+<div id="auth"></div>
+
+<div class="layout" id="app" style="display:none">
+
+  <div class="panel">
+    <div class="card">
+      <h3 id="formTitle">✏️ 약품 구입 적기</h3>
+
+      <div class="row2">
+        <div><label>구입일</label><input type="date" id="fDate"></div>
+        <div><label>종류</label><select id="fCat"></select></div>
+      </div>
+
+      <label>약품 이름</label>
+      <input type="text" id="fName" list="nameList" maxlength="60" placeholder="예) 버콘 S">
+      <datalist id="nameList"></datalist>
+
+      <div class="row2">
+        <div><label>수량</label><input type="number" id="fQty" min="0" step="any" inputmode="decimal" placeholder="예) 5"></div>
+        <div><label>단위</label><input type="text" id="fUnit" list="unitList" maxlength="10" placeholder="병·포·kg"><datalist id="unitList"></datalist></div>
+      </div>
+
+      <label>금액 (원)</label>
+      <input type="number" id="fAmount" min="0" step="1" inputmode="numeric" placeholder="예) 150000">
+      <div class="help" id="amountHelp"></div>
+
+      <label>구입처</label>
+      <input type="text" id="fVendor" list="vendorList" maxlength="60" placeholder="예) ○○동물약품">
+      <datalist id="vendorList"></datalist>
+
+      <label>유효기간 (선택)</label>
+      <input type="date" id="fExpiry">
+
+      <label>메모 (선택)</label>
+      <textarea id="fMemo" maxlength="300" placeholder="어디에 쓸 약인지 등"></textarea>
+
+      <div class="msg" id="formMsg"></div>
+      <button class="btn btn-copper btn-block" id="saveBtn">저장</button>
+      <button class="btn btn-line btn-block" id="delBtn" style="display:none;margin-top:6px;color:var(--red)">🗑 이 기록 지우기</button>
+      <button class="btn btn-line btn-block" id="cancelBtn" style="display:none;margin-top:6px">고치기 취소</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="card">
+      <h3>📊 약품비 · 유효기간</h3>
+      <div class="tiles" id="tiles"></div>
+    </div>
+
+    <div class="card" id="expCard" style="display:none">
+      <h3>⏰ 유효기간 확인할 약품</h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>유효기간</th><th>남은 날</th><th>종류</th><th>약품 이름</th><th class="num">수량</th><th>구입일</th></tr></thead>
+          <tbody id="expBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>📋 구입 내역 (<span id="countLabel">0</span>건 · <span id="sumLabel">0</span>원)</h3>
+      <div class="filters">
+        <select id="filterCat"></select>
+        <select id="filterDays">
+          <option value="30">최근 30일</option>
+          <option value="90" selected>최근 3개월</option>
+          <option value="365">최근 1년</option>
+          <option value="0">전체</option>
+        </select>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>구입일</th><th>종류</th><th>약품 이름</th><th class="num">수량</th><th class="num">금액</th><th>구입처</th><th>유효기간</th><th>메모</th><th>적은 사람</th><th></th></tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div class="empty" id="emptyState"><div class="big">💊</div><div>이 기간에는 구입 내역이 없습니다.</div></div>
+    </div>
+
+    <div class="card">
+      <h3>📅 월별 · 종류별 약품비</h3>
+      <div class="filters"><select id="sumYear"></select></div>
+      <div class="tbl-wrap">
+        <table class="sum">
+          <thead id="sumHead"></thead>
+          <tbody id="sumBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  erp-medicine.html · 정본 1장 · 기록은 농부마을 창고(Supabase)에 저장됨 (실습판: 주소 끝 ?practice=1) · <a class="back" href="erp-map.html">← 지도로 돌아가기</a><br>
+  [AI 생성 초안 - 검토 전]
+</footer>
+
+<script src="erp-config.js"></script>
+<script>
+const CFG = window.ERP_CONFIG || {};
+const LIVE = Boolean(CFG.supabaseUrl && CFG.supabaseAnonKey) && !/[?&]practice=1(&|$)/.test(location.search);
+const SUPABASE_JS = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js";
+const CATS = ["소독약", "백신", "치료제·항생제", "영양제·비타민", "기타"];
+const UNITS = ["병", "포", "kg", "L", "통", "도즈", "개"];
+const EXP_WARN_DAYS = 60;   // 유효기간 며칠 전부터 알릴지
+
+// 구입 내역: [{ id, date, category, name, qty, unit, amount, vendor, expiry, memo, writer }]
+let items = [];
+let me = null;
+let editingId = null;
+
+const $ = id => document.getElementById(id);
+function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
+function isCeo(){ return !LIVE || (!!me && me.role === "대표"); }
+// 자기가 적은 기록은 본인이, 모든 기록은 대표가 지울 수 있음 (최종 판정은 창고가 함)
+function canDelete(x){ return !LIVE || isCeo() || (!!me && x.writerId === me.id); }
+// 입력 칸의 「이 기록 지우기」 버튼 — 고칠 기록이 있고 지울 수 있을 때만 보임. 지우고 나면 입력 칸을 비움
+function showDelBtn(rec, onDelete){
+  const b = document.getElementById("delBtn");
+  b.style.display = rec && canDelete(rec) ? "" : "none";
+  b.onclick = onDelete ? async () => { await onDelete(); if(!items.some(x => x.id === rec.id)) resetForm(); } : null;
+}
+function localDate(d){ return new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10); }
+function today(){ return localDate(new Date()); }
+function addDays(s, n){ const d = new Date(s + "T00:00:00"); d.setDate(d.getDate() + n); return localDate(d); }
+function daysBetween(a, b){ return Math.round((new Date(b + "T00:00:00") - new Date(a + "T00:00:00")) / 86400000); }
+function won(n){ return (n ?? 0).toLocaleString("ko-KR"); }
+function fmtQty(x){ return x.qty == null ? "" : (Number(x.qty).toLocaleString("ko-KR") + (x.unit ? " " + x.unit : "")); }
+function catChip(c){ const i = CATS.indexOf(c); return `<span class="chip ${i >= 0 && i < 4 ? "c" + i : ""}">${esc(c)}</span>`; }
+function expLeft(x){ return x.expiry ? daysBetween(today(), x.expiry) : null; }
+
+// ───────── 저장소 ① 실습판 — 이 브라우저에만 ─────────
+const KEY = "nongbuErpMedicine";
+const Practice = {
+  async load(){ try{ items = JSON.parse(localStorage.getItem(KEY)) || []; }catch(e){ items = []; } },
+  persist(){ try{ localStorage.setItem(KEY, JSON.stringify(items)); }catch(e){ throw new Error("이 브라우저에 저장하지 못했어요 (브라우저 저장소 문제)."); } },
+  async save(rec){
+    if(rec.id){ const i = items.findIndex(x => x.id === rec.id); if(i >= 0) items[i] = { ...items[i], ...rec }; }
+    else items.push({ ...rec, id: "m" + Date.now() });
+    this.persist();
+  },
+  async remove(id){ items = items.filter(x => x.id !== id); this.persist(); }
+};
+
+// ───────── 저장소 ② 실사용 — 창고 (농부마을 DB · Supabase) ─────────
+let sb = null, session = null, liveError = "";
+function loadScript(src){
+  return new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = src; s.onload = resolve;
+    s.onerror = () => reject(new Error("라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인하세요."));
+    document.head.appendChild(s);
+  });
+}
+function friendly(msg){
+  if(/Failed to fetch|NetworkError|Load failed/i.test(msg)) return "창고(서버)에 연결하지 못했습니다. 인터넷 연결을 확인하세요.";
+  if(msg === "Invalid login credentials") return "이메일 또는 비밀번호가 틀렸습니다.";
+  if(/Email not confirmed/i.test(msg)) return "메일함의 확인 링크를 먼저 눌러주세요.";
+  if(/already registered/i.test(msg)) return "이미 가입된 이메일입니다. 로그인해주세요.";
+  if(/medicine_purchases.*does not exist|Could not find the table/i.test(msg)) return "약품 구입 표가 아직 없습니다. supabase/medicine.sql 을 실행했는지 확인하세요.";
+  if(/row-level security|permission denied/i.test(msg)) return "이 일은 권한이 없어요. (기록은 적은 사람 본인이나 대표만 지울 수 있어요)";
+  return msg;
+}
+function rowToItem(r){
+  return { id: String(r.id), date: r.buy_date, category: r.category, name: r.name, qty: r.qty == null ? null : Number(r.qty),
+           unit: r.unit, amount: r.amount == null ? null : Number(r.amount), vendor: r.vendor, expiry: r.expiry || "",
+           memo: r.memo, writer: (r.writer && r.writer.name) || "", writerId: r.written_by };
+}
+const Live = {
+  async init(){
+    if(!window.supabase) await loadScript(SUPABASE_JS);
+    sb = window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey);
+    sb.auth.onAuthStateChange((_e, s) => { session = s; setTimeout(loadLive, 0); });
+  },
+  async load(){
+    let all = [];
+    for(let from = 0; ; from += 1000){
+      const q = await sb.from("medicine_purchases")
+        .select("id,buy_date,category,name,qty,unit,amount,vendor,expiry,memo,written_by,writer:profiles(name)")
+        .order("buy_date").order("id").range(from, from + 999);
+      if(q.error) throw new Error(q.error.message);
+      all = all.concat(q.data);
+      if(q.data.length < 1000) break;
+    }
+    items = all.map(rowToItem);
+  },
+  async save(rec){
+    const row = { buy_date: rec.date, category: rec.category, name: rec.name, qty: rec.qty, unit: rec.unit,
+                  amount: rec.amount, vendor: rec.vendor, expiry: rec.expiry || null, memo: rec.memo };
+    const res = rec.id
+      ? await sb.from("medicine_purchases").update(row).eq("id", Number(rec.id))
+      : await sb.from("medicine_purchases").insert(row);
+    if(res.error) throw new Error(friendly(res.error.message));
+    await this.load();
+  },
+  async remove(id){
+    const { data, error } = await sb.from("medicine_purchases").delete().eq("id", Number(id)).select("id");
+    if(error) throw new Error(friendly(error.message));
+    if(!data.length) throw new Error("지우지 못했어요. 기록은 적은 사람 본인이나 대표만 지울 수 있어요.");
+    await this.load();
+  }
+};
+const DB = LIVE ? Live : Practice;
+
+// ───────── 입력 양식 ─────────
+function fillLists(){
+  const uniq = arr => [...new Set(arr.filter(Boolean))];
+  const recent = items.slice().sort((a,b) => b.date.localeCompare(a.date));
+  $("nameList").innerHTML = uniq(recent.map(x => x.name)).slice(0, 60).map(o => `<option value="${esc(o)}">`).join("");
+  $("vendorList").innerHTML = uniq(recent.map(x => x.vendor)).slice(0, 30).map(o => `<option value="${esc(o)}">`).join("");
+  $("unitList").innerHTML = uniq([...UNITS, ...recent.map(x => x.unit)]).map(o => `<option value="${esc(o)}">`).join("");
+}
+
+// 전에 산 약품 이름을 고르면 종류·단위·구입처를 지난번 그대로 채움 (빈 칸만)
+function onNamePicked(){
+  if(editingId) return;
+  const name = $("fName").value.trim();
+  const last = items.filter(x => x.name === name).sort((a,b) => b.date.localeCompare(a.date))[0];
+  if(!last) return;
+  $("fCat").value = last.category;
+  if(!$("fUnit").value) $("fUnit").value = last.unit || "";
+  if(!$("fVendor").value) $("fVendor").value = last.vendor || "";
+  if(last.qty && last.amount) $("amountHelp").textContent = "지난번(" + last.date + "): " + fmtQty(last) + " " + won(last.amount) + "원";
+}
+
+function resetForm(){
+  editingId = null;
+  $("formTitle").textContent = "✏️ 약품 구입 적기";
+  showDelBtn(null);
+  $("cancelBtn").style.display = "none";
+  $("fDate").value = today();
+  $("fCat").value = CATS[0];
+  ["fName","fQty","fUnit","fAmount","fVendor","fExpiry","fMemo"].forEach(id => $(id).value = "");
+  $("amountHelp").textContent = "";
+}
+
+function showMsg(text, ok){
+  const el = $("formMsg");
+  el.textContent = text; el.className = "msg " + (ok ? "ok" : "err");
+  clearTimeout(el._t); el._t = setTimeout(() => { el.className = "msg"; }, 3500);
+}
+
+function numOrNull(id, integer){
+  const v = $(id).value.trim();
+  if(v === "") return null;
+  const n = Number(v);
+  if(!isFinite(n) || n < 0 || (integer && !Number.isInteger(n))) return NaN;
+  return n;
+}
+
+async function saveItem(){
+  const rec = {
+    id: editingId, date: $("fDate").value, category: $("fCat").value, name: $("fName").value.trim(),
+    qty: numOrNull("fQty", false), unit: $("fUnit").value.trim(), amount: numOrNull("fAmount", true),
+    vendor: $("fVendor").value.trim(), expiry: $("fExpiry").value, memo: $("fMemo").value.trim()
+  };
+  if(!rec.date) return showMsg("구입일을 골라 주세요.", false);
+  if(rec.date > today()) return showMsg("앞으로의 날짜는 적을 수 없어요.", false);
+  if(!rec.name) return showMsg("약품 이름을 적어 주세요.", false);
+  if(Number.isNaN(rec.qty)) return showMsg("수량은 0 이상의 숫자로 적어 주세요.", false);
+  if(Number.isNaN(rec.amount)) return showMsg("금액은 0 이상의 정수(원)로 적어 주세요.", false);
+  if(rec.expiry && rec.expiry < rec.date && !confirm("유효기간이 구입일보다 앞이에요. 그대로 저장할까요?")) return;
+
+  const btn = $("saveBtn");
+  btn.disabled = true; btn.textContent = "저장하는 중…";
+  try{
+    await DB.save(rec);
+    showMsg("💊 " + rec.name + " — " + (editingId ? "고쳤어요." : "저장했어요."), true);
+    resetForm();
+  }catch(e){
+    showMsg(e.message, false);
+  }finally{
+    btn.disabled = false; btn.textContent = "저장";
+  }
+  renderAll();
+}
+
+function editItem(id){
+  const x = items.find(i => i.id === id);
+  if(!x) return;
+  editingId = id;
+  $("fDate").value = x.date; $("fCat").value = x.category; $("fName").value = x.name;
+  $("fQty").value = x.qty ?? ""; $("fUnit").value = x.unit; $("fAmount").value = x.amount ?? "";
+  $("fVendor").value = x.vendor; $("fExpiry").value = x.expiry; $("fMemo").value = x.memo;
+  $("amountHelp").textContent = "";
+  $("formTitle").textContent = "✏️ 구입 내역 고치기";
+  showDelBtn(x, () => deleteItem(id));
+  $("cancelBtn").style.display = "";
+  window.scrollTo({ top: $("formTitle").getBoundingClientRect().top + window.scrollY - 80, behavior:"smooth" });
+}
+
+async function deleteItem(id){
+  const x = items.find(i => i.id === id);
+  if(!x || !confirm(x.date + " " + x.name + " 구입 내역을 지울까요? 지우면 되돌릴 수 없어요.")) return;
+  try{ await DB.remove(id); }catch(e){ alert(e.message); }
+  renderAll();
+}
+
+// ───────── 약품비 · 유효기간 카드 ─────────
+function expiring(){
+  return items.filter(x => x.expiry && expLeft(x) <= EXP_WARN_DAYS).sort((a,b) => a.expiry.localeCompare(b.expiry));
+}
+function renderTiles(){
+  const t = today(), month = t.slice(0,7), year = t.slice(0,4);
+  const sum = f => items.filter(x => f(x.date)).reduce((s,x) => s + (x.amount || 0), 0);
+  const cnt = f => items.filter(x => f(x.date)).length;
+  const exp = expiring();
+  const late = exp.filter(x => expLeft(x) < 0).length, soon = exp.length - late;
+  const expCls = late ? "late" : (soon ? "soon" : "ok");
+  const expBig = late ? late + "개 지남" : (soon ? soon + "개 다가옴" : "괜찮아요");
+  $("tiles").innerHTML = `
+    <div class="tile"><div class="name">💰 이번 달 약품비</div>
+      <div class="big">${won(sum(d => d.startsWith(month)))}<small>원</small></div>
+      <div class="line">${cnt(d => d.startsWith(month))}건 구입</div></div>
+    <div class="tile"><div class="name">📆 올해 약품비</div>
+      <div class="big">${won(sum(d => d.startsWith(year)))}<small>원</small></div>
+      <div class="line">${cnt(d => d.startsWith(year))}건 구입</div></div>
+    <div class="tile ${expCls}"><div class="name">⏰ 유효기간 (${EXP_WARN_DAYS}일 이내)</div>
+      <div class="big">${expBig}</div>
+      <div class="line">${late && soon ? "다가오는 것 " + soon + "개 더" : (exp.length ? "아래 목록을 확인하세요" : "기간이 가까운 약품이 없어요")}</div></div>`;
+
+  $("expCard").style.display = exp.length ? "" : "none";
+  $("expBody").innerHTML = exp.map(x => {
+    const left = expLeft(x);
+    return `<tr><td class="${left < 0 ? "exp-late" : "exp-soon"}">${x.expiry}</td>
+      <td class="${left < 0 ? "exp-late" : "exp-soon"}">${left < 0 ? (-left) + "일 지남" : (left === 0 ? "오늘까지" : left + "일 남음")}</td>
+      <td>${catChip(x.category)}</td><td><b>${esc(x.name)}</b></td><td class="num">${esc(fmtQty(x))}</td><td>${x.date}</td></tr>`;
+  }).join("");
+}
+
+// ───────── 구입 내역 표 ─────────
+function renderTable(){
+  const cf = $("filterCat").value, days = Number($("filterDays").value);
+  const from = days ? addDays(today(), -(days - 1)) : "";
+  const list = items
+    .filter(x => (!cf || x.category === cf) && (!from || x.date >= from))
+    .sort((a,b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id));
+  $("countLabel").textContent = list.length;
+  $("sumLabel").textContent = won(list.reduce((s,x) => s + (x.amount || 0), 0));
+  $("emptyState").style.display = list.length ? "none" : "block";
+  $("tbody").innerHTML = list.map(x => {
+    const left = expLeft(x);
+    const expCls = left === null ? "" : (left < 0 ? "exp-late" : (left <= EXP_WARN_DAYS ? "exp-soon" : ""));
+    return `<tr>
+      <td>${x.date}</td>
+      <td>${catChip(x.category)}</td>
+      <td><b>${esc(x.name)}</b></td>
+      <td class="num">${esc(fmtQty(x))}</td>
+      <td class="num">${x.amount == null ? "" : won(x.amount) + "원"}</td>
+      <td>${esc(x.vendor)}</td>
+      <td class="${expCls}">${esc(x.expiry)}</td>
+      <td class="memo">${esc(x.memo)}</td>
+      <td>${esc(x.writer)}</td>
+      <td style="white-space:nowrap"><button class="edit" onclick="editItem('${x.id}')">고치기</button>${canDelete(x) ? `<button class="del" onclick="deleteItem('${x.id}')">지우기</button>` : ""}</td>
+    </tr>`;
+  }).join("");
+}
+
+// ───────── 월별 · 종류별 약품비 ─────────
+function renderSums(){
+  const years = [...new Set(items.map(x => x.date.slice(0,4)))].sort().reverse();
+  if(!years.length) years.push(today().slice(0,4));
+  const keep = $("sumYear").value;
+  $("sumYear").innerHTML = years.map(y => `<option value="${y}">${y}년</option>`).join("");
+  if(years.includes(keep)) $("sumYear").value = keep;
+  const year = $("sumYear").value;
+
+  $("sumHead").innerHTML = `<tr><th>월</th>${CATS.map(c => `<th class="num">${c}</th>`).join("")}<th class="num">합계</th></tr>`;
+  const inYear = items.filter(x => x.date.startsWith(year));
+  const months = [...new Set(inYear.map(x => x.date.slice(0,7)))].sort();
+  const line = (label, list, cls) => {
+    const byCat = CATS.map(c => list.filter(x => x.category === c).reduce((s,x) => s + (x.amount || 0), 0));
+    const total = byCat.reduce((s,n) => s + n, 0);
+    return `<tr class="${cls}"><td>${label}</td>${byCat.map(n => `<td class="num">${n ? won(n) : "-"}</td>`).join("")}<td class="num"><b>${won(total)}</b></td></tr>`;
+  };
+  let html = months.map(m => line(Number(m.slice(5)) + "월", inYear.filter(x => x.date.startsWith(m)), "")).join("");
+  if(months.length) html += line(year + "년 합계", inYear, "total");
+  else html = `<tr><td colspan="${CATS.length + 2}" style="text-align:center;color:var(--muted)">이 해에는 구입 내역이 없습니다.</td></tr>`;
+  $("sumBody").innerHTML = html;
+}
+
+function renderAll(){ fillLists(); renderTiles(); renderTable(); renderSums(); }
+
+// ───────── 로그인 · 화면 열고 닫기 (실사용 모드) ─────────
+let authMode = "login";
+function renderModeNote(){
+  const el = $("modeNote");
+  if(LIVE){
+    el.className = "warn live";
+    el.innerHTML = "✅ 함께 쓰는 모드 — 기록은 농부마을 창고(DB · Supabase)에 저장됩니다. 직원이 적으면 대표 컴퓨터에서도 바로 보입니다.";
+  }else{
+    el.className = "warn";
+    el.innerHTML = "⚠ 실습판입니다. 기록이 <b>이 컴퓨터의 이 브라우저에만</b> 저장됩니다. 함께 쓰려면 주소 끝의 <b>?practice=1</b>을 빼고 여세요.";
+  }
+}
+function renderBar(){
+  const bar = $("bar");
+  if(!LIVE || !session){ bar.style.display = "none"; return; }
+  bar.style.display = "";
+  bar.innerHTML = `<span class="who">${me ? `👤 <b>${esc(me.name)}</b> (${esc(me.role)}) 로그인 중` : "로그인 중"}</span>
+    <button class="btn btn-line" id="refreshBtn">새로고침</button>
+    <button class="btn btn-line" id="logoutBtn">로그아웃</button>`;
+}
+function authView(){
+  return `<div class="card auth">
+    <div class="switch">
+      <button class="btn ${authMode === "login" ? "btn-copper" : "btn-line"}" data-auth="login">로그인</button>
+      <button class="btn ${authMode === "signup" ? "btn-copper" : "btn-line"}" data-auth="signup">처음 가입</button>
+    </div>
+    <label for="aEmail">이메일</label><input id="aEmail" type="email" autocomplete="email">
+    <label for="aPw">비밀번호${authMode === "signup" ? " (6자 이상)" : ""}</label><input id="aPw" type="password" autocomplete="${authMode === "signup" ? "new-password" : "current-password"}">
+    ${authMode === "signup" ? `
+      <label for="aName">이름</label><input id="aName" autocomplete="name">
+      <label for="aJob">맡은 일</label><input id="aJob" placeholder="예: 사육, 출하, 방역">` : ""}
+    <div class="msg err" id="aErr" style="display:none"></div>
+    <div class="msg ok" id="aOk" style="display:none"></div>
+    <button class="btn btn-copper btn-block" id="authBtn">${authMode === "signup" ? "가입하기" : "로그인"}</button>
+    <p class="help" style="margin-top:10px">${authMode === "signup"
+      ? "가입 후 대표가 전자결재 화면의 「직원 관리」에서 「사용 허용」을 눌러야 쓸 수 있습니다."
+      : "전자결재·산란 기록과 같은 계정입니다."}</p>
+  </div>`;
+}
+function authMsg(id, text){ const el = $(id); el.textContent = text; el.style.display = text ? "block" : "none"; }
+function bindAuth(){
+  document.querySelectorAll("[data-auth]").forEach(b => b.addEventListener("click", () => { authMode = b.dataset.auth; renderGate(); }));
+  $("authBtn").addEventListener("click", async () => {
+    authMsg("aErr", ""); authMsg("aOk", "");
+    const email = $("aEmail").value.trim(), password = $("aPw").value;
+    if(!email.includes("@")) return authMsg("aErr", "이메일을 확인해주세요.");
+    if(password.length < 6)  return authMsg("aErr", "비밀번호는 6자 이상이어야 합니다.");
+    const btn = $("authBtn"); btn.disabled = true;
+    try{
+      if(authMode === "signup"){
+        const name = $("aName").value.trim(), job = $("aJob").value.trim();
+        if(!name){ btn.disabled = false; return authMsg("aErr", "이름을 적어주세요."); }
+        const { data, error } = await sb.auth.signUp({ email, password, options: { data: { name, job }, emailRedirectTo: location.href.split("#")[0] } });
+        if(error) throw error;
+        if(!data.session) authMsg("aOk", "가입 신청이 됐습니다. 메일함에서 확인 링크를 누른 뒤 로그인하세요.");
+      }else{
+        const { error } = await sb.auth.signInWithPassword({ email, password });
+        if(error) throw error;
+      }
+    }catch(e){ authMsg("aErr", friendly(e.message)); }
+    finally{ btn.disabled = false; }
+  });
+}
+function renderGate(){
+  renderModeNote(); renderBar();
+  let gate = "";
+  if(LIVE && liveError) gate = `<div class="card auth"><h3>연결에 문제가 있습니다</h3><p class="msg err" style="display:block">${esc(liveError)}</p></div>`;
+  else if(LIVE && !sb) gate = `<div class="card auth" style="text-align:center;color:var(--muted)">창고(DB)에 연결하는 중…</div>`;
+  else if(LIVE && !session) gate = authView();
+  else if(LIVE && (!me || !me.active)) gate = `<div class="card auth"><h3>⏳ 대표 승인 대기 중</h3>
+      <p style="font-size:13.5px">${me ? esc(me.name) + "님, 가입은 됐습니다." : "직원 정보가 아직 없습니다."} 대표가 전자결재 화면의 「직원 관리」에서 「사용 허용」을 누르면 쓸 수 있습니다. 허용받은 뒤 「새로고침」을 누르세요.</p></div>`;
+  $("auth").innerHTML = gate;
+  $("app").style.display = gate ? "none" : "";
+  if(LIVE && sb && !session && !liveError) bindAuth();
+}
+async function loadLive(){
+  liveError = ""; me = null;
+  if(session){
+    try{
+      const { data, error } = await sb.from("profiles").select("id,name,email,role,active").eq("id", session.user.id).maybeSingle();
+      if(error) throw new Error(error.message);
+      me = data ? { id: data.id, name: data.name || data.email, role: data.role, active: data.active } : null;
+      if(me && me.active) await Live.load();
+    }catch(e){ liveError = friendly(e.message); }
+  }else{ items = []; }
+  renderGate();
+  if(!$("app").style.display) renderAll();
+}
+
+$("bar").addEventListener("click", async e => {
+  if(e.target.id === "refreshBtn") await loadLive();
+  else if(e.target.id === "logoutBtn") await sb.auth.signOut();
+});
+$("fName").addEventListener("change", onNamePicked);
+$("saveBtn").addEventListener("click", saveItem);
+$("cancelBtn").addEventListener("click", resetForm);
+$("filterCat").addEventListener("change", renderTable);
+$("filterDays").addEventListener("change", renderTable);
+$("sumYear").addEventListener("change", renderSums);
+
+async function backgroundRefresh(){
+  if(!LIVE || !me || !me.active || document.visibilityState !== "visible") return;
+  if(document.activeElement && document.activeElement.closest(".panel")) return;
+  try{ await Live.load(); renderAll(); }catch(e){}
+}
+document.addEventListener("visibilitychange", backgroundRefresh);
+setInterval(backgroundRefresh, 60 * 1000);
+
+// ───────── 처음 열 때 ─────────
+if(window.innerWidth < 700) document.querySelectorAll("details.overview").forEach(d => d.open = false);
+$("fCat").innerHTML = CATS.map(c => `<option value="${c}">${c}</option>`).join("");
+$("filterCat").innerHTML = `<option value="">모든 종류</option>` + CATS.map(c => `<option value="${c}">${c}</option>`).join("");
+async function boot(){
+  resetForm();
+  if(!LIVE){ await Practice.load(); renderGate(); renderAll(); return; }
+  renderGate();
+  try{ await Live.init(); }catch(e){ liveError = e.message; renderGate(); }
+}
+boot();
+</script>
+<script src="erp-home.js"></script>
+</body>
+</html>
