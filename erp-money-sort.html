@@ -63,6 +63,7 @@
   td .nt{ font-size:12px; color:var(--muted); margin-top:3px; }
   td .clobe{ color:var(--muted); font-size:13px; }
   td select{ width:150px; }
+  td select.acct{ width:104px; }
   td input.mon{ width:118px; padding:5px 6px; }
   .who{ display:inline-block; font-size:12px; font-weight:800; padding:1px 9px; border-radius:7px; border:1px solid; }
   .who.AI{ color:#3b5fa8; border-color:#c7d4ef; background:#eef3fc; }
@@ -86,14 +87,14 @@
 <div class="flow">
   <a class="step" href="erp-money-collect.html"><small>모은다</small>📥 자료 수집현황</a><span class="arr">→</span>
   <span class="step on"><small>붙인다</small>🗂️ 거래 분류함</span><span class="arr">→</span>
-  <span class="step later"><small>본다</small>🏦 통장·매출 보기</span><span class="arr">·</span>
-  <span class="step later"><small>본다</small>📊 월 손익</span><span class="arr">·</span>
+  <a class="step" href="erp-money-view.html"><small>본다</small>🏦 통장·매출 보기</a><span class="arr">·</span>
+  <a class="step" href="erp-money-pnl.html"><small>본다</small>📊 월 손익</a><span class="arr">·</span>
   <span class="step later"><small>본다</small>⏳ 미수금</span>
 </div>
 
 <div class="crumb">경영·자금 › 거래 분류함 🔒</div>
 <h1>거래 분류함</h1>
-<div class="sub"><select id="month"></select><span id="subText">클로브가 붙인 분류는 참고만, <b>내 분류</b>는 내가 정한다</span></div>
+<div class="sub"><select id="month"></select><select id="acctFilter" style="display:none"></select><span id="subText">클로브가 붙인 분류는 참고만, <b>내 분류</b>는 내가 정한다</span></div>
 
 <div class="warn" id="modeNote"></div>
 <div class="bar" id="bar" style="display:none"></div>
@@ -117,7 +118,7 @@
 
   <div class="tbl-wrap">
     <table>
-      <thead><tr><th>날짜</th><th>적요</th><th class="num">들어옴</th><th class="num">나감</th><th>클로브 분류(참고)</th><th>내 분류</th><th>누가</th><th>귀속월</th><th></th></tr></thead>
+      <thead><tr><th>날짜</th><th>통장</th><th>적요</th><th class="num">들어옴</th><th class="num">나감</th><th>클로브 분류(참고)</th><th>내 분류</th><th>누가</th><th>귀속월</th><th></th></tr></thead>
       <tbody id="tbody"></tbody>
     </table>
     <div class="empty" id="emptyState" style="display:none">이 달에는 거래가 없어요. 아래 「통장 거래 붙이기」로 넣거나, 클로드에게 「클로브 통장 거래 가져와 줘」라고 하세요.</div>
@@ -133,6 +134,11 @@
   <div class="card" id="importCard">
     <h3>📎 통장 거래 붙이기 (클로브 연결 전 · 연습 파일)</h3>
     <div class="help">은행이나 클로브에서 내려받은 통장 파일(CSV)을 고르거나, 엑셀에서 표를 복사해 아래 칸에 붙여 넣으세요. 첫 줄에 <b>날짜 · 적요 · 입금(들어옴) · 출금(나감)</b> 제목이 있으면 알아서 찾아요. 「분류」 칸이 있으면 클로브 분류로 넣어요. 이미 있는 거래는 다시 넣지 않아요.</div>
+    <div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap">
+      <label style="margin:0">어느 통장 거래인가요?</label>
+      <select id="importAcct" style="width:auto"></select>
+      <span class="help">(통장은 「자료 수집현황 → 통장 관리」에서 등록)</span>
+    </div>
     <div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap">
       <input type="file" id="file" accept=".csv,.txt,text/csv">
       <span class="help">또는 붙여 넣기 ↓</span>
@@ -173,7 +179,10 @@ const SUPABASE_JS = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/d
 let txns = [];
 // 내 분류: [{ id, name, pnl }]
 let cats = [];
-let me = null, allowed = !LIVE, tab = "all", month = "";
+let me = null, allowed = !LIVE, tab = "all", month = "", acctFilter = "";
+// 통장 (자료 수집현황의 「통장 관리」에서 정함): [{ id, nickname, bank, last4 }]
+let accounts = [];
+function acctName(id){ const a = accounts.find(x => x.id === id); return a ? a.nickname : ""; }
 
 const $ = id => document.getElementById(id);
 function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
@@ -215,6 +224,7 @@ const Practice = {
     if(!txns) txns = practiceSeed();
     try{ cats = JSON.parse(localStorage.getItem(KEY_C)) || null; }catch(e){ cats = null; }
     if(!cats) cats = DEFAULT_CATS.map(([name, pnl], i) => ({ id:"c" + i, name, pnl }));
+    try{ accounts = (JSON.parse(localStorage.getItem("nongbuErpMoneyAccounts")) || []).filter(a => a.active !== false); }catch(e){ accounts = []; }
   },
   persist(){ try{ localStorage.setItem(KEY_T, JSON.stringify(txns)); localStorage.setItem(KEY_C, JSON.stringify(cats)); }catch(e){} },
   async update(t, patch){ Object.assign(t, patch); this.persist(); },
@@ -242,7 +252,7 @@ function friendly(msg){
   return msg;
 }
 const rowToTxn = r => ({ id:String(r.id), date:r.txn_date, desc:r.description, note:r.note, inAmt:Number(r.amount_in), outAmt:Number(r.amount_out),
-  clobe:r.clobe_category, cat:r.my_category, who:r.who, belong:r.belong_month || "", extKey:r.ext_key });
+  clobe:r.clobe_category, cat:r.my_category, who:r.who, belong:r.belong_month || "", extKey:r.ext_key, account: r.account_id == null ? "" : String(r.account_id) });
 const Live = {
   async init(){
     if(!window.supabase) await loadScript(SUPABASE_JS);
@@ -253,6 +263,8 @@ const Live = {
     const c = await sb.from("money_categories").select("*").order("sort").order("id");
     if(c.error) throw new Error(c.error.message);
     cats = c.data.map(x => ({ id:String(x.id), name:x.name, pnl:x.pnl }));
+    const ac = await sb.from("money_accounts").select("id,nickname,bank,last4,active").order("sort").order("id");
+    accounts = ac.error ? [] : ac.data.filter(x => x.active).map(x => ({ id:String(x.id), nickname:x.nickname, bank:x.bank, last4:x.last4 }));
     let all = [];
     for(let from = 0; ; from += 1000){
       const q = await sb.from("bank_txns").select("*").order("txn_date").order("id").range(from, from + 999);
@@ -267,13 +279,15 @@ const Live = {
     if("cat" in patch) row.my_category = patch.cat;
     if("who" in patch) row.who = patch.who;
     if("belong" in patch) row.belong_month = patch.belong || null;
+    if("account" in patch) row.account_id = patch.account ? Number(patch.account) : null;
     const { error } = await sb.from("bank_txns").update(row).eq("id", Number(t.id));
     if(error) throw new Error(friendly(error.message));
     Object.assign(t, patch);
   },
   async insertMany(rows){
     const payload = rows.map(r => ({ txn_date:r.date, description:r.desc, note:r.note || "", amount_in:r.inAmt, amount_out:r.outAmt,
-      clobe_category:r.clobe || "", my_category:r.cat, who:r.who, belong_month:r.belong || null, source:"파일", ext_key:r.extKey }));
+      clobe_category:r.clobe || "", my_category:r.cat, who:r.who, belong_month:r.belong || null, source:"파일", ext_key:r.extKey,
+      account_id: r.account ? Number(r.account) : null }));
     for(let i = 0; i < payload.length; i += 500){
       const { error } = await sb.from("bank_txns").upsert(payload.slice(i, i + 500), { onConflict:"ext_key", ignoreDuplicates:true });
       if(error) throw new Error(friendly(error.message));
@@ -311,7 +325,16 @@ function renderMonths(){
   $("month").innerHTML = ms.map(m => `<option value="${m}">${m.slice(0,4)}년 ${Number(m.slice(5))}월</option>`).join("");
   $("month").value = month;
 }
-function monthTxns(){ return txns.filter(t => t.date.startsWith(month)).sort((a, b) => a.date.localeCompare(b.date) || String(a.id).localeCompare(String(b.id), undefined, { numeric:true })); }
+function renderAcctFilter(){
+  const sel = $("acctFilter");
+  sel.style.display = accounts.length ? "" : "none";
+  if(acctFilter && acctFilter !== "none" && !accounts.some(a => a.id === acctFilter)) acctFilter = "";
+  sel.innerHTML = `<option value="">모든 통장</option>` + accounts.map(a => `<option value="${a.id}">${esc(a.nickname)} ····${esc(a.last4)}</option>`).join("") + `<option value="none">통장 모름</option>`;
+  sel.value = acctFilter;
+  const imp = $("importAcct");
+  imp.innerHTML = `<option value="">— 모름 —</option>` + accounts.map(a => `<option value="${a.id}">${esc(a.nickname)} (${esc(a.bank)} ····${esc(a.last4)})</option>`).join("");
+}
+function monthTxns(){ return txns.filter(t => t.date.startsWith(month) && (!acctFilter || (acctFilter === "none" ? !t.account : t.account === acctFilter))).sort((a, b) => a.date.localeCompare(b.date) || String(a.id).localeCompare(String(b.id), undefined, { numeric:true })); }
 
 function renderTable(){
   const all = monthTxns();
@@ -330,6 +353,7 @@ function renderTable(){
   const opts = cats.map(c => `<option value="${esc(c.name)}">${esc(c.name)}${c.pnl ? "" : " (손익 아님)"}</option>`).join("");
   $("tbody").innerHTML = list.map(t => `<tr class="${t.cat ? "" : "unsorted"}" data-id="${t.id}">
     <td>${md(t.date)}</td>
+    <td>${accounts.length ? `<select data-f="account" class="acct"><option value="">모름</option>${accounts.map(a => `<option value="${a.id}" ${t.account === a.id ? "selected" : ""}>${esc(a.nickname)}</option>`).join("")}</select>` : `<span class="help">${esc(acctName(t.account) || "—")}</span>`}</td>
     <td>${esc(t.desc)}${t.note ? `<div class="nt">${esc(t.note)}</div>` : ""}</td>
     <td class="num in">${won(t.inAmt)}</td>
     <td class="num">${won(t.outAmt)}</td>
@@ -345,7 +369,9 @@ function renderTable(){
 $("tbody").addEventListener("change", async e => {
   const el = e.target.closest("[data-f]"); if(!el) return;
   const tr = el.closest("tr"), t = txns.find(x => x.id === tr.dataset.id); if(!t) return;
-  const patch = el.dataset.f === "cat" ? { cat: el.value || null, who: el.value ? "나" : null } : { belong: el.value };
+  const patch = el.dataset.f === "cat" ? { cat: el.value || null, who: el.value ? "나" : null }
+              : el.dataset.f === "account" ? { account: el.value }
+              : { belong: el.value };
   el.disabled = true;
   try{ await DB.update(t, patch); }catch(err){ alert(err.message); }
   el.disabled = false;
@@ -360,6 +386,7 @@ $("tbody").addEventListener("click", async e => {
 });
 $("tabs").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if(b){ tab = b.dataset.tab; renderTable(); } });
 $("month").addEventListener("change", () => { month = $("month").value; renderTable(); });
+$("acctFilter").addEventListener("change", () => { acctFilter = $("acctFilter").value; renderTable(); });
 
 // ───────── 통장 거래 붙이기 (CSV · 엑셀 붙여 넣기) ─────────
 let parsed = [];
@@ -429,7 +456,8 @@ $("previewBtn").onclick = async () => {
   const { rows, bad, error } = parseText(await readInput());
   if(error){ $("previewInfo").textContent = ""; msg.className = "msg err"; msg.textContent = error; $("importBtn").disabled = true; return; }
   const have = new Set(txns.map(t => t.extKey));
-  parsed = rows.filter(r => !have.has(r.extKey)).map(r => { const c = autoCat(r.desc); return { ...r, cat: c, who: c ? "자동" : null, note:"", belong:"" }; });
+  const acct = $("importAcct").value;
+  parsed = rows.filter(r => !have.has(r.extKey)).map(r => { const c = autoCat(r.desc); return { ...r, cat: c, who: c ? "자동" : null, note:"", belong:"", account: acct }; });
   const auto = parsed.filter(r => r.cat).length;
   $("previewInfo").textContent = `읽은 거래 ${rows.length}건 · 새로 붙일 것 ${parsed.length}건 (이미 있는 ${rows.length - parsed.length}건은 건너뜀)` +
     (auto ? ` · 전에 정한 대로 미리 채울 것 ${auto}건` : "") + (bad.length ? ` · 읽지 못한 줄 ${bad.length}개 (${bad.slice(0, 8).join(", ")}번째 줄)` : "");
@@ -482,7 +510,7 @@ $("catSave").onclick = async () => {
   renderAll();
 };
 
-function renderAll(){ renderMonths(); renderTable(); renderCats(); }
+function renderAll(){ renderMonths(); renderAcctFilter(); renderTable(); renderCats(); }
 
 // ───────── 로그인 · 대표·재무만 ─────────
 function renderModeNote(){
