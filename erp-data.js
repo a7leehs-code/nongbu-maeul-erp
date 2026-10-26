@@ -19,7 +19,7 @@ window.ERP_CATEGORIES = [
     code: "돈", anchor: "cat-money", name: "① 돈",
     sub: "돈이 새는 지점을 보는 묶음. 7·8회차(회계·재무)에서 채운다.",
     items: [
-      { icon:"📥", name: "자료 수집현황", where: "통장·세금계산서·현금영수증·카드가 며칠 것까지 들어왔나 (클로브) · 대표·재무만 봄", often: "매일 확인", urgency: "상", order: "7회차", status: "inprogress", file: "erp-money-collect.html" },
+      { icon:"📥", name: "자료 수집현황", where: "통장 관리(별명·부서·은행·끝 4자리) · 통장·세금계산서·현금영수증·카드가 며칠 것까지 들어왔나 (클로브) · 대표·재무만 봄", often: "매일 확인", urgency: "상", order: "7회차", status: "inprogress", file: "erp-money-collect.html" },
       { icon:"🗂️", name: "거래 분류함", where: "통장 거래를 내 분류(계란 매출·사람·사료·약품·자리·설비·파는 데 드는 돈 / 손익 아님)로 나눔 · 클로브 분류는 참고만 · 대표·재무만 봄", often: "매주", urgency: "상", order: "7회차", status: "inprogress", file: "erp-money-sort.html" },
       { icon:"🏦", name: "통장·매출 보기", where: "이번 달 판 것·쓴 것·남았나 모자랐나, 나간 돈 분류별, 손익 아닌 돈, 들어온 돈 거래처별, 미분류 따로 · 대표·재무만 봄", often: "월 1회", urgency: "상", order: "7회차", status: "inprogress", file: "erp-money-view.html" },
       { icon:"📊", name: "월 손익", where: "장부 규칙(미분류는 따로)으로 남은 돈, 통장 증감과 맞추기 ✓, 분류별 금액 · 대표·재무만 봄", often: "월 1회", urgency: "상", order: "7회차", status: "inprogress", file: "erp-money-pnl.html" },

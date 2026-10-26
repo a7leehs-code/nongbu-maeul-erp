@@ -120,6 +120,27 @@ function render(){
     <div class="exp">따로 둔 것 — 미분류 <b>${s.uncls.length}건 · ${won(s.unclsNet)}원</b> · 손익 아님 들어옴 <b>${won(s.nonIn)}</b> · 나감 <b>${won(s.nonOut)}</b></div>
   </div>`;
 
+  // ①-2 지난달 · 이번 달 나란히 (지난달 거래가 있을 때만)
+  const [yy, mm] = month.split("-").map(Number);
+  const prevMonth = mm === 1 ? (yy - 1) + "-12" : yy + "-" + String(mm - 1).padStart(2, "0");
+  if(months.includes(prevMonth)){
+    const p = M.stats(prevMonth);
+    const line = (label, a, b, signed) => {
+      const d = b - a, f = signed ? M.signed : won;
+      return `<tr><td>${label}</td><td class="num">${f(a)}</td><td class="num"><b>${f(b)}</b></td><td class="num" style="color:${d > 0 ? "var(--green)" : d < 0 ? "var(--red)" : "var(--muted)"}">${d ? M.signed(d) : "같음"}</td></tr>`;
+    };
+    html += `<h2>지난달 · 이번 달 나란히</h2><div class="tbl-wrap"><table>
+      <thead><tr><th>줄</th><th class="num">${M.monthLabel(prevMonth)}</th><th class="num">${M.monthLabel(month)}</th><th class="num">차이</th></tr></thead><tbody>
+      ${line("판 것", p.sales, s.sales)}
+      ${line("쓴 것", p.cost, s.cost)}
+      ${line("<b>남은 돈</b>", p.profit, s.profit, true)}
+      <tr class="uncls"><td>미분류 (따로 둔 것)</td><td class="num">${p.uncls.length}건 · ${won(p.unclsNet)}</td><td class="num">${s.uncls.length}건 · ${won(s.unclsNet)}</td><td class="num">${s.uncls.length - p.uncls.length > 0 ? "+" : ""}${s.uncls.length - p.uncls.length}건</td></tr>
+      </tbody></table></div>
+      <div class="note plain">쓴 것의 차이는 「진짜 더 썼다」일 수도, 「미분류가 줄어 쓴 것으로 들어왔다」일 수도 있어요. 미분류 건수도 같이 보세요.</div>`;
+  }else{
+    html += `<div class="note plain">${M.monthLabel(prevMonth)} 거래가 아직 없어서 지난달과 나란히 볼 수 없어요. 지난달 통장 거래를 붙이면 여기에 나란히 나옵니다.</div>`;
+  }
+
   // ② 통장 증감과 맞추기
   const nonInWhat = [...new Set(s.nonInList.map(t => t.cat))].join("·");
   const nonOutWhat = [...new Set(s.nonOutList.map(t => t.cat))].join("·");

@@ -116,6 +116,25 @@
   <div class="note plain"><b>이 표를 채우는 법</b> — 클로드에게 「<b>자료 수집현황 갱신해 줘</b>」라고 하면, 클로드가 클로브에 연결된 통장·카드·세금계산서·현금영수증과 마지막으로 가져온 시각을 읽어 이 표에 넣습니다(금액은 넣지 않습니다). 며칠 지난 것이 있으면 <b>클로브 화면에서 최신화(새로 가져오기)</b>를 누르세요.<br>
     <b>카드를 따로 안 가져오는 경우</b> — 체크카드만 쓴다면 쓴 돈은 통장에 이미 있어서, 카드 내역을 또 가져오면 같은 지출이 두 번 생깁니다. 그럴 땐 아래에서 카드를 「연결 안 함」으로 두세요.</div>
 
+  <div class="card" id="acctCard">
+    <h3>🏦 통장 관리 <span class="help" id="acctHelp"></span></h3>
+    <div class="help" style="margin-bottom:10px">통장을 계좌번호 대신 <b>내가 지은 별명</b>으로 부릅니다. 계좌번호는 <b>끝 4자리만</b> 적고, 잔액·상품명은 적지 않습니다. 거래 분류함에서 거래마다 「어느 통장」인지 이 별명으로 보여 줍니다.</div>
+    <div class="tbl-wrap" style="margin-bottom:10px">
+      <table style="min-width:520px">
+        <thead><tr><th>별명</th><th>부서</th><th>은행</th><th>끝 4자리</th><th>상태</th></tr></thead>
+        <tbody id="acctBody"></tbody>
+      </table>
+    </div>
+    <div id="acctEdit">
+      <div id="acctList"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-line" id="acctAdd" style="flex:1">+ 통장 추가</button>
+        <button class="btn btn-copper" id="acctSave" style="flex:1">통장 저장</button>
+      </div>
+    </div>
+    <div class="msg" id="acctMsg"></div>
+  </div>
+
   <div class="card" id="editCard">
     <h3>⚙️ 자료 줄 고치기 <span class="help" id="editHelp"></span></h3>
     <div id="srcList"></div>
@@ -149,6 +168,8 @@ const SUPABASE_JS = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/d
 
 // 자료 줄: [{ id, name, route, connected, lastDataDate, lastDataLabel, fetchedAt, todo }]
 let sources = [];
+// 통장: [{ id, nickname, dept, bank, last4, active }] — 계좌번호는 끝 4자리만
+let accounts = [];
 let me = null, allowed = !LIVE;
 
 const $ = id => document.getElementById(id);
@@ -178,8 +199,11 @@ const Practice = {
     if(!sources) sources = [["통장 — 운영통장","클로브 ← 은행"],["세금계산서(매출)","클로브 ← 홈택스"],["세금계산서(매입)","클로브 ← 홈택스"],["현금영수증","클로브 ← 홈택스"],["카드","클로브 ← 카드사"]]
       .map(([name, route], i) => ({ id:"m" + (i+1), name, route, connected:true, lastDataDate:"", lastDataLabel:"", fetchedAt:null, todo:"" }));
   },
-  async save(){ try{ localStorage.setItem(KEY, JSON.stringify(sources)); }catch(e){ throw new Error("이 브라우저에 저장하지 못했어요."); } }
+  async save(){ try{ localStorage.setItem(KEY, JSON.stringify(sources)); }catch(e){ throw new Error("이 브라우저에 저장하지 못했어요."); } },
+  async loadAccounts(){ try{ accounts = JSON.parse(localStorage.getItem(KEY_A)) || []; }catch(e){ accounts = []; } },
+  async saveAccounts(){ try{ localStorage.setItem(KEY_A, JSON.stringify(accounts)); }catch(e){ throw new Error("이 브라우저에 저장하지 못했어요."); } }
 };
+const KEY_A = "nongbuErpMoneyAccounts";
 
 // ───────── 저장소 ② 실사용 — 창고 ─────────
 let sb = null, session = null, liveError = "";
@@ -217,9 +241,76 @@ const Live = {
       if(res.error) throw new Error(friendly(res.error.message));
     }
     await this.load();
+  },
+  async loadAccounts(){
+    const { data, error } = await sb.from("money_accounts").select("*").order("sort").order("id");
+    if(error) throw new Error(error.message);
+    accounts = data.map(x => ({ id:String(x.id), nickname:x.nickname, dept:x.dept, bank:x.bank, last4:x.last4, active:x.active }));
+  },
+  async saveAccounts(removedIds){
+    for(const id of removedIds){ const r = await sb.from("money_accounts").delete().eq("id", Number(id)); if(r.error) throw new Error(friendly(r.error.message)); }
+    for(const [i, a] of accounts.entries()){
+      const row = { nickname:a.nickname, dept:a.dept, bank:a.bank, last4:a.last4, active:a.active !== false, sort:i + 1 };
+      const res = a.id.startsWith("new") ? await sb.from("money_accounts").insert(row) : await sb.from("money_accounts").update(row).eq("id", Number(a.id));
+      if(res.error) throw new Error(/duplicate|unique/i.test(res.error.message) ? "같은 별명이나 같은 은행·끝 4자리 통장이 이미 있어요." : friendly(res.error.message));
+    }
+    await this.loadAccounts();
   }
 };
 const DB = LIVE ? Live : Practice;
+
+// ───────── 통장 관리 (과제 ① — 대표만 고침, 대표·재무가 봄) ─────────
+let removedAcc = [];
+function renderAccounts(){
+  const can = isCeo();
+  $("acctHelp").textContent = accounts.length ? "통장 " + accounts.filter(a => a.active !== false).length + "개" : "";
+  $("acctBody").innerHTML = accounts.length
+    ? accounts.map(a => `<tr><td class="nm">${esc(a.nickname)}</td><td>${esc(a.dept || "—")}</td><td>${esc(a.bank)}</td><td>····${esc(a.last4)}</td><td><span class="badge ${a.active !== false ? "ok" : "off"}">${a.active !== false ? "쓰는 중" : "안 씀"}</span></td></tr>`).join("")
+    : `<tr><td colspan="5" class="help" style="text-align:center">아직 등록한 통장이 없어요. ${can ? "클로브에 회사가 연결되면 클로드에게 「통장 목록 넣어 줘」라고 하시거나, 아래에서 직접 추가하세요." : ""}</td></tr>`;
+  $("acctEdit").style.display = can ? "" : "none";
+  if(!can) return;
+  $("acctList").innerHTML = accounts.map((a, i) => `<div class="src-row">
+    <div class="grid">
+      <div><label>별명</label><input data-a="${i}" data-f="nickname" value="${esc(a.nickname)}" maxlength="20" placeholder="예) 운영통장"></div>
+      <div><label>부서 (선택)</label><input data-a="${i}" data-f="dept" value="${esc(a.dept)}" maxlength="20" placeholder="하나뿐이면 비워도 돼요"></div>
+      <div><label>은행</label><input data-a="${i}" data-f="bank" value="${esc(a.bank)}" maxlength="20" placeholder="예) 농협"></div>
+      <div><label>계좌번호 끝 4자리</label><input data-a="${i}" data-f="last4" value="${esc(a.last4)}" maxlength="4" inputmode="numeric" placeholder="1234"></div>
+    </div>
+    <div class="grid2">
+      <div><label style="display:flex;gap:6px;align-items:center"><input type="checkbox" data-a="${i}" data-f="active" ${a.active !== false ? "checked" : ""} style="width:auto"> 쓰는 중</label></div>
+      <div class="help">통장을 빼도 그 통장 거래는 지워지지 않고 「어느 통장」 칸만 비워져요.</div>
+      <button class="btn btn-line" data-adel="${i}" style="color:var(--red)">빼기</button>
+    </div>
+  </div>`).join("");
+}
+function readAccounts(){
+  document.querySelectorAll("#acctList [data-f]").forEach(inp => {
+    const a = accounts[inp.dataset.a], f = inp.dataset.f;
+    a[f] = f === "active" ? inp.checked : inp.value.trim();
+  });
+}
+function acctMsg(t, ok){ const el = $("acctMsg"); el.textContent = t; el.className = "msg " + (ok ? "ok" : "err"); }
+$("acctAdd").onclick = () => { readAccounts(); accounts.push({ id:(LIVE ? "new" : "a") + Date.now(), nickname:"", dept:"", bank:"", last4:"", active:true }); renderAccounts(); };
+$("acctList").addEventListener("click", e => {
+  const b = e.target.closest("[data-adel]");
+  if(!b) return;
+  readAccounts();
+  const a = accounts[b.dataset.adel];
+  if(!confirm((a.nickname || "이 통장") + "을(를) 목록에서 뺄까요? 그 통장 거래는 지워지지 않아요.")) return;
+  if(!a.id.startsWith("new") && LIVE) removedAcc.push(a.id);
+  accounts.splice(b.dataset.adel, 1);
+  renderAccounts();
+});
+$("acctSave").onclick = async () => {
+  readAccounts();
+  if(accounts.some(a => !a.nickname || !a.bank)) return acctMsg("별명과 은행을 채워 주세요.", false);
+  if(accounts.some(a => !/^[0-9]{4}$/.test(a.last4))) return acctMsg("계좌번호는 끝 4자리 숫자만 적어 주세요. 전체 번호는 적지 않아요.", false);
+  const nick = accounts.map(a => a.nickname);
+  if(new Set(nick).size !== nick.length) return acctMsg("같은 별명이 두 개 있어요.", false);
+  try{ await DB.saveAccounts(removedAcc); removedAcc = []; acctMsg("통장을 저장했어요.", true); }
+  catch(e){ acctMsg(e.message, false); }
+  renderAccounts();
+};
 
 // ───────── 그리기 ─────────
 function renderTable(){
@@ -318,7 +409,7 @@ $("permList").addEventListener("change", async e => {
   else{ if(cb.checked) granted.add(id); else granted.delete(id); msg.className = "msg ok"; msg.textContent = name + "님 — " + (cb.checked ? "경영·자금을 볼 수 있게 했어요." : "이제 볼 수 없어요."); }
 });
 
-function renderAll(){ renderTable(); renderEdit(); renderPerms(); }
+function renderAll(){ renderTable(); renderAccounts(); renderEdit(); renderPerms(); }
 
 // ───────── 로그인 · 화면 열고 닫기 ─────────
 let authMode = "login";
@@ -377,12 +468,12 @@ async function loadLive(){
       if(me && me.active){
         const r = await sb.rpc("has_perm", { p: "money" });
         allowed = !r.error && r.data === true;
-        if(allowed) await Live.load();
+        if(allowed){ await Live.load(); await Live.loadAccounts(); }
         if(me.role === "대표") await loadPerms();
       }
     }catch(e){ liveError = friendly(e.message); }
   }
-  if(!allowed) sources = [];
+  if(!allowed){ sources = []; accounts = []; }
   renderGate();
   if(!$("app").style.display) renderAll();
 }
@@ -392,7 +483,7 @@ $("bar").addEventListener("click", async e => {
 });
 
 async function boot(){
-  if(!LIVE){ await Practice.load(); renderGate(); renderAll(); return; }
+  if(!LIVE){ await Practice.load(); await Practice.loadAccounts(); renderGate(); renderAll(); return; }
   renderGate();
   try{ await Live.init(); }catch(e){ liveError = e.message; renderGate(); }
 }
